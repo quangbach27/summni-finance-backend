@@ -1,0 +1,7 @@
+# IDE / Editor
+.vscode/
+.idea/
+
+# cache
+.go/
+.go-cache/

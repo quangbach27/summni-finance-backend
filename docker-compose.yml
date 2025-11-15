@@ -1,0 +1,24 @@
+version: "3.8"
+name: "wild-workouts"
+
+services:
+  sumni-finance-backend:
+    build:
+      context: docker/app
+    volumes:
+      - ./internal:/app/internal
+      - ./cmd:/app/cmd
+      - ./.go/pkg:/app/go/pkg
+      - ./.go-cache:/app/go-cache
+    working_dir: /app
+    ports:
+      - "127.0.0.1:8080:$PORT"
+    env_file:
+      - .env
+    environment:
+      DEBUG: 
+      GOCACHE: /go-cache
+    depends_on:
+      - firestore
+
+  

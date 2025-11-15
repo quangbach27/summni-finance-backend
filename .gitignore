@@ -1,0 +1,10 @@
+# IDE / Editor
+.vscode/
+.idea/
+
+# Dependency directories
+vendor/
+
+# cache
+.go/
+.go-cache/

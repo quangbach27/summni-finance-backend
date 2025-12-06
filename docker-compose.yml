@@ -7,12 +7,17 @@ services:
     build:
       context: docker/app-local
     volumes:
+      # Source code volumes
       - ./internal:/app/internal
       - ./cmd:/app/cmd
+      # Go module files
       - ./go.mod:/app/go.mod
       - ./go.sum:/app/go.sum
+      # Go cache volumes
       - ./.go/pkg:/app/go/pkg
       - ./.go-cache:/app/go-cache
+      # Vendor directory
+      - ./vendor:/app/vendor
     working_dir: /app
     ports:
       - "127.0.0.1:8080:$PORT" # App port

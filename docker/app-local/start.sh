@@ -8,7 +8,10 @@ echo "⚙️ Starting application..."
 if [ "$DEBUG" = "true" ]; then
     echo "🔧 Debug mode enabled — starting Delve..."
 
-    go build -gcflags="all=-N -l" -o $BINARY $SRC_DIR/main.go
+    go build \
+        -mod=vendor  \
+        -gcflags="all=-N -l" \
+        -o $BINARY $SRC_DIR/main.go
 
     # Run Delve in headless mode
     dlv exec "$BINARY" \
@@ -20,5 +23,5 @@ if [ "$DEBUG" = "true" ]; then
 
 else
     echo "🚀 Running server normally..."
-    go run $SRC_DIR/main.go
+    go run -mod=vendor $SRC_DIR/main.go
 fi

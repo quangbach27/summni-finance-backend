@@ -11,3 +11,5 @@ dev:
 stop:
 	docker compose down $(SERVICE)
 	
+lint:
+	golangci-lint run

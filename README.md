@@ -16,23 +16,11 @@ Normal dev run (hot reload via reflex):
 make dev
 ```
 
-Start in debug mode (Delve on port 40000):
+Start in **debug mode** (Delve on port 40000):
 
 ```bash
 make dev DEBUG=true
 ```
-
-What happens under the hood:
-
-- Image builds from `docker/app-local/Dockerfile` (Go + reflex + Delve)
-- The container starts with `reflex` watching `*.go`/`go.mod` and runs `docker/app-local/start.sh`
-- In debug mode, `start.sh` builds with `-gcflags="all=-N -l"` and runs Delve headless on `:40000`
-- In normal mode, it runs `go run ./cmd/server/main.go`
-
-Ports:
-
-- App: http://localhost:8080 (mapped from container `$PORT` in your `.env`)
-- Debugger (Delve): 40000/tcp on localhost when `DEBUG=true`
 
 Stop the stack:
 

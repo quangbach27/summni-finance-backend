@@ -8,9 +8,8 @@ import (
 
 // Config holds all application configuration
 type Config struct {
-	Port     string
-	Database DatabaseConfig
-	CORS     CORSConfig
+	Database  DatabaseConfig
+	AppConfig AppConfig
 }
 
 // DatabaseConfig holds database-related configuration
@@ -21,8 +20,9 @@ type DatabaseConfig struct {
 	Password string
 }
 
-// CORSConfig holds CORS-related configuration
-type CORSConfig struct {
+// AppConfig holds CORS-related configuration
+type AppConfig struct {
+	Port           string
 	AllowedOrigins []string
 }
 
@@ -45,14 +45,14 @@ func GetConfig() *Config {
 // loadConfig loads configuration from environment variables
 func loadConfig() *Config {
 	cfg := &Config{
-		Port: getEnv("PORT", "8080"),
 		Database: DatabaseConfig{
 			Host:     getEnv("POSTGRES_ADDR", "localhost"),
 			Database: getEnv("POSTGRES_DATABASE", "db"),
 			User:     getEnv("POSTGRES_USER", "user"),
 			Password: getEnv("POSTGRES_PASSWORD", "password"),
 		},
-		CORS: CORSConfig{
+		AppConfig: AppConfig{
+			Port:           getEnv("PORT", "8080"),
 			AllowedOrigins: strings.Split(getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:3000"), ","),
 		},
 	}

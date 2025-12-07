@@ -6,25 +6,42 @@ import (
 	"sync"
 )
 
-// Config holds all application configuration
-type Config struct {
-	Port     string
-	Database DatabaseConfig
-	CORS     CORSConfig
-}
-
-// DatabaseConfig holds database-related configuration
 type DatabaseConfig struct {
-	Host     string
-	Database string
-	User     string
-	Password string
+	// DATABASE CONFIG
+	host     string
+	database string
+	user     string
+	password string
 }
 
-// CORSConfig holds CORS-related configuration
-type CORSConfig struct {
-	AllowedOrigins []string
+// Database getters
+func (db DatabaseConfig) Host() string     { return db.host }
+func (db DatabaseConfig) Name() string     { return db.database }
+func (db DatabaseConfig) User() string     { return db.user }
+func (db DatabaseConfig) Password() string { return db.password }
+
+// APP CONFIG
+type AppConfig struct {
+	port           string
+	allowedOrigins []string
+	env            string
 }
+
+func (a AppConfig) Port() string { return a.port }
+func (a AppConfig) Env() string  { return a.env }
+func (a AppConfig) AllowedOrigins() []string {
+	return a.allowedOrigins
+}
+
+// Config holds all application configuration
+// CONFIG ROOT
+type Config struct {
+	database DatabaseConfig
+	app      AppConfig
+}
+
+func (c *Config) Database() DatabaseConfig { return c.database }
+func (c *Config) App() AppConfig           { return c.app }
 
 var (
 	configInstance *Config
@@ -42,22 +59,21 @@ func GetConfig() *Config {
 	return configInstance
 }
 
-// loadConfig loads configuration from environment variables
+// INTERNAL LOADING
 func loadConfig() *Config {
-	cfg := &Config{
-		Port: getEnv("PORT", "8080"),
-		Database: DatabaseConfig{
-			Host:     getEnv("POSTGRES_ADDR", "localhost"),
-			Database: getEnv("POSTGRES_DATABASE", "db"),
-			User:     getEnv("POSTGRES_USER", "user"),
-			Password: getEnv("POSTGRES_PASSWORD", "password"),
+	return &Config{
+		database: DatabaseConfig{
+			host:     getEnv("POSTGRES_ADDR", "localhost"),
+			database: getEnv("POSTGRES_DATABASE", "db"),
+			user:     getEnv("POSTGRES_USER", "user"),
+			password: getEnv("POSTGRES_PASSWORD", "password"),
 		},
-		CORS: CORSConfig{
-			AllowedOrigins: strings.Split(getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:3000"), ","),
+		app: AppConfig{
+			port:           getEnv("PORT", "8080"),
+			env:            getEnv("ENV", "dev"),
+			allowedOrigins: strings.Split(getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:3000"), ","),
 		},
 	}
-
-	return cfg
 }
 
 // getEnv retrieves an environment variable or returns a default value

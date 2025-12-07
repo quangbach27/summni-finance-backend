@@ -2,9 +2,11 @@
 .vscode/
 .idea/
 
-# Dependency directories
-vendor/
-
 # cache
 .go/
 .go-cache/
+
+#vendor
+vendor/
+
+.DS_Store

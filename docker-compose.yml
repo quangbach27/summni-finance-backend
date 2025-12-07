@@ -3,22 +3,25 @@ name: "wild-workouts"
 
 services:
   sumni-finance-backend:
+    container_name: sumni-finance-backend
     build:
-      context: docker/app
+      context: docker/app-local
     volumes:
+      # Source code volumes
       - ./internal:/app/internal
       - ./cmd:/app/cmd
+      # Go module files
+      - ./go.mod:/app/go.mod
+      - ./go.sum:/app/go.sum
+      # Go cache volumes
       - ./.go/pkg:/app/go/pkg
       - ./.go-cache:/app/go-cache
     working_dir: /app
     ports:
-      - "127.0.0.1:8080:$PORT"
+      - "127.0.0.1:8080:$PORT" # App port
+      - "127.0.0.1:40000:40000" # Delve debug port
     env_file:
       - .env
     environment:
-      DEBUG: 
+      DEBUG: "${DEBUG:-false}"
       GOCACHE: /go-cache
-    depends_on:
-      - firestore
-
-  

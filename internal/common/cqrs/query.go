@@ -11,5 +11,5 @@ func ApplyQueryDecorator[Q any, R any](handler QueryHandler[Q, R]) QueryHandler[
 }
 
 type QueryHandler[Q any, R any] interface {
-	Handle(ctx context.Context, query Q) (R, error)
+	Handle(ctx context.Context, cmd Q) (R, error)
 }

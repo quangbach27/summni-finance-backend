@@ -1,8 +1,8 @@
 package httperr
 
 import (
-	"log/slog"
 	"net/http"
+	"sumni-finance-backend/internal/common/logs"
 
 	"github.com/go-chi/render"
 )
@@ -89,12 +89,13 @@ func RespondWithSlugError(err error, w http.ResponseWriter, r *http.Request) {
 }
 
 func httpRespondWithError(err error, slug string, w http.ResponseWriter, r *http.Request, logMSg string, status int) {
-	logger := slog.With(
+	logger := logs.GetLogEntry(r).With(
 		"error", err,
 		"error_slug", slug,
 		"method", r.Method,
 		"path", r.URL.Path,
 	)
+
 	// Correct severity based on HTTP status
 	if status >= 500 {
 		logger.Error(logMSg)

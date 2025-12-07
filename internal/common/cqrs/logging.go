@@ -43,7 +43,7 @@ func (d queryLoggingDecorator[Q, R]) Handle(ctx context.Context, query Q) (resul
 		"query_body", fmt.Sprintf("%#v", query),
 	)
 
-	logger.Debug("Execute command")
+	logger.Debug("Execute query")
 
 	defer func() {
 		if err != nil {

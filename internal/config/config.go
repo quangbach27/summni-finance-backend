@@ -59,11 +59,10 @@ func GetConfig() *Config {
 	return configInstance
 }
 
-// INTERNAL LOADING
 func loadConfig() *Config {
 	return &Config{
 		database: DatabaseConfig{
-			host:     getEnv("POSTGRES_ADDR", "localhost"),
+			host:     getEnv("POSTGRES_HOST", "localhost"),
 			database: getEnv("POSTGRES_DATABASE", "db"),
 			user:     getEnv("POSTGRES_USER", "user"),
 			password: getEnv("POSTGRES_PASSWORD", "password"),

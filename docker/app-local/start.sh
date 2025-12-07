@@ -9,7 +9,6 @@ if [ "$DEBUG" = "true" ]; then
     echo "🔧 Debug mode enabled — starting Delve..."
 
     go build \
-        -mod=vendor  \
         -gcflags="all=-N -l" \
         -o $BINARY $SRC_DIR/main.go
 
@@ -23,5 +22,5 @@ if [ "$DEBUG" = "true" ]; then
 
 else
     echo "🚀 Running server normally..."
-    go run -mod=vendor $SRC_DIR/main.go
+    go run $SRC_DIR/main.go
 fi

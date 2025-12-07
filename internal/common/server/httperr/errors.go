@@ -97,9 +97,9 @@ func httpRespondWithError(err error, slug string, w http.ResponseWriter, r *http
 	)
 	// Correct severity based on HTTP status
 	if status >= 500 {
-		logger.Error(msg)
+		logger.Error(logMSg)
 	} else {
-		logger.Warn(msg)
+		logger.Warn(logMSg)
 	}
 
 	resp := ErrorResponse{slug, status}

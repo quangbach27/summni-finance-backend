@@ -16,8 +16,6 @@ services:
       # Go cache volumes
       - ./.go/pkg:/app/go/pkg
       - ./.go-cache:/app/go-cache
-      # Vendor directory
-      - ./vendor:/app/vendor
     working_dir: /app
     ports:
       - "127.0.0.1:8080:$PORT" # App port

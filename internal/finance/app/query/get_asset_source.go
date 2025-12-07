@@ -2,7 +2,6 @@ package query
 
 import (
 	"context"
-	"errors"
 	"sumni-finance-backend/internal/common/cqrs"
 )
 
@@ -17,6 +16,8 @@ func NewGetAssetSoureHandler() GetAssetSourceHandler {
 }
 
 func (h *getAssetSourceHandler) Handle(ctx context.Context, cmd GetAssetSourceCmd) (AssetSource, error) {
-
-	return AssetSource{}, errors.New("here is my error")
+	return AssetSource{
+		Name:       "techcombank",
+		SourceType: "bank",
+	}, nil
 }

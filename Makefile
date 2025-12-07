@@ -1,4 +1,13 @@
 SERVICE := sumni-finance-backend
+# Database Config Variables (Use environment variables if set, otherwise use default placeholders)
+POSTGRES_USER ?= user
+POSTGRES_PASSWORD ?= password
+POSTGRES_HOST ?= localhost
+POSTGRES_DATABASE ?= db
+POSTGRES_PORT ?= 5432
+
+DB_URL := postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}?sslmode=disable
+MIGRATE_PATH := db/migrations
 
 .PHONY: test dev stop lint
 
@@ -16,3 +25,19 @@ stop:
 	
 lint:
 	golangci-lint run
+
+# Applies all pending migrations (Forward)
+migrate-create:
+	migrate create -ext sql -dir $(MIGRATE_PATH) -seq $(NAME)
+
+migrate-up:
+	migrate -database "$(DB_URL)" -path $(MIGRATE_PATH) up
+
+# Rolls back the last applied migration (Backward)
+migrate-down:
+	migrate -database "$(DB_URL)" -path $(MIGRATE_PATH) down 1
+
+# Shows the current database migration status
+migrate-status:
+	@echo "Checking migration status..."
+	@migrate -database "$(DB_URL)" -path $(MIGRATE_PATH) version

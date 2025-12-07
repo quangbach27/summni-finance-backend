@@ -41,6 +41,78 @@ The codebase follows **Clean Architecture** principles with clear separation of 
 - **Money**: Immutable monetary values with currency validation
 - **Currency**: Supported currencies (USD, VND, KRW)
 - **IDs**: Type-safe identifiers using UUID
+- **BankDetails**: Value object encapsulating bank-specific information
+
+### Detailed Domain Model Analysis
+
+#### Wallet Entity (Aggregate Root)
+
+```go
+type Wallet struct {
+    id           WalletID
+    name         string
+    isStrictMode bool
+    currency     valueobject.Currency
+    allocations  []*Allocation
+}
+```
+
+**Key Features:**
+
+- **Aggregate Root**: Manages `Allocation` entities with consistency boundaries
+- **Rich Domain Behavior**: `TopUp()`, `Withdraw()`, `TotalBalance()` methods
+- **Currency Consistency**: Enforces same currency across all operations
+- **Strict Mode**: Business rule for operation validation
+- **Factory Pattern**: `NewWallet()` with validation, `UnmarshalWalletFromDB()` for persistence
+
+**Business Rules Enforced:**
+
+- Wallet must have a name and at least one allocation
+- Currency consistency across all operations
+- Asset source must exist for top-up/withdraw operations
+- Immutable ID generation using UUIDv7
+
+#### AssetSource Entity
+
+```go
+type AssetSource struct {
+    id          AssetSourceID
+    name        string
+    sourceType  SourceType  // TypeBank or TypeCash
+    balance     valueobject.Money
+    ownerID     uuid.UUID
+    bankDetails *BankDetails // Nil for cash assets
+}
+```
+
+**Key Features:**
+
+- **Type Safety**: Distinct factories for Bank vs Cash assets
+- **Conditional Composition**: Bank details only for bank assets
+- **Value Object Integration**: Uses `BankDetails` value object for bank-specific data
+- **Owner Association**: Links to user via `ownerID`
+
+**Type-Safe Factories:**
+
+```go
+func NewBankAssetSource(ownerID uuid.UUID, name string, initBalance valueobject.Money, bankName, accountNumber string) (*AssetSource, error)
+func NewCashAssetSource(ownerID uuid.UUID, name string, initBalance valueobject.Money) (*AssetSource, error)
+```
+
+#### Allocation Entity (Part of Wallet Aggregate)
+
+```go
+type Allocation struct {
+    assetSourceID AssetSourceID
+    amount        valueobject.Money
+}
+```
+
+**Key Features:**
+
+- **Entity within Aggregate**: Managed by Wallet aggregate root
+- **Linking Mechanism**: Connects wallets to asset sources
+- **Value Object Usage**: Money with currency validation
 
 ## **Design Patterns**
 
@@ -324,3 +396,149 @@ make lint         # Run code linting
 ---
 
 This architecture provides a solid foundation for a financial application with proper separation of concerns, maintainable code structure, and excellent development experience. When adding new features, follow the established patterns and maintain the clean architecture principles.
+
+## **SOLID Principles Analysis**
+
+### Assessment: **Well-Designed, Not Over-Complicated**
+
+#### ✅ **Single Responsibility Principle (SRP)**
+
+- **Wallet**: Manages financial allocations and operations
+- **AssetSource**: Represents funding sources (bank/cash)
+- **Money**: Handles monetary calculations with currency validation
+- **BankDetails**: Encapsulates bank-specific information
+- **Each class has one reason to change**
+
+#### ✅ **Open/Closed Principle (OCP)**
+
+- **AssetSource**: Extensible via factory pattern (Bank/Cash types)
+- **CQRS Handlers**: New commands/queries can be added without modifying existing ones
+- **Middleware**: Decorator pattern allows adding new behaviors
+
+#### ✅ **Liskov Substitution Principle (LSP)**
+
+- **Interface-based design**: All implementations can substitute their interfaces
+- **Value Objects**: Immutable and behaviorally consistent
+- **Factory methods**: Return same interface contracts
+
+#### ✅ **Interface Segregation Principle (ISP)**
+
+- **Ports package**: Specific interfaces (FinanceServerInterface)
+- **CQRS interfaces**: Separate CommandHandler and QueryHandler
+- **No forced implementation of unused methods**
+
+#### ✅ **Dependency Inversion Principle (DIP)**
+
+- **Clean Architecture**: Domain doesn't depend on infrastructure
+- **Dependency Injection**: Constructor injection throughout
+- **Interfaces in ports**: Abstract dependencies properly
+
+### Design Complexity Assessment: **Appropriate**
+
+**Pros:**
+
+- **Domain Complexity**: Financial applications require strict business rules
+- **Type Safety**: Strong typing prevents runtime errors
+- **Maintainability**: Clear separation enables easy testing and modification
+- **Scalability**: Architecture supports growth without major refactoring
+
+**Could Be Simplified For:**
+
+- **Simple CRUD applications** (but this isn't one)
+- **Prototype/MVP stages** (but production-ready code requires rigor)
+
+**Conclusion**: The complexity level is **justified** for a financial domain where data integrity, business rule enforcement, and maintainability are critical.
+
+## **SQL Security Considerations**
+
+### Current Status: **Repository Pattern Not Yet Implemented**
+
+**Security Guidelines for Future Database Integration:**
+
+#### 1. **SQL Injection Prevention**
+
+```go
+// ✅ Use parameterized queries
+func (r *walletRepository) GetByID(ctx context.Context, id WalletID) (*Wallet, error) {
+    query := `SELECT id, name, currency, is_strict_mode FROM wallets WHERE id = $1`
+    row := r.db.QueryRowContext(ctx, query, id)
+    // ...
+}
+
+// ❌ NEVER use string concatenation
+func (r *walletRepository) GetByName(name string) {
+    query := fmt.Sprintf("SELECT * FROM wallets WHERE name = '%s'", name) // VULNERABLE
+}
+```
+
+#### 2. **Input Validation at Domain Layer**
+
+```go
+// ✅ Already implemented - validate at domain boundaries
+func NewWallet(name string, currency valueobject.Currency, ...) (*Wallet, error) {
+    if name == "" {
+        return nil, errors.New("wallet name cannot be empty")
+    }
+    // Prevent SQL injection through domain validation
+}
+```
+
+#### 3. **Database Access Control**
+
+```go
+// ✅ Recommended patterns for future implementation
+type WalletRepository interface {
+    GetByOwner(ctx context.Context, ownerID uuid.UUID) ([]*Wallet, error)    // Owner-scoped queries
+    Create(ctx context.Context, wallet *Wallet) error                        // Input validation
+    UpdateBalance(ctx context.Context, walletID WalletID, amount Money) error // Atomic operations
+}
+```
+
+#### 4. **Connection Security**
+
+```go
+// ✅ Configuration already prepared
+type DatabaseConfig struct {
+    host     string  // Use TLS connections
+    database string  // Principle of least privilege DB names
+    user     string  // Dedicated service user (not admin)
+    password string  // Strong passwords, prefer environment variables
+}
+```
+
+#### 5. **Query Security Patterns**
+
+- **Parameterized Queries**: Use `$1, $2` placeholders
+- **Owner Scoping**: Always include `owner_id` in financial queries
+- **Transaction Boundaries**: Use database transactions for multi-table operations
+- **Audit Logging**: Log all financial operations with user context
+- **Rate Limiting**: Prevent abuse of expensive queries
+
+#### 6. **Recommended Libraries**
+
+```go
+import (
+    "github.com/jmoiron/sqlx"          // Enhanced database/sql
+    "github.com/lib/pq"                // PostgreSQL driver
+    "github.com/golang-migrate/migrate" // Schema migrations
+)
+```
+
+#### 7. **Security Headers & Middleware** (Already Implemented)
+
+```go
+// ✅ Current security measures
+router.Use(
+    middleware.SetHeader("X-Content-Type-Options", "nosniff"),
+    middleware.SetHeader("X-Frame-Options", "deny"),
+)
+```
+
+### Migration Security Checklist
+
+- [ ] Use migrations with version control
+- [ ] Review all SQL scripts for injection vulnerabilities
+- [ ] Implement row-level security (RLS) for multi-tenant data
+- [ ] Set up database connection pooling with proper timeouts
+- [ ] Configure SSL/TLS for database connections
+- [ ] Implement audit trails for financial transactions

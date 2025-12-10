@@ -18,6 +18,6 @@ func NewCreateAssetSourceHandler() CreateAssetSourceHandler {
 }
 
 func (h *createAssetSourceHandler) Handle(ctx context.Context, cmd CreateAssetSourceCmd) error {
-	logs.LoggerFromCtx(ctx).Info("create asset source.")
+	logs.FromContext(ctx).Info("create asset source.")
 	return nil
 }

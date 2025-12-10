@@ -29,6 +29,7 @@ func (v *ValidationErrors) Merge(other *ValidationErrors) {
 	if other == nil || len(other.Errors) == 0 {
 		return
 	}
+
 	v.Errors = append(v.Errors, other.Errors...)
 }
 
@@ -37,11 +38,10 @@ func (v *ValidationErrors) AsError() error {
 	if len(v.Errors) == 0 {
 		return nil
 	}
+
 	return v
 }
 
-// Error implements the standard error interface.
-// Now it returns a JSON string representing the object.
 func (v *ValidationErrors) Error() string {
 	// Marshal the entire struct (which contains the "errors" list)
 	bytes, err := json.Marshal(v)

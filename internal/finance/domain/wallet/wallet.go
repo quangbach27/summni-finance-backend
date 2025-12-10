@@ -1,17 +1,18 @@
-package domain
+package wallet
 
 import (
 	"errors"
 	"fmt"
 	"sumni-finance-backend/internal/common/valueobject"
+	"sumni-finance-backend/internal/finance/domain/assetsource"
 
 	"github.com/google/uuid"
 )
 
-type WalletID uuid.UUID
+type ID uuid.UUID
 
 type Wallet struct {
-	id           WalletID
+	id           ID
 	name         string
 	isStrictMode bool
 	currency     valueobject.Currency
@@ -39,7 +40,7 @@ func NewWallet(
 	}
 
 	return &Wallet{
-		id:           WalletID(id),
+		id:           ID(id),
 		name:         name,
 		currency:     currency,
 		isStrictMode: isStrictMode,
@@ -48,13 +49,13 @@ func NewWallet(
 }
 
 func UnmarshalWalletFromDB(
-	id WalletID,
+	id ID,
 	name string,
 	currency valueobject.Currency,
 	isStrictMode bool,
 	allocations []*Allocation,
 ) (*Wallet, error) {
-	if id == WalletID(uuid.Nil) {
+	if id == ID(uuid.Nil) {
 		return nil, errors.New("cannot load wallet with nil ID")
 	}
 
@@ -76,7 +77,7 @@ func UnmarshalWalletFromDB(
 }
 
 // --- GETTERS (Crucial for other layers to read data) ---
-func (w *Wallet) ID() WalletID                   { return w.id }
+func (w *Wallet) ID() ID                         { return w.id }
 func (w *Wallet) Name() string                   { return w.name }
 func (w *Wallet) IsStrictMode() bool             { return w.isStrictMode }
 func (w *Wallet) Currency() valueobject.Currency { return w.currency }
@@ -99,7 +100,7 @@ func (w *Wallet) TotalBalance() (valueobject.Money, error) {
 	return total, nil
 }
 
-func (w *Wallet) TopUp(assetSourceID AssetSourceID, amount valueobject.Money) error {
+func (w *Wallet) TopUp(assetSourceID assetsource.ID, amount valueobject.Money) error {
 	if amount.IsZero() {
 		return errors.New("top-up amount must be positive")
 	}
@@ -125,7 +126,7 @@ func (w *Wallet) TopUp(assetSourceID AssetSourceID, amount valueobject.Money) er
 	return fmt.Errorf("asset source %s not found in this wallet", assetSourceID)
 }
 
-func (w *Wallet) Withdraw(assetSourceID AssetSourceID, amount valueobject.Money) error {
+func (w *Wallet) Withdraw(assetSourceID assetsource.ID, amount valueobject.Money) error {
 	if amount.Currency() != w.currency {
 		return fmt.Errorf("wallet currency is %s but withdraw amount is %s", w.currency, amount.Currency())
 	}
@@ -147,27 +148,3 @@ func (w *Wallet) Withdraw(assetSourceID AssetSourceID, amount valueobject.Money)
 	// returning error if not found source
 	return fmt.Errorf("asset source %s not found in this wallet", assetSourceID)
 }
-
-// --- ALLOCATION ---
-type Allocation struct {
-	assetSourceID AssetSourceID
-	amount        valueobject.Money
-}
-
-func NewAllocation(assetSourceID AssetSourceID, amount valueobject.Money) (*Allocation, error) {
-	if assetSourceID == AssetSourceID(uuid.Nil) {
-		return nil, errors.New("assertSouceID is required")
-	}
-
-	if amount.IsZero() {
-		return nil, errors.New("amount is required")
-	}
-
-	return &Allocation{
-		assetSourceID: assetSourceID,
-		amount:        amount,
-	}, nil
-}
-
-func (a *Allocation) AssetSourceID() AssetSourceID { return a.assetSourceID }
-func (a *Allocation) Amount() valueobject.Money    { return a.amount }

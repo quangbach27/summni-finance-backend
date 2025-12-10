@@ -2,62 +2,12 @@ package httperr
 
 import (
 	"net/http"
+	common_errors "sumni-finance-backend/internal/common/errors"
 	"sumni-finance-backend/internal/common/logs"
 
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 )
-
-type ErrorType struct {
-	t string
-}
-
-var (
-	ErrorTypeUnknown        = ErrorType{"unknown"}
-	ErrorTypeAuthorization  = ErrorType{"authorization"}
-	ErrorTypeIncorrectInput = ErrorType{"incorrect-input"}
-)
-
-type SlugError struct {
-	error     string
-	slug      string
-	errorType ErrorType
-}
-
-func (s SlugError) Error() string {
-	return s.error
-}
-
-func (s SlugError) Slug() string {
-	return s.slug
-}
-
-func (s SlugError) ErrorType() ErrorType {
-	return s.errorType
-}
-
-func NewSlugError(error string, slug string) SlugError {
-	return SlugError{
-		error:     error,
-		slug:      slug,
-		errorType: ErrorTypeUnknown,
-	}
-}
-
-func NewAuthorizationError(error string, slug string) SlugError {
-	return SlugError{
-		error:     error,
-		slug:      slug,
-		errorType: ErrorTypeAuthorization,
-	}
-}
-
-func NewIncorrectInputError(error string, slug string) SlugError {
-	return SlugError{
-		error:     error,
-		slug:      slug,
-		errorType: ErrorTypeIncorrectInput,
-	}
-}
 
 func InternalError(slug string, err error, w http.ResponseWriter, r *http.Request) {
 	httpRespondWithError(err, slug, w, r, "Internal server error", http.StatusInternalServerError)
@@ -72,16 +22,16 @@ func BadRequest(slug string, err error, w http.ResponseWriter, r *http.Request) 
 }
 
 func RespondWithSlugError(err error, w http.ResponseWriter, r *http.Request) {
-	slugError, ok := err.(SlugError)
+	slugError, ok := err.(common_errors.SlugError)
 	if !ok {
 		InternalError("internal-server-error", err, w, r)
 		return
 	}
 
 	switch slugError.ErrorType() {
-	case ErrorTypeAuthorization:
+	case common_errors.ErrorTypeAuthorization:
 		Unauthorised(slugError.Slug(), slugError, w, r)
-	case ErrorTypeIncorrectInput:
+	case common_errors.ErrorTypeIncorrectInput:
 		BadRequest(slugError.Slug(), slugError, w, r)
 	default:
 		InternalError(slugError.Slug(), slugError, w, r)
@@ -94,6 +44,8 @@ func httpRespondWithError(err error, slug string, w http.ResponseWriter, r *http
 		"error_slug", slug,
 	)
 
+	requestID := middleware.GetReqID(r.Context())
+
 	// Correct severity based on HTTP status
 	if status >= 500 {
 		logger.Error(logMSg)
@@ -101,7 +53,7 @@ func httpRespondWithError(err error, slug string, w http.ResponseWriter, r *http
 		logger.Warn(logMSg)
 	}
 
-	resp := ErrorResponse{slug, status}
+	resp := ErrorResponse{slug, status, logMSg, requestID}
 
 	if err := render.Render(w, r, resp); err != nil {
 		panic(err)
@@ -111,6 +63,8 @@ func httpRespondWithError(err error, slug string, w http.ResponseWriter, r *http
 type ErrorResponse struct {
 	Slug       string `json:"slug"`
 	httpStatus int
+	Message    string `json:"message"`
+	TraceID    string `json:"trace_id"`
 }
 
 func (e ErrorResponse) Render(w http.ResponseWriter, r *http.Request) error {

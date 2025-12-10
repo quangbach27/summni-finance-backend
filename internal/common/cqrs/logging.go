@@ -13,7 +13,7 @@ type commandLoggingDecorator[C any] struct {
 func (d commandLoggingDecorator[C]) Handle(ctx context.Context, cmd C) (err error) {
 	handlerType := generateActionName(cmd)
 
-	logger := logs.LoggerFromCtx(ctx).With(
+	logger := logs.FromContext(ctx).With(
 		"command", handlerType,
 		"command_body", fmt.Sprintf("%#v", cmd),
 	)
@@ -38,7 +38,7 @@ type queryLoggingDecorator[Q any, R any] struct {
 func (d queryLoggingDecorator[Q, R]) Handle(ctx context.Context, query Q) (result R, err error) {
 	handlerType := generateActionName(query)
 
-	logger := logs.LoggerFromCtx(ctx).With(
+	logger := logs.FromContext(ctx).With(
 		"query", handlerType,
 		"query_body", fmt.Sprintf("%#v", query),
 	)

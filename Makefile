@@ -9,10 +9,13 @@ POSTGRES_PORT ?= 5432
 DB_URL := postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}?sslmode=disable
 MIGRATE_PATH := db/migrations
 
-.PHONY: test dev stop lint
+.PHONY: test test-ci dev stop lint migrate-create migrate-up migrate-down
 
 test:
 	@./scripts/test.sh .e2e.env
+
+test-ci: 
+	@CI=true ./scripts/test.sh .e2e.env
 
 dev:
 	DEBUG=$(DEBUG) docker compose up --build $(SERVICE) -d	

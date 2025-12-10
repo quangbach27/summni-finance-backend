@@ -49,7 +49,7 @@ The codebase follows **Clean Architecture** principles with clear separation of 
 
 ```go
 type Wallet struct {
-    id           WalletID
+    id           ID  // wallet.ID which is uuid.UUID
     name         string
     isStrictMode bool
     currency     valueobject.Currency
@@ -63,22 +63,24 @@ type Wallet struct {
 - **Rich Domain Behavior**: `TopUp()`, `Withdraw()`, `TotalBalance()` methods
 - **Currency Consistency**: Enforces same currency across all operations
 - **Strict Mode**: Business rule for operation validation
-- **Factory Pattern**: `NewWallet()` with validation, `UnmarshalWalletFromDB()` for persistence
+- **Factory Pattern**: `NewWallet(name, currency, isStrictMode, allocations)` with validation, `UnmarshalWalletFromDB()` for persistence reconstruction
 
 **Business Rules Enforced:**
 
-- Wallet must have a name and at least one allocation
-- Currency consistency across all operations
-- Asset source must exist for top-up/withdraw operations
-- Immutable ID generation using UUIDv7
+- Wallet must have a name and at least one allocation ("wallet is not belong to assert source")
+- Currency consistency across all operations with detailed error messages
+- Asset source must exist in wallet allocations for top-up/withdraw operations
+- Negative money amounts prevented at Money creation and operation level
+- Immutable ID generation using UUIDv7 for both Wallet and AssetSource
+- Strict validation for empty names and nil IDs
 
 #### AssetSource Entity
 
 ```go
 type AssetSource struct {
-    id          AssetSourceID
+    id          ID  // assetsource.ID which is uuid.UUID
     name        string
-    sourceType  SourceType  // TypeBank or TypeCash
+    sourceType  SourceType  // TypeBank or TypeCash (struct with code field)
     balance     valueobject.Money
     ownerID     uuid.UUID
     bankDetails *BankDetails // Nil for cash assets
@@ -88,6 +90,7 @@ type AssetSource struct {
 **Key Features:**
 
 - **Type Safety**: Distinct factories for Bank vs Cash assets
+- **SourceType**: Struct with code field, predefined constants `TypeBank = SourceType{code: "BANK"}` and `TypeCash = SourceType{code: "CASH"}`
 - **Conditional Composition**: Bank details only for bank assets
 - **Value Object Integration**: Uses `BankDetails` value object for bank-specific data
 - **Owner Association**: Links to user via `ownerID`
@@ -103,7 +106,7 @@ func NewCashAssetSource(ownerID uuid.UUID, name string, initBalance valueobject.
 
 ```go
 type Allocation struct {
-    assetSourceID AssetSourceID
+    assetSourceID assetsource.ID
     amount        valueobject.Money
 }
 ```
@@ -113,6 +116,7 @@ type Allocation struct {
 - **Entity within Aggregate**: Managed by Wallet aggregate root
 - **Linking Mechanism**: Connects wallets to asset sources
 - **Value Object Usage**: Money with currency validation
+- **Factory Method**: `NewAllocation(assetSourceID, amount)` with validation
 
 ## **Design Patterns**
 
@@ -121,16 +125,27 @@ type Allocation struct {
 ```go
 // Commands for state changes
 type CreateAssetSourceHandler cqrs.CommandHandler[CreateAssetSourceCmd]
+type createAssetSourceHandler struct{}
 
 // Queries for data retrieval
 type GetAssetSourceHandler cqrs.QueryHandler[GetAssetSourceCmd, AssetSource]
+type getAssetSourceHandler struct{}
 ```
+
+**Current Implementation:**
+
+- **CreateAssetSourceCmd**: Empty struct, handler logs creation event
+- **GetAssetSourceCmd**: Empty struct, returns hardcoded AssetSource example
+- **Application Layer**: Aggregates Commands and Queries structs
+- **Auto-applied Decorators**: `ApplyCommandDecorators()` and `ApplyQueryDecorator()` for logging
+- **Factory Pattern**: `NewCreateAssetSourceHandler()` and `NewGetAssetSoureHandler()` return decorated handlers
 
 **Usage Guidelines:**
 
 - Commands: Use for operations that modify state
 - Queries: Use for read-only operations
 - Apply logging decorators for observability
+- Return types defined in query/types.go for DTOs
 
 ### 2. Decorator Pattern
 
@@ -148,9 +163,11 @@ func ApplyQueryDecorator[Q any, R any](handler QueryHandler[Q, R]) QueryHandler[
 ### 3. Factory Pattern
 
 ```go
-func NewBankAssetSource(id int64, name string, balance valueobject.Money, ownerID uuid.UUID, accountNumber, bankName string) (*BankAssetSource, error)
-func NewCashAssetSource() (*CashAssetSource, error)
+func NewBankAssetSource(ownerID uuid.UUID, name string, initBalance valueobject.Money, bankName, accountNumber string) (*AssetSource, error)
+func NewCashAssetSource(ownerID uuid.UUID, name string, initBalance valueobject.Money) (*AssetSource, error)
+func NewAllocation(assetSourceID assetsource.ID, amount valueobject.Money) (*Allocation, error)
 func NewMoney(amount int64, currency Currency) (Money, error)
+func NewBankDetails(bankName, accountNumber string) (BankDetails, error)
 ```
 
 **Usage Guidelines:**
@@ -287,11 +304,36 @@ server := &http.Server{
 
 ```go
 // Rich domain objects with behavior
-func (w *Wallet) TopUp(assetSourceID AssetSourceID, amount valueobject.Money) error
-func (w *Wallet) Withdraw(assetSourceID AssetSourceID, amount valueobject.Money) error
+func (w *Wallet) TopUp(assetSourceID assetsource.ID, amount valueobject.Money) error
+func (w *Wallet) Withdraw(assetSourceID assetsource.ID, amount valueobject.Money) error
+func (w *Wallet) TotalBalance() (valueobject.Money, error)
 func (m Money) Add(other Money) (Money, error)
 func (m Money) Subtract(other Money) (Money, error)
+func (m Money) LessOrEqualThan(other Money) bool
+func (m Money) IsZero() bool
 ```
+
+**Domain-specific Validations:**
+
+- **TopUp**: Validates positive amounts and currency consistency, finds existing allocation
+- **Withdraw**: Checks sufficient funds and currency matching
+- **Money Operations**: Prevent negative results and enforce currency consistency
+- **Allocation Factory**: `NewAllocation()` validates non-nil asset source ID and positive amount
+
+**BankDetails Value Object:**
+
+```go
+type BankDetails struct {
+    bankName      string
+    accountNumber string
+}
+
+func NewBankDetails(bankName, accountNumber string) (BankDetails, error)
+```
+
+- Immutable value object for bank-specific information
+- Validation ensures both bank name and account number are required
+- Used only in bank-type asset sources (nil for cash assets)
 
 **Guidelines:**
 
@@ -375,6 +417,42 @@ make lint         # Run code linting
 - **Testing**: Comprehensive test setup with environment isolation
 
 ## **Future Considerations**
+
+### Current Implementation Status & Next Steps
+
+**✅ Completed Features:**
+
+- Complete domain model with Wallet, AssetSource, and Allocation entities
+- Rich value objects (Money, Currency, BankDetails) with proper validation
+- CQRS pattern foundation with command/query handlers
+- Factory patterns for type-safe object creation
+- Clean Architecture with proper layer separation
+- HTTP server setup with middleware stack
+- Configuration management with environment variables
+- Structured logging with request context
+- Docker development environment with hot reload
+
+**🚧 In Progress / Needs Implementation:**
+
+- **Repository Pattern**: Interfaces defined but implementations needed
+- **Database Integration**: Migrations ready but repository layer incomplete
+- **CQRS Handlers**: Currently return hardcoded responses, need actual business logic
+- **Persistence Layer**: Domain entities need serialization/deserialization
+- **API Endpoints**: HTTP handlers need actual business logic integration
+- **Transaction Support**: Multi-operation consistency not yet implemented
+- **Input Validation**: HTTP request validation layer missing
+- **Error Handling**: Domain errors need proper HTTP status mapping
+
+**📋 Recommended Implementation Order:**
+
+1. Complete repository interfaces and implementations
+2. Implement proper CQRS command/query handlers with actual business logic
+3. Add database persistence layer with proper domain reconstruction
+4. Implement HTTP request/response DTOs and validation
+5. Add transaction management for multi-aggregate operations
+6. Implement comprehensive error handling with proper HTTP responses
+7. Add authentication and authorization middleware
+8. Implement event sourcing for audit trails
 
 ### Planned Enhancements
 

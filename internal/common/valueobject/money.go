@@ -30,14 +30,12 @@ func (m Money) Amount() int64      { return m.amount }
 func (m Money) Currency() Currency { return m.currency }
 
 // IsZero checks if the struct is the zero value (uninitialized)
-func (m Money) IsZero() bool {
-	return m == Money{}
-}
+func (m Money) IsZero() bool { return m == Money{} }
 
 // Add sums two money objects.
 func (m Money) Add(other Money) (Money, error) {
 	// 1. Allow adding Zero (No error needed)
-	if other.IsZero() {
+	if other.IsZero() || other.amount == 0 {
 		return m, nil
 	}
 
@@ -45,10 +43,6 @@ func (m Money) Add(other Money) (Money, error) {
 	if m.currency != other.currency {
 		return Money{}, errors.New("cannot add different currencies")
 	}
-
-	// 3. Optional: Check for Integer Overflow (Int64 is huge, but good for safety)
-	// total := m.amount + other.amount
-	// if total < m.amount { return Money{}, errors.New("integer overflow") }
 
 	return Money{
 		amount:   m.amount + other.amount,
@@ -59,7 +53,7 @@ func (m Money) Add(other Money) (Money, error) {
 // Subtract deducts money.
 func (m Money) Subtract(other Money) (Money, error) {
 	// 1. Allow subtracting Zero
-	if other.IsZero() {
+	if other.IsZero() || other.amount == 0 {
 		return m, nil
 	}
 
@@ -82,12 +76,12 @@ func (m Money) Subtract(other Money) (Money, error) {
 }
 
 // LessOrEqualThan compares amounts.
-// Note: It returns false if currencies mismatch (or you could panic/error).
 func (m Money) LessOrEqualThan(other Money) bool {
+	// Choosing to return false here implies they are not comparable.
+	// Be careful not to rely on this for sorting mixed currencies.
 	if m.currency != other.currency {
-		return false // Or handle mismatch differently
+		return false
 	}
 
-	// Fixed Logic: Return true if m <= other
 	return m.amount <= other.amount
 }

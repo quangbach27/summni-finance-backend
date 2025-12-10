@@ -92,8 +92,6 @@ func httpRespondWithError(err error, slug string, w http.ResponseWriter, r *http
 	logger := logs.GetLogEntry(r).With(
 		"error", err,
 		"error_slug", slug,
-		"method", r.Method,
-		"path", r.URL.Path,
 	)
 
 	// Correct severity based on HTTP status

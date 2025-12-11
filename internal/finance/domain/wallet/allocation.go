@@ -1,7 +1,7 @@
 package wallet
 
 import (
-	"errors"
+	"sumni-finance-backend/internal/common/validator"
 	"sumni-finance-backend/internal/common/valueobject"
 	"sumni-finance-backend/internal/finance/domain/assetsource"
 
@@ -15,12 +15,13 @@ type Allocation struct {
 }
 
 func NewAllocation(assetSourceID assetsource.ID, amount valueobject.Money) (*Allocation, error) {
-	if assetSourceID == assetsource.ID(uuid.Nil) {
-		return nil, errors.New("assertSouceID is required")
-	}
+	validator := validator.New()
 
-	if amount.IsZero() {
-		return nil, errors.New("amount is required")
+	validator.Check(assetSourceID != assetsource.ID(uuid.Nil), "assetSourceID", "assetSourceID is required")
+	validator.Check(!amount.IsZero(), "amount", "amount is required")
+
+	if err := validator.Err(); err != nil {
+		return nil, err
 	}
 
 	return &Allocation{

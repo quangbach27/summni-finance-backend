@@ -2,6 +2,7 @@ package valueobject
 
 import (
 	"errors"
+	"sumni-finance-backend/internal/common/validator"
 )
 
 type Money struct {
@@ -12,11 +13,13 @@ type Money struct {
 // NewMoney creates a new Money instance.
 // It enforces that money cannot be negative at creation.
 func NewMoney(amount int64, currency Currency) (Money, error) {
-	if amount < 0 {
-		return Money{}, errors.New("money amount cannot be negative")
-	}
-	if currency.IsZero() {
-		return Money{}, errors.New("money currency is required")
+	validator := validator.New()
+
+	validator.Check(amount >= 0, "money.amount", "amount cannot be negative")
+	validator.Check(!currency.IsZero(), "money.currency", "currency is required")
+
+	if err := validator.Err(); err != nil {
+		return Money{}, err
 	}
 
 	return Money{

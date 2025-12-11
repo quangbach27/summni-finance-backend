@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	commons_errors "sumni-finance-backend/internal/common/errors"
+	"sumni-finance-backend/internal/common/validator"
 	"sumni-finance-backend/internal/finance/domain/assetsource"
 
 	"github.com/stretchr/testify/assert"
@@ -13,12 +13,11 @@ import (
 
 func TestNewBankDetails(t *testing.T) {
 	tests := []struct {
-		name               string
-		inputName          string
-		inputAccount       string
-		expectError        bool
-		expectedErrorCount int
-		expectedFields     []string // Fields expected to have errors
+		name           string
+		inputName      string
+		inputAccount   string
+		expectError    bool
+		expectedFields []string // Fields expected to have errors
 	}{
 		{
 			name:         "Success: Valid Inputs",
@@ -27,25 +26,25 @@ func TestNewBankDetails(t *testing.T) {
 			expectError:  false,
 		},
 		{
-			name:               "Failure: Missing Bank Name Only",
-			inputName:          "",
-			inputAccount:       "123",
-			expectError:        true,
-			expectedErrorCount: 1,
+			name:           "Failure: Missing Bank Name Only",
+			inputName:      "",
+			inputAccount:   "123",
+			expectError:    true,
+			expectedFields: []string{"bankName"},
 		},
 		{
-			name:               "Failure: Missing Account Number Only",
-			inputName:          "FinBank",
-			inputAccount:       "",
-			expectError:        true,
-			expectedErrorCount: 1,
+			name:           "Failure: Missing Account Number Only",
+			inputName:      "FinBank",
+			inputAccount:   "",
+			expectError:    true,
+			expectedFields: []string{"accountNumber"},
 		},
 		{
-			name:               "Failure: Both Missing (Aggregated)",
-			inputName:          "",
-			inputAccount:       "",
-			expectError:        true,
-			expectedErrorCount: 2,
+			name:           "Failure: Both Missing (Aggregated)",
+			inputName:      "",
+			inputAccount:   "",
+			expectError:    true,
+			expectedFields: []string{"accountNumber", "bankName"},
 		},
 	}
 
@@ -57,11 +56,12 @@ func TestNewBankDetails(t *testing.T) {
 				require.Error(t, err)
 				assert.True(t, details.IsZero(), "Should return zero value on error")
 
-				// --- Critical Error Aggregation Checks ---
-				var valErrs *commons_errors.ValidationErrors
+				var valErrs *validator.ErrorList
 				require.True(t, errors.As(err, &valErrs), "Error must be of type *ValidationErrors")
 
-				assert.Len(t, valErrs.Errors, tt.expectedErrorCount, "Incorrect number of aggregated errors")
+				for _, field := range tt.expectedFields {
+					assert.Contains(t, valErrs.Errors, field)
+				}
 			} else {
 				require.NoError(t, err)
 				assert.False(t, details.IsZero(), "Should not be zero value on success")

@@ -2,7 +2,6 @@ package httperr
 
 import (
 	"net/http"
-	common_errors "sumni-finance-backend/internal/common/errors"
 	"sumni-finance-backend/internal/common/logs"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -22,16 +21,16 @@ func BadRequest(slug string, err error, w http.ResponseWriter, r *http.Request) 
 }
 
 func RespondWithSlugError(err error, w http.ResponseWriter, r *http.Request) {
-	slugError, ok := err.(common_errors.SlugError)
+	slugError, ok := err.(SlugError)
 	if !ok {
 		InternalError("internal-server-error", err, w, r)
 		return
 	}
 
 	switch slugError.ErrorType() {
-	case common_errors.ErrorTypeAuthorization:
+	case ErrorTypeAuthorization:
 		Unauthorised(slugError.Slug(), slugError, w, r)
-	case common_errors.ErrorTypeIncorrectInput:
+	case ErrorTypeIncorrectInput:
 		BadRequest(slugError.Slug(), slugError, w, r)
 	default:
 		InternalError(slugError.Slug(), slugError, w, r)

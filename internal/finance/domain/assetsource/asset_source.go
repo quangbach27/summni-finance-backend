@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	commons_errors "sumni-finance-backend/internal/common/errors"
+	"sumni-finance-backend/internal/common/validator"
 	"sumni-finance-backend/internal/common/valueobject"
 
 	"github.com/google/uuid"
@@ -35,26 +35,19 @@ func newBaseAssetSource(
 	currency valueobject.Currency,
 	sourceType SourceType,
 ) (*AssetSource, error) {
-	validationErrs := &commons_errors.ValidationErrors{}
+	validator := validator.New()
 
-	if ownerID == uuid.Nil {
-		validationErrs.Add("ownerID", "ownerID is required")
-	}
+	validator.Check(ownerID != uuid.Nil, "ownerID", "ownerID is required")
+	validator.Check(amount >= 0, "amount", "amount is positive")
+	validator.Check(!currency.IsZero(), "currency", "currency is required")
+	validator.Check(!sourceType.IsZero(), "sourceType", "sourceType is required")
 
-	if currency.IsZero() {
-		validationErrs.Add("currency", "currency is required")
-	}
-
-	if sourceType.IsZero() {
-		validationErrs.Add("sourceType", "sourceType is required")
+	if err := validator.Err(); err != nil {
+		return nil, err
 	}
 
 	initbalance, err := valueobject.NewMoney(amount, currency)
 	if err != nil {
-		validationErrs.Add("balance", err.Error())
-	}
-
-	if err := validationErrs.AsError(); err != nil {
 		return nil, err
 	}
 
@@ -79,24 +72,23 @@ func NewBankAssetSource(
 	bankName string,
 	accountNumber string,
 ) (*AssetSource, error) {
-	validationErrs := &commons_errors.ValidationErrors{}
+	validator := validator.New()
 
 	assetSource, err := newBaseAssetSource(ownerID, initAmount, currency, BankType)
-
 	if err != nil {
-		var baseValidationErrs *commons_errors.ValidationErrors
-		if errors.As(err, &baseValidationErrs) {
-			validationErrs.Merge(baseValidationErrs)
-		} else {
+		if !validator.TryMerge(err) {
 			return nil, err
 		}
 	}
 
 	bankDetails, err := NewBankDetails(bankName, accountNumber)
 	if err != nil {
-		validationErrs.Add("bankDetails", err.Error())
+		if !validator.TryMerge(err) {
+			return nil, err
+		}
 	}
-	if err = validationErrs.AsError(); err != nil {
+
+	if err = validator.Err(); err != nil {
 		return nil, err
 	}
 

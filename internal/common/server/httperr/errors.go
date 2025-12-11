@@ -1,4 +1,4 @@
-package errors
+package httperr
 
 type ErrorType struct {
 	t string
@@ -11,13 +11,13 @@ var (
 )
 
 type SlugError struct {
-	error     string
+	logMsg    string
 	slug      string
 	errorType ErrorType
 }
 
 func (s SlugError) Error() string {
-	return s.error
+	return s.logMsg
 }
 
 func (s SlugError) Slug() string {
@@ -28,25 +28,25 @@ func (s SlugError) ErrorType() ErrorType {
 	return s.errorType
 }
 
-func NewUnknowError(error string, slug string) SlugError {
+func NewUnknowError(logMsg string, slug string) SlugError {
 	return SlugError{
-		error:     error,
+		logMsg:    logMsg,
 		slug:      slug,
 		errorType: ErrorTypeUnknown,
 	}
 }
 
-func NewAuthorizationError(error string, slug string) SlugError {
+func NewAuthorizationError(logMsg string, slug string) SlugError {
 	return SlugError{
-		error:     error,
+		logMsg:    logMsg,
 		slug:      slug,
 		errorType: ErrorTypeAuthorization,
 	}
 }
 
-func NewIncorrectInputError(error string, slug string) SlugError {
+func NewIncorrectInputError(logMsg string, slug string) SlugError {
 	return SlugError{
-		error:     error,
+		logMsg:    logMsg,
 		slug:      slug,
 		errorType: ErrorTypeIncorrectInput,
 	}

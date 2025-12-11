@@ -3,6 +3,7 @@ package wallet
 import (
 	"errors"
 	"fmt"
+	"sumni-finance-backend/internal/common/validator"
 	"sumni-finance-backend/internal/common/valueobject"
 	"sumni-finance-backend/internal/finance/domain/assetsource"
 
@@ -26,8 +27,17 @@ func NewWallet(
 	isStrictMode bool,
 	allocations []*Allocation,
 ) (*Wallet, error) {
-	if name == "" {
-		return nil, errors.New("wallet name cannot be empty")
+	validator := validator.New()
+
+	validator.Required(name, "name")
+
+	validator.Check(len(allocations) != 0, "allocations", "allocation is required")
+	for _, alloc := range allocations {
+		validator.Check(alloc != nil && *alloc != Allocation{}, "allocation", "allocation is required")
+	}
+
+	if err := validator.Err(); err != nil {
+		return nil, err
 	}
 
 	id, err := uuid.NewV7()
@@ -35,40 +45,8 @@ func NewWallet(
 		return nil, err
 	}
 
-	if len(allocations) == 0 {
-		return nil, errors.New("wallet is not belong to assert source")
-	}
-
 	return &Wallet{
 		id:           ID(id),
-		name:         name,
-		currency:     currency,
-		isStrictMode: isStrictMode,
-		allocations:  allocations,
-	}, nil
-}
-
-func UnmarshalWalletFromDB(
-	id ID,
-	name string,
-	currency valueobject.Currency,
-	isStrictMode bool,
-	allocations []*Allocation,
-) (*Wallet, error) {
-	if id == ID(uuid.Nil) {
-		return nil, errors.New("cannot load wallet with nil ID")
-	}
-
-	if name == "" {
-		return nil, errors.New("data corruption: wallet name is empty")
-	}
-
-	if currency.IsZero() {
-		return nil, errors.New("data corruption: wallet currency is empty")
-	}
-
-	return &Wallet{
-		id:           id,
 		name:         name,
 		currency:     currency,
 		isStrictMode: isStrictMode,

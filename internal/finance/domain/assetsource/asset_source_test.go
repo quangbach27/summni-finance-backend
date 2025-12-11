@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	// Must use the full path to access the package's public types
-	commons_errors "sumni-finance-backend/internal/common/errors"
+	"sumni-finance-backend/internal/common/validator"
 	"sumni-finance-backend/internal/common/valueobject"
 	"sumni-finance-backend/internal/finance/domain/assetsource"
 
@@ -16,189 +16,350 @@ import (
 
 // --- Fixtures ---
 var (
-	testOwnerID = uuid.New()
-	nilOwnerID  = uuid.Nil
-	usd, _      = valueobject.NewCurrency("USD")
+	testOwnerID   = uuid.New()
+	usd, _        = valueobject.NewCurrency("USD")
+	bankName      = "techcombank"
+	accountNumber = "7777777317"
 )
 
-// --- Test NewBankAssetSource Factory ---
+// --- Test AssetSource Factory ---
 
-func TestNewBankAssetSource_Success(t *testing.T) {
-	asset, err := assetsource.NewBankAssetSource(
-		testOwnerID,
-		1000,
-		usd,
-		"TestBank",
-		"1234567890",
-	)
+func TestAssetSource_NewBankAssetSource(t *testing.T) {
+	testCases := []struct {
+		name string
 
-	require.NoError(t, err)
-	assert.NotEqual(t, uuid.Nil, asset.ID(), "Asset ID should be generated")
-	assert.Equal(t, assetsource.BankType, asset.Type(), "Type must be Bank")
-	require.NotNil(t, asset.BankDetails(), "BankDetails must not be nil")
-	assert.Equal(t, "TestBank", asset.BankDetails().BankName())
-}
+		inputOwnerID       uuid.UUID
+		inputInitAmount    int64
+		inputCurrency      valueobject.Currency
+		inputBankName      string
+		inputAccountNumner string
 
-func TestNewBankAssetSource_ValidationFailure_BaseAndBankDetails(t *testing.T) {
-	// 1. Inputs designed to fail multiple layers of validation
-	asset, err := assetsource.NewBankAssetSource(
-		nilOwnerID, // Fails base asset validation (ownerID)
-		-100,       // Fails base asset validation (NewMoney amount)
-		usd,
-		"", // Fails bank details validation (bankName)
-		"",
-	)
-
-	require.Error(t, err)
-	assert.Nil(t, asset)
-
-	// 2. Assert the error is the merged ValidationErrors type
-	var validationErrs *commons_errors.ValidationErrors
-	require.True(t, errors.As(err, &validationErrs), "Error must be of type *ValidationErrors")
-
-	// 3. Verify the count of merged errors (Expecting 3: ownerID, balance, bankDetails)
-	assert.Len(t, validationErrs.Errors, 3, "Should have 3 accumulated validation errors")
-
-	// Helper to check for specific error messages based on the client-facing field name
-	checkError := func(field string, expectedMsg string) {
-		found := false
-		for _, e := range validationErrs.Errors {
-			if e.Field == field && assert.Contains(t, e.Message, expectedMsg) {
-				found = true
-				break
-			}
-		}
-		assert.True(t, found, "Did not find error for field: "+field)
-	}
-
-	// 4. Check for errors from newBaseAssetSource
-	checkError("ownerID", "ownerID is required")
-	checkError("balance", "cannot be negative") // Message from NewMoney
-}
-
-// --- Test NewCashAssetSource Factory ---
-
-func TestNewCashAssetSource_Success(t *testing.T) {
-	asset, err := assetsource.NewCashAssetSource(
-		testOwnerID,
-		500,
-		usd,
-	)
-
-	require.NoError(t, err)
-	assert.NotEqual(t, uuid.Nil, asset.ID())
-	assert.Equal(t, assetsource.CashType, asset.Type(), "Type must be Cash")
-	assert.Nil(t, asset.BankDetails(), "Cash asset must have nil BankDetails")
-}
-
-func TestNewCashAssetSource_ValidationFailure(t *testing.T) {
-	asset, err := assetsource.NewCashAssetSource(
-		nilOwnerID,             // Fails base asset validation (ownerID)
-		-50,                    // Fails base asset validation (amount)
-		valueobject.Currency{}, // Fails base asset validation (currency)
-	)
-
-	require.Error(t, err)
-	assert.Nil(t, asset)
-
-	// Cash factory only relies on newBaseAssetSource, so we test its accumulated errors
-	var validationErrs *commons_errors.ValidationErrors
-	require.True(t, errors.As(err, &validationErrs))
-
-	// Expecting 3 errors: ownerID, amount, currency
-	assert.Len(t, validationErrs.Errors, 3)
-
-	checkError := func(field string, expectedMsg string) {
-		found := false
-		for _, e := range validationErrs.Errors {
-			if e.Field == field && assert.Contains(t, e.Message, expectedMsg) {
-				found = true
-				break
-			}
-		}
-		assert.True(t, found, "Did not find error for field: "+field)
-	}
-
-	checkError("ownerID", "ownerID is required")
-	checkError("balance", "cannot be negative")
-	checkError("currency", "currency is required")
-}
-
-func TestNewSourceTypeFromStr_Success(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    string
-		wantType assetsource.SourceType
+		expectedErrorFields []string // Used for asserting specific field failures
+		wantErr             bool
 	}{
 		{
-			name:     "Success: Exact match (CASH)",
-			input:    "CASH",
-			wantType: assetsource.CashType,
+			name:               "Success: Valid Inputs",
+			inputOwnerID:       testOwnerID,
+			inputInitAmount:    1000,
+			inputCurrency:      usd,
+			inputBankName:      bankName,
+			inputAccountNumner: accountNumber,
+			wantErr:            false,
 		},
 		{
-			name:     "Success: Exact match (BANK)",
-			input:    "BANK",
-			wantType: assetsource.BankType,
+			name:                "Fail: Missing OwnerID",
+			inputOwnerID:        uuid.UUID{},
+			inputInitAmount:     1000,
+			inputCurrency:       usd,
+			inputBankName:       bankName,
+			inputAccountNumner:  accountNumber,
+			expectedErrorFields: []string{"ownerID"},
+			wantErr:             true,
 		},
 		{
-			name:     "Success: Lowercase input (cash)",
-			input:    "cash",
-			wantType: assetsource.CashType,
+			name:                "Fail: Negative Amount",
+			inputOwnerID:        testOwnerID,
+			inputInitAmount:     -10,
+			inputCurrency:       usd,
+			inputBankName:       bankName,
+			inputAccountNumner:  accountNumber,
+			expectedErrorFields: []string{"amount"},
+			wantErr:             true,
 		},
 		{
-			name:     "Success: Mixed case input (BaNk)",
-			input:    "BaNk",
-			wantType: assetsource.BankType,
+			name:                "Fail: Missing Currency",
+			inputOwnerID:        testOwnerID,
+			inputInitAmount:     1000,
+			inputCurrency:       valueobject.Currency{},
+			inputBankName:       bankName,
+			inputAccountNumner:  accountNumber,
+			expectedErrorFields: []string{"currency"},
+			wantErr:             true,
 		},
 		{
-			name:     "Success: Input with leading/trailing spaces",
-			input:    " BANK ",
-			wantType: assetsource.BankType,
+			name:                "Fail: Missing BankName",
+			inputOwnerID:        testOwnerID,
+			inputInitAmount:     1000,
+			inputCurrency:       usd,
+			inputBankName:       "", // Missing local check field
+			inputAccountNumner:  accountNumber,
+			expectedErrorFields: []string{"bankName"}, // Assuming NewBankDetails combines both errors
+			wantErr:             true,
+		},
+		{
+			name:                "Fail: Missing AccountNumber",
+			inputOwnerID:        testOwnerID,
+			inputInitAmount:     1000,
+			inputCurrency:       usd,
+			inputBankName:       bankName, // Missing local check field
+			inputAccountNumner:  "",
+			expectedErrorFields: []string{"accountNumber"}, // Assuming NewBankDetails combines both errors
+			wantErr:             true,
+		},
+		{
+			name:                "Fail: Missing all required fields",
+			inputOwnerID:        uuid.UUID{}, // Base fail
+			inputInitAmount:     -10,
+			inputCurrency:       valueobject.Currency{},
+			inputBankName:       "",
+			inputAccountNumner:  "",
+			expectedErrorFields: []string{"ownerID", "amount", "currency", "bankName", "accountNumber"},
+			wantErr:             true,
 		},
 	}
 
-	for _, tt := range tests {
+	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := assetsource.NewSourceTypeFromStr(tt.input)
+			asset, err := assetsource.NewBankAssetSource(
+				tt.inputOwnerID,
+				tt.inputInitAmount,
+				tt.inputCurrency,
+				tt.inputBankName,
+				tt.inputAccountNumner,
+			)
 
-			require.NoError(t, err)
-			assert.Equal(t, tt.wantType, got)
-			assert.Equal(t, tt.wantType.Code(), got.Code())
-			assert.False(t, got.IsZero())
+			if tt.wantErr {
+				require.Error(t, err)
+				assert.Nil(t, asset)
+
+				validationErr := &validator.ErrorList{}
+
+				// Assert the error is our validation type
+				assert.True(t, errors.As(err, &validationErr), "Expected error to be a ValidationErrors type")
+
+				// Assert the correct number of errors
+				assert.Len(t, validationErr.Errors, len(tt.expectedErrorFields), "Incorrect number of errors collected")
+
+				// Assert the specific error fields are present
+				for _, field := range tt.expectedErrorFields {
+					assert.Contains(t, validationErr.Errors, field, "Missing expected error field: "+field)
+				}
+			} else {
+				require.NoError(t, err)
+
+				assert.NotEqual(t, uuid.Nil, asset.ID(), "Asset ID should be generated")
+				assert.Equal(t, assetsource.BankType, asset.Type(), "Type must be Bank")
+				require.NotNil(t, asset.BankDetails(), "BankDetails must not be nil")
+				assert.Equal(t, bankName, asset.BankDetails().BankName())
+				assert.Equal(t, accountNumber, asset.BankDetails().AccountNumber())
+			}
 		})
 	}
 }
 
-func TestNewSourceTypeFromStr_Failure(t *testing.T) {
-	tests := []struct {
-		name  string
-		input string
+func TestAssetSource_NewCashAssetSource(t *testing.T) {
+	testCases := []struct {
+		name string
+
+		inputOwnerID    uuid.UUID
+		inputInitAmount int64
+		inputCurrency   valueobject.Currency
+
+		expectedErrorFields []string
+		wantErr             bool
 	}{
 		{
-			name:  "Failure: Unknown type",
-			input: "CRYPTO",
+			name:            "Success: Valid Inputs",
+			inputOwnerID:    testOwnerID,
+			inputInitAmount: 1000,
+			inputCurrency:   usd,
+			wantErr:         false,
 		},
 		{
-			name:  "Failure: Empty string",
-			input: "",
+			name:                "Fail: Missing OwnerID",
+			inputOwnerID:        uuid.UUID{},
+			inputInitAmount:     1000,
+			inputCurrency:       usd,
+			expectedErrorFields: []string{"ownerID"},
+			wantErr:             true,
 		},
 		{
-			name:  "Failure: Whitespace only",
-			input: "  ",
+			name:                "Fail: Negative Amount",
+			inputOwnerID:        testOwnerID,
+			inputInitAmount:     -10,
+			inputCurrency:       usd,
+			expectedErrorFields: []string{"amount"},
+			wantErr:             true,
 		},
 		{
-			name:  "Failure: Typo",
-			input: "CASHH",
+			name:                "Fail: Missing Currency",
+			inputOwnerID:        testOwnerID,
+			inputInitAmount:     1000,
+			inputCurrency:       valueobject.Currency{},
+			expectedErrorFields: []string{"currency"},
+			wantErr:             true,
 		},
 	}
 
-	for _, tt := range tests {
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			asset, err := assetsource.NewCashAssetSource(
+				tt.inputOwnerID,
+				tt.inputInitAmount,
+				tt.inputCurrency,
+			)
+
+			if tt.wantErr {
+				require.Error(t, err)
+				assert.Nil(t, asset)
+
+				validationErr := &validator.ErrorList{}
+				assert.True(t, errors.As(err, &validationErr), "Expected error to be a ValidationErrors type")
+				assert.Len(t, validationErr.Errors, len(tt.expectedErrorFields), "Incorrect number of errors collected")
+
+				for _, field := range tt.expectedErrorFields {
+					assert.Contains(t, validationErr.Errors, field, "Missing expected error field: "+field)
+				}
+			} else {
+				require.NoError(t, err)
+
+				assert.NotEqual(t, uuid.Nil, asset.ID(), "Asset ID should be generated")
+				assert.Equal(t, assetsource.CashType, asset.Type(), "Type must be Cash")
+				assert.Nil(t, asset.BankDetails(), "BankDetails must be nil for Cash")
+			}
+		})
+	}
+}
+
+// --- Test  AssetSource Getter ---
+func TestAssetSource_GetterValues(t *testing.T) {
+	// 1. Setup Known Input Values
+	expectedBalance, _ := valueobject.NewMoney(100, usd)
+	expectedOwnerID := uuid.Must(uuid.NewV7())
+	expectedBankType := assetsource.BankType
+	expectedBankDetails, _ := assetsource.NewBankDetails(bankName, accountNumber)
+	expectedCashType := assetsource.CashType
+
+	// 2. Test Case 1: Bank Asset (with BankDetails)
+	t.Run("BankAsset Getters", func(t *testing.T) {
+		bankAsset, err := assetsource.NewBankAssetSource(
+			expectedOwnerID,
+			expectedBalance.Amount(),
+			expectedBalance.Currency(),
+			expectedBankDetails.BankName(),
+			expectedBankDetails.AccountNumber(),
+		)
+
+		require.NoError(t, err)
+
+		// Test simple value equality
+		assert.Equal(t, expectedOwnerID, bankAsset.OwnerID(), "OwnerID() should match input OwnerID")
+		assert.Equal(t, expectedBankType, bankAsset.Type(), "Type() should match input Type")
+
+		// Test Money struct equality (composite value)
+		assert.Equal(t, expectedBalance, bankAsset.Balance(), "Balance() should match input Balance struct")
+
+		// Test pointer equality (BankDetails should NOT be nil)
+		require.NotNil(t, bankAsset.BankDetails(), "BankDetails() must not be nil for BankType")
+		assert.Equal(t, expectedBankDetails, *bankAsset.BankDetails(), "BankDetails() should return the exact same pointer")
+	})
+
+	// 3. Test Case 2: Cash Asset (without BankDetails)
+	t.Run("CashAsset Getters", func(t *testing.T) {
+		cashAsset, err := assetsource.NewCashAssetSource(
+			expectedOwnerID,
+			expectedBalance.Amount(),
+			expectedBalance.Currency(),
+		)
+
+		require.NoError(t, err)
+
+		// Test simple value equality
+		assert.Equal(t, expectedCashType, cashAsset.Type(), "Type() should match input Type")
+
+		// Test pointer equality (BankDetails MUST be nil)
+		assert.Nil(t, cashAsset.BankDetails(), "BankDetails() must be nil for CashType")
+	})
+}
+
+// --- Test SourceTye Factory ---
+
+func TestSourceType_NewSourceTypeFromStr(t *testing.T) {
+	testCases := []struct {
+		name             string
+		input            string
+		expectSourceType assetsource.SourceType
+		wantErr          bool
+		expectedCode     string
+	}{
+		{
+			name:             "Success: CASH (Uppercase)",
+			input:            "CASH",
+			expectSourceType: assetsource.CashType,
+			expectedCode:     "CASH",
+			wantErr:          false,
+		},
+		{
+			name:             "Success: cash (Lowercase)",
+			input:            "cash",
+			expectSourceType: assetsource.CashType,
+			expectedCode:     "CASH",
+			wantErr:          false,
+		},
+		{
+			name:             "Success: BANK (Uppercase)",
+			input:            "BANK",
+			expectSourceType: assetsource.BankType,
+			expectedCode:     "BANK",
+			wantErr:          false,
+		},
+		{
+			name:             "Success: bank (Trailing Space)",
+			input:            " bank ",
+			expectSourceType: assetsource.BankType,
+			expectedCode:     "BANK",
+			wantErr:          false,
+		},
+		{
+			name:             "Failure: Unknown String",
+			input:            "unknown",
+			expectSourceType: assetsource.SourceType{},
+			wantErr:          true,
+		},
+		{
+			name:             "Failure: Empty String",
+			input:            "",
+			expectSourceType: assetsource.SourceType{},
+			wantErr:          true,
+		},
+	}
+
+	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := assetsource.NewSourceTypeFromStr(tt.input)
 
-			require.Error(t, err)
-			assert.True(t, got.IsZero(), "Should return zero value on error")
-			assert.Contains(t, err.Error(), "unknow asset source type:") // Check for expected error text
+			if tt.wantErr {
+				require.Error(t, err, "Expected an error for input: %s", tt.input)
+				assert.Equal(t, tt.expectSourceType, got, "Expected zero value on failure")
+			} else {
+				require.NoError(t, err, "Did not expect an error for input: %s", tt.input)
+				assert.Equal(t, tt.expectSourceType, got, "SourceType object mismatch")
+				assert.Equal(t, tt.expectedCode, got.Code(), "Code mismatch")
+			}
 		})
 	}
+}
+
+func TestSourceType_Getter(t *testing.T) {
+	t.Run("CashType Code", func(t *testing.T) {
+		assert.Equal(t, "CASH", assetsource.CashType.Code(), "CashType Code() should return 'CASH'")
+	})
+
+	t.Run("BankType Code", func(t *testing.T) {
+		assert.Equal(t, "BANK", assetsource.BankType.Code(), "BankType Code() should return 'BANK'")
+	})
+}
+
+func TestSourceType_IsZero(t *testing.T) {
+	// Define the expected zero value for the SourceType
+	var zeroSourceType assetsource.SourceType
+
+	t.Run("Non-Zero Constants", func(t *testing.T) {
+		assert.False(t, assetsource.CashType.IsZero(), "CashType should not be zero")
+		assert.False(t, assetsource.BankType.IsZero(), "BankType should not be zero")
+	})
+
+	t.Run("Zero Value", func(t *testing.T) {
+		assert.True(t, zeroSourceType.IsZero(), "Zero-initialized SourceType should be zero")
+	})
 }

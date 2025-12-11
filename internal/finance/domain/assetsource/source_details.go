@@ -1,8 +1,6 @@
 package assetsource
 
-import (
-	common_errors "sumni-finance-backend/internal/common/errors"
-)
+import "sumni-finance-backend/internal/common/validator"
 
 // BankDetails: Value Object (Grouping related information)
 type BankDetails struct {
@@ -11,16 +9,12 @@ type BankDetails struct {
 }
 
 func NewBankDetails(bankName, accountNumber string) (BankDetails, error) {
-	validationErrs := &common_errors.ValidationErrors{}
-	if bankName == "" {
-		validationErrs.Add("bankName", "bank name is required")
-	}
+	validator := validator.New()
 
-	if accountNumber == "" {
-		validationErrs.Add("accountNumber", "account number is required")
-	}
+	validator.Required(bankName, "bankName")
+	validator.Required(accountNumber, "accountNumber")
 
-	if err := validationErrs.AsError(); err != nil {
+	if err := validator.Err(); err != nil {
 		return BankDetails{}, err
 	}
 

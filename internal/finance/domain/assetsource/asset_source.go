@@ -134,3 +134,4 @@ func NewSourceTypeFromStr(soureTypeStr string) (SourceType, error) {
 
 func (st SourceType) Code() string { return st.code }
 func (st SourceType) IsZero() bool { return st == SourceType{} }
+func (st SourceType) IsCash() bool { return st == CashType }

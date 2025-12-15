@@ -3,5 +3,6 @@ package wallet
 import "context"
 
 type Repository interface {
-	GetWalletAllocations(ctx context.Context, id ID) (*Wallet, error)
+	GetByID(ctx context.Context, id ID) (*Wallet, error)
+	Create(ctx context.Context, wallets *Wallet) error
 }

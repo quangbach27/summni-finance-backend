@@ -1,9 +1,9 @@
 SERVICE := sumni-finance-backend
 # Database Config Variables (Use environment variables if set, otherwise use default placeholders)
-POSTGRES_USER ?= user
-POSTGRES_PASSWORD ?= password
+POSTGRES_USER ?= sumni
+POSTGRES_PASSWORD ?= sumni
 POSTGRES_HOST ?= localhost
-POSTGRES_DATABASE ?= db
+POSTGRES_DATABASE ?= sumni-finance
 POSTGRES_PORT ?= 5432
 
 DB_URL := postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}?sslmode=disable

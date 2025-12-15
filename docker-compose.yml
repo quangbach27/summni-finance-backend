@@ -25,3 +25,21 @@ services:
     environment:
       DEBUG: "${DEBUG:-false}"
       GOCACHE: /go-cache
+    depends_on:
+      - sumni-fnance-db
+
+  sumni-fnance-db:
+    image: postgres:16-alpine
+    container_name: sumni-finance-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: sumni
+      POSTGRES_PASSWORD: sumni
+      POSTGRES_DB: sumni-finance
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  postgres_data:

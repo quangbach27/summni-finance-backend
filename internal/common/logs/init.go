@@ -4,22 +4,34 @@ import (
 	"log/slog"
 	"os"
 	"sumni-finance-backend/internal/config"
+
+	"github.com/ThreeDotsLabs/humanslog"
 )
 
 func Init() {
-	var handler slog.Handler
-	env := config.GetConfig().App().Env()
+	config := config.GetConfig()
 
-	if env == "dev" {
-		handler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-			Level: slog.LevelDebug,
-		})
-	} else {
-		handler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-			Level: slog.LevelInfo,
-		})
+	slogOpts := &slog.HandlerOptions{
+		Level: slog.LevelDebug,
 	}
 
-	logger := slog.New(handler)
+	var logger *slog.Logger
+	if config.App().Env() == "prod" {
+		logger = slog.New(slog.NewJSONHandler(os.Stdout, slogOpts))
+	} else {
+		opts := &humanslog.Options{
+			HandlerOptions:    slogOpts,
+			MaxSlicePrintSize: 10,
+			SortKeys:          true,
+			NewLineAfterLog:   true,
+			StringerFormatter: true,
+			TimeFormat:        "[04:05]",
+			DebugColor:        humanslog.Magenta,
+		}
+
+		logger = slog.New(humanslog.NewHandler(os.Stdout, opts))
+	}
+
+	// optional: set global logger
 	slog.SetDefault(logger)
 }

@@ -3,6 +3,7 @@ module sumni-finance-backend
 go 1.24.3
 
 require (
+	github.com/ThreeDotsLabs/humanslog v0.0.0-20251212105943-b7b671246cf2
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/stretchr/testify v1.11.1
 )

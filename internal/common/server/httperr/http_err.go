@@ -1,6 +1,7 @@
 package httperr
 
 import (
+	"errors"
 	"net/http"
 	"sumni-finance-backend/internal/common/logs"
 
@@ -38,8 +39,13 @@ func RespondWithSlugError(err error, w http.ResponseWriter, r *http.Request) {
 }
 
 func httpRespondWithError(err error, slug string, w http.ResponseWriter, r *http.Request, logMSg string, status int) {
+	wrappedErr := errors.Unwrap(err)
+	if wrappedErr == nil {
+		wrappedErr = err // If no wrapping occurred, use the error itself
+	}
+
 	logger := logs.GetLogEntry(r).With(
-		"error", err,
+		"error", wrappedErr,
 		"error_slug", slug,
 	)
 
@@ -55,7 +61,7 @@ func httpRespondWithError(err error, slug string, w http.ResponseWriter, r *http
 	resp := ErrorResponse{slug, status, logMSg, requestID}
 
 	if err := render.Render(w, r, resp); err != nil {
-		panic(err)
+		logger.Error("failed to render resp: " + err.Error())
 	}
 }
 
@@ -63,7 +69,7 @@ type ErrorResponse struct {
 	Slug       string `json:"slug"`
 	httpStatus int
 	Message    string `json:"message"`
-	TraceID    string `json:"trace_id"`
+	RequestID  string `json:"request_id"`
 }
 
 func (e ErrorResponse) Render(w http.ResponseWriter, r *http.Request) error {

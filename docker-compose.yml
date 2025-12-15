@@ -26,9 +26,9 @@ services:
       DEBUG: "${DEBUG:-false}"
       GOCACHE: /go-cache
     depends_on:
-      - sumni-fnance-db
+      - sumni-finance-db
 
-  sumni-fnance-db:
+  sumni-finance-db:
     image: postgres:16-alpine
     container_name: sumni-finance-db
     ports:

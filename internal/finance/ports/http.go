@@ -12,7 +12,7 @@ type FinanceServerInterface interface {
 }
 
 func HandleFinanceFromMux(r chi.Router, si FinanceServerInterface) http.Handler {
-	r.Route("/v1/asset-source", func(r chi.Router) {
+	r.Route("/v1/asset-sources", func(r chi.Router) {
 		r.Get("/", si.GetAssetSources)
 		r.Post("/", si.CreateAssetSource)
 	})

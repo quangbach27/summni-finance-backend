@@ -38,12 +38,13 @@ func MustNewPgConnectionPool(ctx context.Context) *pgxpool.Pool {
 	if err != nil {
 		log.Fatalf("unable to create connection pool: %s", err.Error())
 	}
-	defer connPool.Close()
+	log.Println(dsn)
 
 	// Ping the database to ensure the connection is established
 	err = connPool.Ping(ctx)
 	if err != nil {
 		log.Fatalf("failed to ping database: %s", err.Error())
+		connPool.Close()
 	}
 
 	log.Println("Database connection pool successfully established.")

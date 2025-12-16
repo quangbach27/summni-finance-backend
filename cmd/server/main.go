@@ -5,7 +5,6 @@ import (
 	"sumni-finance-backend/internal/common/logs"
 	"sumni-finance-backend/internal/common/server"
 	financePorts "sumni-finance-backend/internal/finance/ports"
-	"sumni-finance-backend/internal/finance/ports/handler"
 	financeService "sumni-finance-backend/internal/finance/service"
 
 	"github.com/go-chi/chi/v5"
@@ -15,7 +14,7 @@ import (
 func main() {
 	logs.Init()
 
-	financeApp := financeService.NewApplication()
+	financeApplication := financeService.NewApplication()
 
 	server.RunHTTPServer(func(router chi.Router) http.Handler {
 		// HealthCheck
@@ -25,9 +24,9 @@ func main() {
 		})
 
 		// Finance Port
-		financePorts.HandleFinanceFromMux(
+		financePorts.HandleServerFromMux(
 			router,
-			handler.NewFinanceServerInterface(financeApp),
+			financePorts.NewFinanceServer(financeApplication),
 		)
 
 		return router

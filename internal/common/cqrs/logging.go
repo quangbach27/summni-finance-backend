@@ -2,7 +2,6 @@ package cqrs
 
 import (
 	"context"
-	"fmt"
 	"sumni-finance-backend/internal/common/logs"
 )
 
@@ -15,7 +14,6 @@ func (d commandLoggingDecorator[C]) Handle(ctx context.Context, cmd C) (err erro
 
 	logger := logs.FromContext(ctx).With(
 		"command", handlerType,
-		"command_body", fmt.Sprintf("%#v", cmd),
 	)
 
 	logger.Debug("Execute command")
@@ -40,7 +38,6 @@ func (d queryLoggingDecorator[Q, R]) Handle(ctx context.Context, query Q) (resul
 
 	logger := logs.FromContext(ctx).With(
 		"query", handlerType,
-		"query_body", fmt.Sprintf("%#v", query),
 	)
 
 	logger.Debug("Execute query")

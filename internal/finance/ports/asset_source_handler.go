@@ -1,4 +1,4 @@
-package handler
+package ports
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sumni-finance-backend/internal/common/server/httperr"
 	"sumni-finance-backend/internal/finance/app/command"
+	"sumni-finance-backend/internal/finance/app/query"
 
 	"github.com/go-chi/render"
 	"github.com/google/uuid"
@@ -73,4 +74,13 @@ func (h *FinanceHandler) CreateAssetSource(w http.ResponseWriter, r *http.Reques
 	render.JSON(w, r, map[string]any{
 		"status": "created",
 	})
+}
+
+func (h *FinanceHandler) GetAssetSources(w http.ResponseWriter, r *http.Request) {
+	cmd := query.GetAssetSourceCmd{}
+
+	_, err := h.app.Queries.GetAssetSourceHandler.Handle(r.Context(), cmd)
+	if err != nil {
+		httperr.RespondWithSlugError(err, w, r)
+	}
 }

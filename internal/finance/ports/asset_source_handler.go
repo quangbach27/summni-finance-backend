@@ -26,7 +26,7 @@ type CreateAssetSourceItem struct {
 	AccountNumber string `json:"accountNumber"`
 }
 
-func (h *FinanceHandler) CreateAssetSource(w http.ResponseWriter, r *http.Request) {
+func (h *financeHandler) CreateAssetSource(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	var req CreateAssetSourceRequest
@@ -76,7 +76,7 @@ func (h *FinanceHandler) CreateAssetSource(w http.ResponseWriter, r *http.Reques
 	})
 }
 
-func (h *FinanceHandler) GetAssetSources(w http.ResponseWriter, r *http.Request) {
+func (h *financeHandler) GetAssetSources(w http.ResponseWriter, r *http.Request) {
 	cmd := query.GetAssetSourceCmd{}
 
 	_, err := h.app.Queries.GetAssetSourceHandler.Handle(r.Context(), cmd)

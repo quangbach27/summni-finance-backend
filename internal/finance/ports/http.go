@@ -7,25 +7,25 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-type FinanceServerInterface interface {
+type FinanceHandlerInterface interface {
 	CreateAssetSource(w http.ResponseWriter, r *http.Request)
 	GetAssetSources(w http.ResponseWriter, r *http.Request)
 }
 
-type FinanceHandler struct {
+type financeHandler struct {
 	app app.Application
 }
 
-func NewFinanceServer(app app.Application) FinanceServerInterface {
-	return &FinanceHandler{
+func NewFinanceHandler(app app.Application) *financeHandler {
+	return &financeHandler{
 		app: app,
 	}
 }
 
-func HandleServerFromMux(r chi.Router, si FinanceServerInterface) http.Handler {
+func HandleServerFromMux(r chi.Router, handler FinanceHandlerInterface) http.Handler {
 	r.Route("/v1/asset-sources", func(r chi.Router) {
-		r.Get("/", si.GetAssetSources)
-		r.Post("/", si.CreateAssetSource)
+		r.Get("/", handler.GetAssetSources)
+		r.Post("/", handler.CreateAssetSource)
 	})
 
 	return r

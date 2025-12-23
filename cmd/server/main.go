@@ -26,7 +26,7 @@ func main() {
 		// Finance Port
 		financePorts.HandleServerFromMux(
 			router,
-			financePorts.NewFinanceServer(financeApplication),
+			financePorts.NewFinanceHandler(financeApplication),
 		)
 
 		return router

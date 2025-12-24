@@ -23,11 +23,24 @@ func main() {
 			render.JSON(w, r, map[string]string{"status": "ok"})
 		})
 
-		// Finance Port
-		financePorts.HandleServerFromMux(
-			router,
-			financePorts.NewFinanceHandler(financeApplication),
-		)
+		// Auth router
+		// TODO: disable authHandler
+		/*
+			authHandler := auth.NewAuthHandler()
+			auth.HandleServerFromMux(router, authHandler)
+		*/
+		// Protected routes
+		router.Group(func(protectedRoute chi.Router) {
+			/*
+				protectedRoute.Use(authHandler.AuthMiddleware)
+			*/
+
+			// Finance Port
+			financePorts.HandleServerFromMux(
+				protectedRoute,
+				financePorts.NewFinanceHandler(financeApplication),
+			)
+		})
 
 		return router
 	})

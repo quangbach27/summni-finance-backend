@@ -10,15 +10,15 @@ import (
 )
 
 func InternalError(slug string, err error, w http.ResponseWriter, r *http.Request) {
-	httpRespondWithError(err, slug, w, r, "Internal server error", http.StatusInternalServerError)
+	httpRespondWithError(err, slug, w, r, err.Error(), http.StatusInternalServerError)
 }
 
 func Unauthorised(slug string, err error, w http.ResponseWriter, r *http.Request) {
-	httpRespondWithError(err, slug, w, r, "Unauthorised", http.StatusUnauthorized)
+	httpRespondWithError(err, slug, w, r, err.Error(), http.StatusUnauthorized)
 }
 
 func BadRequest(slug string, err error, w http.ResponseWriter, r *http.Request) {
-	httpRespondWithError(err, slug, w, r, "Bad request", http.StatusBadRequest)
+	httpRespondWithError(err, slug, w, r, err.Error(), http.StatusBadRequest)
 }
 
 func RespondWithSlugError(err error, w http.ResponseWriter, r *http.Request) {

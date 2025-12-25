@@ -48,20 +48,21 @@ func (a AppConfig) AllowedOrigins() []string {
 
 // Keycloak CONFIG
 type KeycloakConfig struct {
-	realmURL     string
-	clientID     string
-	clientSecret string
-	redirectURL  string
-	callbackURL  string
+	realmURL      string
+	clientID      string
+	clientSecret  string
+	callbackURL   string
+	postLoginURL  string
+	postLogoutURL string
 }
 
-func (k KeycloakConfig) RealmURL() string     { return k.realmURL }
-func (k KeycloakConfig) ClientID() string     { return k.clientID }
-func (k KeycloakConfig) ClientSecret() string { return k.clientSecret }
-func (k KeycloakConfig) RedirectURL() string  { return k.redirectURL }
-func (k KeycloakConfig) CallbackURL() string  { return k.callbackURL }
+func (k KeycloakConfig) RealmURL() string      { return k.realmURL }
+func (k KeycloakConfig) ClientID() string      { return k.clientID }
+func (k KeycloakConfig) ClientSecret() string  { return k.clientSecret }
+func (k KeycloakConfig) PostLoginURL() string  { return k.postLoginURL }
+func (k KeycloakConfig) CallbackURL() string   { return k.callbackURL }
+func (k KeycloakConfig) PostLogoutURL() string { return k.postLogoutURL }
 
-// Config holds all application configuration
 // CONFIG ROOT
 type Config struct {
 	database DatabaseConfig
@@ -104,18 +105,18 @@ func loadConfig() *Config {
 		},
 
 		app: AppConfig{
-			port: getEnv("PORT", "8080"),
-			env:  getEnv("ENV", "dev"),
-
+			port:           getEnv("PORT", "8080"),
+			env:            getEnv("ENV", "dev"),
 			allowedOrigins: strings.Split(getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:3000"), ","),
 		},
 
 		keycloak: KeycloakConfig{
-			realmURL:     getEnv("KEYCLOAK_REALM_URL", "http://keycloak:8080/realms/SumniFinanceApp"),
-			clientID:     getEnv("KEYCLOAK_CLIENT_ID", "sumni-finance-backend"),
-			clientSecret: getEnv("KEYCLOAK_CLIENT_SECRET", "sumni-finance-backend-secret"),
-			redirectURL:  getEnv("KEYCLOAK_REDIRECT_URL", "http://localhost:3000"),
-			callbackURL:  getEnv("KEYCLOAK_CALLBACK_URL", "http://localhost:4000/v1/auth/callback"),
+			realmURL:      getEnv("KEYCLOAK_REALM_URL", "http://keycloak:8080/realms/SumniFinanceApp"),
+			clientID:      getEnv("KEYCLOAK_CLIENT_ID", "sumni-finance-backend"),
+			clientSecret:  getEnv("KEYCLOAK_CLIENT_SECRET", "sumni-finance-backend-secret"),
+			callbackURL:   getEnv("KEYCLOAK_CALLBACK_URL", "http://localhost:4000/v1/auth/callback"),
+			postLoginURL:  getEnv("POST_LOGIN_URL", "http://localhost:3000/wallets"),
+			postLogoutURL: getEnv("POST_LOGOUT_URL", "http://localhost:3000"),
 		},
 	}
 }

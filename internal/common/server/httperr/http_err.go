@@ -44,7 +44,7 @@ func httpRespondWithError(err error, slug string, w http.ResponseWriter, r *http
 		wrappedErr = err // If no wrapping occurred, use the error itself
 	}
 
-	logger := logs.GetLogEntry(r).With(
+	logger := logs.FromContext(r.Context()).With(
 		"error", wrappedErr,
 		"error_slug", slug,
 	)

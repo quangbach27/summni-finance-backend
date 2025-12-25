@@ -68,7 +68,7 @@ func RunHTTPServerOnAddr(addr string, createHandler func(router chi.Router) http
 func setMiddleware(router *chi.Mux) {
 	router.Use(middleware.RequestID)
 	router.Use(middleware.RealIP)
-	router.Use(logs.NewStructuredLogger(slog.Default()))
+	router.Use(logs.Middleware(slog.Default()))
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.Timeout(2 * time.Second))
 

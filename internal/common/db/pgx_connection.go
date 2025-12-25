@@ -3,7 +3,8 @@ package db
 import (
 	"context"
 	"fmt"
-	"log"
+	"os"
+	"sumni-finance-backend/internal/common/logs"
 	"sumni-finance-backend/internal/config"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 
 func MustNewPgConnectionPool(ctx context.Context) *pgxpool.Pool {
 	dbConfig := config.GetConfig().Database()
+	logger := logs.FromContext(ctx)
 
 	dsn := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
@@ -25,7 +27,8 @@ func MustNewPgConnectionPool(ctx context.Context) *pgxpool.Pool {
 	// Configuration settings (optional but recommended)
 	config, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		log.Fatalf("failed to parse DSN: %s", err.Error())
+		logger.Error("failed to parse DSN", "err", err)
+		os.Exit(1)
 	}
 
 	config.MaxConns = dbConfig.MaxConns()
@@ -36,17 +39,18 @@ func MustNewPgConnectionPool(ctx context.Context) *pgxpool.Pool {
 	// Connect to the database
 	connPool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
-		log.Fatalf("unable to create connection pool: %s", err.Error())
+		logger.Error("failed to create connection pool", "err", err)
+		os.Exit(1)
 	}
-	log.Println(dsn)
 
 	// Ping the database to ensure the connection is established
 	err = connPool.Ping(ctx)
 	if err != nil {
-		log.Fatalf("failed to ping database: %s", err.Error())
+		logger.Error("failed to ping database", "err", err)
 		connPool.Close()
+		os.Exit(1)
 	}
 
-	log.Println("Database connection pool successfully established.")
+	logger.Info("Database connection pool successfully established.")
 	return connPool
 }

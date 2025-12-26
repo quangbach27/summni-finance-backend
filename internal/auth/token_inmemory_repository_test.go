@@ -93,7 +93,6 @@ func TestInmemoryAuthRepository_Race(t *testing.T) {
 			sessionID := fmt.Sprintf("session-%d", id)
 			_ = authRepo.DeleteBySessionID(ctx, sessionID)
 		}(i)
-
 	}
 
 	wg.Wait()

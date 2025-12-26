@@ -67,6 +67,9 @@ type authHandler struct {
 	verifier  *oidc.IDTokenVerifier
 	tokenRepo TokenRepository
 }
+type Oauth2Client struct {
+	GetAuthorizationEndpoint func() string
+}
 
 func NewAuthHandler(tokenRepo TokenRepository) *authHandler {
 	kcConfig := config.GetConfig().Keycloak()
@@ -149,7 +152,7 @@ func (handler *authHandler) HandleCallback(w http.ResponseWriter, r *http.Reques
 	}
 
 	if queryState != stateCookie.Value {
-		httperr.BadRequest("invalid-state-for-auth-callback", errors.New("State mismatch detected - possible CSRF attack"), w, r)
+		httperr.BadRequest("invalid-state-for-auth-callback", errors.New("state mismatch detected - possible CSRF attack"), w, r)
 		return
 	}
 
@@ -233,7 +236,7 @@ func (handler *authHandler) AuthMiddleware(next http.Handler) http.Handler {
 
 		cookie, err := r.Cookie(SessionCookie)
 		if err != nil {
-			httperr.Unauthorised("missing-session", fmt.Errorf("Authentication failed: %w", err), w, r)
+			httperr.Unauthorised("missing-session", fmt.Errorf("authentication failed: %w", err), w, r)
 			return
 		}
 
@@ -243,14 +246,14 @@ func (handler *authHandler) AuthMiddleware(next http.Handler) http.Handler {
 		// 1. Get Token (and refresh if needed)
 		token, err := handler.getFreshToken(r.Context(), sessionID)
 		if err != nil {
-			httperr.Unauthorised("invalid-or-expired-session", fmt.Errorf("Authentication failed: %w", err), w, r)
+			httperr.Unauthorised("invalid-or-expired-session", fmt.Errorf("authentication failed: %w", err), w, r)
 			return
 		}
 
 		// 2. Verify Signature and Expiry
 		rawIDToken, exist := token.Extra("id_token").(string)
 		if !exist {
-			httperr.Unauthorised("missing-id-token", errors.New("id_token missing from token reponse"), w, r)
+			httperr.Unauthorised("missing-id-token", errors.New("id_token missing from token response"), w, r)
 			return
 		}
 

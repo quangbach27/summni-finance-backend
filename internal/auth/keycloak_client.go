@@ -61,8 +61,12 @@ func NewKeycloakClient() (*keycloakClient, error) {
 	}, nil
 }
 
-func (k *keycloakClient) GetAuthorizationCodeURL(state string) string {
-	return k.config.AuthCodeURL(state)
+func (k *keycloakClient) GetAuthorizationCodeURL(state string, codeChallenge string) string {
+	return k.config.AuthCodeURL(
+		state,
+		oauth2.SetAuthURLParam("code_challenge", codeChallenge),
+		oauth2.SetAuthURLParam("code_challenge_method", "S256"),
+	)
 }
 
 func (k *keycloakClient) Authenticate(ctx context.Context, token *oauth2.Token) (*oauth2.Token, error) {
@@ -106,8 +110,16 @@ func (k *keycloakClient) GetLogoutURL(ctx context.Context, token *oauth2.Token) 
 	return logoutURL, nil
 }
 
-func (k *keycloakClient) ExchangeCode(ctx context.Context, code string) (*oauth2.Token, error) {
-	return k.config.Exchange(ctx, code)
+func (k *keycloakClient) ExchangeCode(
+	ctx context.Context,
+	code,
+	codeVerifier string,
+) (*oauth2.Token, error) {
+	return k.config.Exchange(
+		ctx,
+		code,
+		oauth2.SetAuthURLParam("code_verifier", codeVerifier),
+	)
 }
 
 func (k *keycloakClient) getFreshToken(ctx context.Context, token *oauth2.Token) (*oauth2.Token, error) {

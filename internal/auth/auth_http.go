@@ -2,6 +2,8 @@ package auth
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -14,10 +16,12 @@ import (
 )
 
 const (
-	SessionKey    = "p_sessionid"
-	SessionMaxAge = 3600 // 1 hour
-	StateKey      = "p_state"
-	StateMaxAge   = 300 // 5 min
+	SessionKey         = "p_sessionid"
+	SessionMaxAge      = 3600 // 1 hour
+	StateKey           = "p_state"
+	StateMaxAge        = 300 // 5 min
+	CodeVerifierKey    = "p_code_verifier"
+	CodeVerifierMaxAge = 300 // 5 min
 )
 
 type AuthHandlerInterface interface {
@@ -37,10 +41,10 @@ func HandleServerFromMux(r chi.Router, si AuthHandlerInterface) http.Handler {
 }
 
 type Oauth2Client interface {
-	GetAuthorizationCodeURL(state string) string
+	GetAuthorizationCodeURL(state string, codeChallenge string) string
 	Authenticate(ctx context.Context, token *oauth2.Token) (*oauth2.Token, error)
 	GetLogoutURL(ctx context.Context, token *oauth2.Token) (string, error)
-	ExchangeCode(ctx context.Context, code string) (*oauth2.Token, error)
+	ExchangeCode(ctx context.Context, code string, codeVerifier string) (*oauth2.Token, error)
 }
 
 type TokenRepository interface {
@@ -63,10 +67,13 @@ func NewAuthHandler(oauth2Client Oauth2Client, tokenRepo TokenRepository) *authH
 
 func (handler *authHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	state := uuid.New().String()
+	codeVerifier := generateCodeVerifier()
+	codeChallenge := generateCodeChallenge(codeVerifier)
 
 	handler.setCookie(w, StateKey, state, StateMaxAge)
+	handler.setCookie(w, CodeVerifierKey, codeVerifier, CodeVerifierMaxAge)
 
-	url := handler.oauth2Client.GetAuthorizationCodeURL(state)
+	url := handler.oauth2Client.GetAuthorizationCodeURL(state, codeChallenge)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
@@ -87,15 +94,24 @@ func (handler *authHandler) HandleCallback(w http.ResponseWriter, r *http.Reques
 
 	handler.setCookie(w, StateKey, "", -1) // Delete state cookie
 
-	// 2. Exchange Code for Token
+	// 2. Verify Code Verifier (PKCE)
+	codeVerifierCookie, err := r.Cookie(CodeVerifierKey)
+	if err != nil {
+		httperr.BadRequest("missing-code-verifier-cookie", err, w, r)
+		return
+	}
+	codeVerifier := codeVerifierCookie.Value
+	handler.setCookie(w, CodeVerifierKey, "", -1) // Delete code verifier cookie
+
+	// 3. Exchange Code for Token with PKCE
 	code := r.URL.Query().Get("code")
-	token, err := handler.oauth2Client.ExchangeCode(r.Context(), code)
+	token, err := handler.oauth2Client.ExchangeCode(r.Context(), code, codeVerifier)
 	if err != nil {
 		httperr.InternalError("failed-to-exchange-token", err, w, r)
 		return
 	}
 
-	// 3. Store session in repository
+	// 4. Store session in repository
 	sessionID := uuid.New().String()
 	err = handler.tokenRepo.Save(r.Context(), sessionID, token)
 	if err != nil {
@@ -103,11 +119,13 @@ func (handler *authHandler) HandleCallback(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// 4. Set Session Cookie
+	// 5. Set Session Cookie
 	handler.setCookie(w, SessionKey, sessionID, SessionMaxAge)
 
-	// 5. Redirect to PostLoginURL
-	http.Redirect(w, r, config.GetConfig().Keycloak().PostLoginURL(), http.StatusFound)
+	// 6. Validate and redirect to PostLoginURL
+	postLoginURL := config.GetConfig().Keycloak().PostLoginURL()
+
+	http.Redirect(w, r, postLoginURL, http.StatusFound)
 }
 
 func (handler *authHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
@@ -117,9 +135,9 @@ func (handler *authHandler) HandleLogout(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	sesisonID := sessionCookie.Value
+	sessionID := sessionCookie.Value
 
-	token, err := handler.tokenRepo.GetBySessionID(r.Context(), sesisonID)
+	token, err := handler.tokenRepo.GetBySessionID(r.Context(), sessionID)
 	if err != nil {
 		httperr.BadRequest("token-not-found-in-store", err, w, r)
 		return
@@ -131,7 +149,7 @@ func (handler *authHandler) HandleLogout(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err = handler.tokenRepo.DeleteBySessionID(r.Context(), sesisonID)
+	err = handler.tokenRepo.DeleteBySessionID(r.Context(), sessionID)
 	if err != nil {
 		httperr.InternalError("failed-to-delete-session-in-store", err, w, r)
 		return
@@ -165,7 +183,7 @@ func (handler *authHandler) AuthMiddleware(next http.Handler) http.Handler {
 
 		// If token refreshed, store it to store
 		if token.AccessToken != freshToken.AccessToken {
-			err = handler.tokenRepo.Save(r.Context(), sessionID, token)
+			err = handler.tokenRepo.Save(r.Context(), sessionID, freshToken)
 			if err != nil {
 				httperr.InternalError("failed-to-save-token", err, w, r)
 				return
@@ -186,4 +204,14 @@ func (handler *authHandler) setCookie(w http.ResponseWriter, name string, value 
 		Secure:   false, // Set to true for HTTPS
 		SameSite: http.SameSiteLaxMode,
 	})
+}
+
+// PKCE helper functions
+func generateCodeVerifier() string {
+	return uuid.New().String() + uuid.New().String() // 64+ characters
+}
+
+func generateCodeChallenge(verifier string) string {
+	hash := sha256.Sum256([]byte(verifier))
+	return base64.RawURLEncoding.EncodeToString(hash[:])
 }

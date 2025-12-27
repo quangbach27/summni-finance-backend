@@ -45,7 +45,7 @@ func TestInMemoryAuthRepository(t *testing.T) {
 		assert.ErrorIs(t, err, auth.ErrTokenNotFound)
 	})
 
-	t.Run("should delete toekn successfully", func(t *testing.T) {
+	t.Run("should delete token successfully", func(t *testing.T) {
 		authRepo, _ := auth.NewInMemoryTokenRepository()
 		sessionID := "session-to-delete"
 		token := &oauth2.Token{AccessToken: "secret"}

@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
+	"os"
 	"sumni-finance-backend/internal/auth"
+	"sumni-finance-backend/internal/common/db"
 	"sumni-finance-backend/internal/common/logs"
 	"sumni-finance-backend/internal/common/server"
 	financePorts "sumni-finance-backend/internal/finance/ports"
@@ -15,8 +18,23 @@ import (
 
 func main() {
 	logs.Init()
+	ctx := context.Background()
 
-	financeApplication := financeService.NewApplication()
+	connPool := db.MustNewPgConnectionPool(ctx)
+
+	tokenRepo, err := auth.NewInMemoryTokenRepository()
+	if err != nil {
+		slog.Error("critical failure", "err", err)
+		os.Exit(1)
+	}
+
+	keycloakClient, err := auth.NewKeycloakClient()
+	if err != nil {
+		slog.Error("critical failure", "err", err)
+		os.Exit(1)
+	}
+
+	financeApplication := financeService.NewApplication(connPool)
 
 	server.RunHTTPServer(func(router chi.Router) http.Handler {
 		// HealthCheck
@@ -25,13 +43,7 @@ func main() {
 			render.JSON(w, r, map[string]string{"status": "ok"})
 		})
 
-		// Auth router
-		// TODO: Enable authHandler when intergrate authentication
-		authRepo, err := auth.NewInMemoryTokenRepository()
-		if err != nil {
-			slog.Error("critical failure", "err", err)
-		}
-		authHandler := auth.NewAuthHandler(authRepo)
+		authHandler := auth.NewAuthHandler(keycloakClient, tokenRepo)
 		auth.HandleServerFromMux(router, authHandler)
 
 		// Protected routes
@@ -39,9 +51,6 @@ func main() {
 			protectedRoute.Use(authHandler.AuthMiddleware)
 
 			protectedRoute.Get("/healthp", func(w http.ResponseWriter, r *http.Request) {
-				claims, _ := auth.ClaimsFromContext(r.Context())
-				slog.Info("claims from token", "claims", claims)
-
 				w.WriteHeader(http.StatusOK)
 				render.JSON(w, r, map[string]string{"status": "ok"})
 			})

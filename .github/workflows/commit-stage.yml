@@ -1,0 +1,78 @@
+name: Commit Stage
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      security-events: write
+      pull-requests: write # For coverage comments
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: "go.mod" # Use version from go.mod
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y make
+
+      - name: Verify Go formatting
+        run: |
+          if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+            echo "Code is not formatted. Run 'go fmt ./...'"
+            gofmt -s -l .
+            exit 1
+          fi
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v2.6.1
+          args: --timeout=5m
+
+      - name: Build application
+        run: go build -v ./...
+
+      - name: Run unit tests
+        run: make test-ci
+
+      - name: Go vulnerability check
+        uses: golang/govulncheck-action@v1
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Code vulnerability scanning
+        uses: anchore/scan-action@v4
+        id: scan
+        with:
+          path: "."
+          fail-build: false
+          severity-cutoff: high
+          output-format: sarif
+
+      - name: Upload vulnerability results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: ${{ steps.scan.outputs.sarif }}

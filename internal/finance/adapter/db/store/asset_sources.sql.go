@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createAssetsource = `-- name: CreateAssetsource :exec
+const createAssetSource = `-- name: CreateAssetSource :exec
 INSERT INTO finance.asset_sources (
     id, 
     owner_id, 
@@ -20,12 +20,13 @@ INSERT INTO finance.asset_sources (
     source_type, 
     currency_code, 
     bank_name, 
-    account_number
+    account_number,
+    office_id
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 `
 
-type CreateAssetsourceParams struct {
+type CreateAssetSourceParams struct {
 	ID            uuid.UUID
 	OwnerID       uuid.UUID
 	Balance       int64
@@ -33,10 +34,11 @@ type CreateAssetsourceParams struct {
 	CurrencyCode  string
 	BankName      pgtype.Text
 	AccountNumber pgtype.Text
+	OfficeID      uuid.UUID
 }
 
-func (q *Queries) CreateAssetsource(ctx context.Context, arg CreateAssetsourceParams) error {
-	_, err := q.db.Exec(ctx, createAssetsource,
+func (q *Queries) CreateAssetSource(ctx context.Context, arg CreateAssetSourceParams) error {
+	_, err := q.db.Exec(ctx, createAssetSource,
 		arg.ID,
 		arg.OwnerID,
 		arg.Balance,
@@ -44,47 +46,7 @@ func (q *Queries) CreateAssetsource(ctx context.Context, arg CreateAssetsourcePa
 		arg.CurrencyCode,
 		arg.BankName,
 		arg.AccountNumber,
+		arg.OfficeID,
 	)
 	return err
-}
-
-const listAssetSources = `-- name: ListAssetSources :many
-SELECT id, owner_id, balance, source_type, currency_code, bank_name, account_number 
-FROM finance.asset_sources
-ORDER BY id
-LIMIT $1
-OFFSET $2
-`
-
-type ListAssetSourcesParams struct {
-	Limit  int32
-	Offset int32
-}
-
-func (q *Queries) ListAssetSources(ctx context.Context, arg ListAssetSourcesParams) ([]FinanceAssetSource, error) {
-	rows, err := q.db.Query(ctx, listAssetSources, arg.Limit, arg.Offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []FinanceAssetSource
-	for rows.Next() {
-		var i FinanceAssetSource
-		if err := rows.Scan(
-			&i.ID,
-			&i.OwnerID,
-			&i.Balance,
-			&i.SourceType,
-			&i.CurrencyCode,
-			&i.BankName,
-			&i.AccountNumber,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }

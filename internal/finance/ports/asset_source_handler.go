@@ -9,7 +9,6 @@ import (
 	"sumni-finance-backend/internal/finance/app/query"
 
 	"github.com/go-chi/render"
-	"github.com/google/uuid"
 )
 
 type CreateAssetSourceRequest struct {
@@ -24,6 +23,7 @@ type CreateAssetSourceItem struct {
 	CurrencyCode  string `json:"currencyCode"`
 	BankName      string `json:"bankName"`
 	AccountNumber string `json:"accountNumber"`
+	OfficeID      string `json:"officeId"`
 }
 
 func (h *financeHandler) CreateAssetSources(w http.ResponseWriter, r *http.Request) {
@@ -47,20 +47,16 @@ func (h *financeHandler) CreateAssetSources(w http.ResponseWriter, r *http.Reque
 		AssetSourceList: make([]command.CreateAssetSourceItem, len(req.AssetSources)),
 	}
 	for i, as := range req.AssetSources {
-		ownerID, err := uuid.Parse(as.OwnerID)
-		if err != nil {
-			httperr.BadRequest("invalid-ownerID", err, w, r)
-			return
-		}
 
 		cmd.AssetSourceList[i] = command.CreateAssetSourceItem{
 			Name:          as.Name,
-			OwnerID:       ownerID,
+			OwnerID:       as.OwnerID,
 			InitBalance:   as.InitBalance,
 			SourceType:    as.SourceType,
 			CurrencyCode:  as.CurrencyCode,
 			BankName:      as.BankName,
 			AccountNumber: as.AccountNumber,
+			OfficeID:      as.OfficeID,
 		}
 	}
 

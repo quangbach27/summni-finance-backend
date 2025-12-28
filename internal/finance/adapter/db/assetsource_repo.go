@@ -66,7 +66,7 @@ func (repo *assetsourceRepo) Create(ctx context.Context, assetSourceList []*asse
 			accountNumber = common_db.ToPgText(bankDetails.AccountNumber())
 		}
 
-		err = txQueries.CreateAssetsource(ctx, store.CreateAssetsourceParams{
+		err = txQueries.CreateAssetSource(ctx, store.CreateAssetSourceParams{
 			ID:            uuid.UUID(assetSource.ID()),
 			OwnerID:       assetSource.OwnerID(),
 			Balance:       assetSource.Balance().Amount(),
@@ -74,6 +74,7 @@ func (repo *assetsourceRepo) Create(ctx context.Context, assetSourceList []*asse
 			SourceType:    assetSource.Type().Code(),
 			BankName:      bankName,
 			AccountNumber: accountNumber,
+			OfficeID:      assetSource.OfficeID(),
 		})
 		if err != nil {
 			return err

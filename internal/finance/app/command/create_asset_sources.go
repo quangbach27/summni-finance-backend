@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"errors"
 	"sumni-finance-backend/internal/common/cqrs"
 	"sumni-finance-backend/internal/common/server/httperr"
 	"sumni-finance-backend/internal/common/valueobject"
@@ -16,12 +17,13 @@ type CreateAssetSourceCmd struct {
 
 type CreateAssetSourceItem struct {
 	Name          string
-	OwnerID       uuid.UUID
+	OwnerID       string
 	InitBalance   int64
 	SourceType    string
 	CurrencyCode  string
 	BankName      string
 	AccountNumber string
+	OfficeID      string
 }
 
 type CreateAssetSourceHandler cqrs.CommandHandler[CreateAssetSourceCmd]
@@ -35,39 +37,55 @@ func NewCreateAssetSourceHandler(assetsourceRepo assetsource.Repository) CreateA
 }
 
 func (h *createAssetSourceHandler) Handle(ctx context.Context, cmd CreateAssetSourceCmd) (err error) {
+	if len(cmd.AssetSourceList) == 0 {
+		return httperr.NewIncorrectInputError(errors.New("asset source list cannot be empty"), "asset-source-list-is-empty")
+	}
+
 	assetSourceList := make([]*assetsource.AssetSource, 0, len(cmd.AssetSourceList))
 
-	for _, cmd := range cmd.AssetSourceList {
-		sourceType, err := assetsource.NewSourceTypeFromStr(cmd.SourceType)
+	for _, asCmd := range cmd.AssetSourceList {
+		sourceType, err := assetsource.NewSourceTypeFromStr(asCmd.SourceType)
 		if err != nil {
 			return httperr.NewIncorrectInputError(err, "invalid-source-type")
 		}
 
-		currency, err := valueobject.NewCurrency(cmd.CurrencyCode)
+		currency, err := valueobject.NewCurrency(asCmd.CurrencyCode)
 		if err != nil {
 			return httperr.NewIncorrectInputError(err, "invalid-currency-code")
+		}
+
+		ownerID, err := uuid.Parse(asCmd.OwnerID)
+		if err != nil {
+			return httperr.NewIncorrectInputError(err, "fail-to-parse-owner-id")
+		}
+
+		officeID, err := uuid.Parse(asCmd.OfficeID)
+		if err != nil {
+			return httperr.NewIncorrectInputError(err, "fail-to-parse-office-id")
 		}
 
 		var assetSource *assetsource.AssetSource
 		if sourceType.IsCash() {
 			assetSource, err = assetsource.NewCashAssetSource(
-				cmd.OwnerID,
-				cmd.InitBalance,
+				ownerID,
+				asCmd.InitBalance,
 				currency,
+				officeID,
 			)
 			if err != nil {
-				return httperr.NewError(err, "failed-to-create-cash-asset-source")
+				return httperr.NewIncorrectInputError(err, "failed-to-create-cash-asset-source")
 			}
 		} else {
 			assetSource, err = assetsource.NewBankAssetSource(
-				cmd.OwnerID,
-				cmd.InitBalance,
+				ownerID,
+				asCmd.InitBalance,
 				currency,
-				cmd.BankName,
-				cmd.AccountNumber,
+				asCmd.BankName,
+				asCmd.AccountNumber,
+				officeID,
 			)
 			if err != nil {
-				return httperr.NewError(err, "failed-to-create-bank-asset-source")
+				return httperr.NewIncorrectInputError(err, "failed-to-create-bank-asset-source")
 			}
 		}
 
@@ -75,7 +93,7 @@ func (h *createAssetSourceHandler) Handle(ctx context.Context, cmd CreateAssetSo
 	}
 
 	if err = h.assetsourceRepo.Create(ctx, assetSourceList); err != nil {
-		return httperr.NewUnknowError(err, "failed-to-store-asset-source-to-db")
+		return httperr.NewUnknowError(err, "failed-to-save-asset-source-to-db")
 	}
 
 	return nil

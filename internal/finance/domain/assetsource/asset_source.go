@@ -18,6 +18,7 @@ type AssetSource struct {
 	balance    valueobject.Money
 	ownerID    uuid.UUID
 	sourceType SourceType
+	officeID   uuid.UUID
 
 	bankDetails *BankDetails // Nil if SourceType is Cash
 }
@@ -27,6 +28,7 @@ func (as *AssetSource) Balance() valueobject.Money { return as.balance }
 func (as *AssetSource) OwnerID() uuid.UUID         { return as.ownerID }
 func (as *AssetSource) Type() SourceType           { return as.sourceType }
 func (as *AssetSource) BankDetails() *BankDetails  { return as.bankDetails }
+func (as *AssetSource) OfficeID() uuid.UUID        { return as.officeID }
 
 // newBaseAssetSource: Private template for shared asset initialization logic
 func newBaseAssetSource(
@@ -34,6 +36,7 @@ func newBaseAssetSource(
 	amount int64,
 	currency valueobject.Currency,
 	sourceType SourceType,
+	officeID uuid.UUID,
 ) (*AssetSource, error) {
 	validator := validator.New()
 
@@ -41,6 +44,7 @@ func newBaseAssetSource(
 	validator.Check(amount >= 0, "amount", "amount must be positive")
 	validator.Check(!currency.IsZero(), "currency", "currency is required")
 	validator.Check(!sourceType.IsZero(), "sourceType", "sourceType is required")
+	validator.Check(officeID != uuid.Nil, "officeID", "ownerID is required")
 
 	if err := validator.Err(); err != nil {
 		return nil, err
@@ -61,6 +65,7 @@ func newBaseAssetSource(
 		balance:    initbalance,
 		ownerID:    ownerID,
 		sourceType: sourceType,
+		officeID:   officeID,
 	}, nil
 }
 
@@ -71,10 +76,11 @@ func NewBankAssetSource(
 	currency valueobject.Currency,
 	bankName string,
 	accountNumber string,
+	officeID uuid.UUID,
 ) (*AssetSource, error) {
 	validator := validator.New()
 
-	assetSource, err := newBaseAssetSource(ownerID, initAmount, currency, BankType)
+	assetSource, err := newBaseAssetSource(ownerID, initAmount, currency, BankType, officeID)
 	if err != nil {
 		if !validator.TryMerge(err) {
 			return nil, err
@@ -102,8 +108,9 @@ func NewCashAssetSource(
 	ownerID uuid.UUID,
 	initAmount int64,
 	currency valueobject.Currency,
+	officeID uuid.UUID,
 ) (*AssetSource, error) {
-	assetSource, err := newBaseAssetSource(ownerID, initAmount, currency, CashType)
+	assetSource, err := newBaseAssetSource(ownerID, initAmount, currency, CashType, officeID)
 	if err != nil {
 		return nil, err
 	}

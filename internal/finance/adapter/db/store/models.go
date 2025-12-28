@@ -17,10 +17,11 @@ type FinanceAssetSource struct {
 	CurrencyCode  string
 	BankName      pgtype.Text
 	AccountNumber pgtype.Text
+	OfficeID      uuid.UUID
 }
 
 type FinanceAssetsourceWallet struct {
-	AssetsourceID uuid.UUID
+	AssetSourceID uuid.UUID
 	WalletID      uuid.UUID
 }
 

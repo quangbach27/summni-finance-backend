@@ -16,7 +16,8 @@ CREATE TABLE finance.asset_sources (
     currency_code CHAR(3) NOT NULL DEFAULT 'VND',
     
     bank_name varchar(255),
-    account_number varchar(255)
+    account_number varchar(255),
+    office_id uuid NOT NULL
 );
 
 -- 3. CREATE TABLE wallets

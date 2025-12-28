@@ -1,11 +1,4 @@
--- name: ListAssetSources :many
-SELECT id, owner_id, balance, source_type, currency_code, bank_name, account_number 
-FROM finance.asset_sources
-ORDER BY id
-LIMIT $1
-OFFSET $2;
-
--- name: CreateAssetsource :exec
+-- name: CreateAssetSource :exec
 INSERT INTO finance.asset_sources (
     id, 
     owner_id, 
@@ -13,7 +6,8 @@ INSERT INTO finance.asset_sources (
     source_type, 
     currency_code, 
     bank_name, 
-    account_number
+    account_number,
+    office_id
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7);
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
 

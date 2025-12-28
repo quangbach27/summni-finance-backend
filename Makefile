@@ -9,7 +9,7 @@ POSTGRES_PORT ?= 5432
 DB_URL := postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}?sslmode=disable
 MIGRATE_PATH := db/migrations
 
-.PHONY: test test-ci dev stop down lint migrate-create migrate-up migrate-down sqlc-generate
+.PHONY: test test-ci dev stop lint migrate-create migrate-up migrate-down sqlc-generate
 
 test:
 	@./scripts/test.sh .e2e.env
@@ -26,9 +26,6 @@ logs:
 stop:
 	docker compose down $(SERVICE)
 
-down:
-	docker compose down -v
-	
 lint:
 	golangci-lint run
 

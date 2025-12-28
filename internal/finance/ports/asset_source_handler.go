@@ -13,7 +13,7 @@ import (
 )
 
 type CreateAssetSourceRequest struct {
-	AssetSources []CreateAssetSourceItem `json:"assetSource"`
+	AssetSources []CreateAssetSourceItem `json:"assetSources"`
 }
 
 type CreateAssetSourceItem struct {
@@ -26,7 +26,7 @@ type CreateAssetSourceItem struct {
 	AccountNumber string `json:"accountNumber"`
 }
 
-func (h *financeHandler) CreateAssetSource(w http.ResponseWriter, r *http.Request) {
+func (h *financeHandler) CreateAssetSources(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	var req CreateAssetSourceRequest
@@ -39,7 +39,7 @@ func (h *financeHandler) CreateAssetSource(w http.ResponseWriter, r *http.Reques
 	}
 
 	if len(req.AssetSources) == 0 {
-		httperr.BadRequest("assetSource-empty", errors.New("assetSource is required"), w, r)
+		httperr.BadRequest("asset-source-empty", errors.New("assetSource is required"), w, r)
 		return
 	}
 

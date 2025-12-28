@@ -8,7 +8,7 @@ import (
 )
 
 type FinanceHandlerInterface interface {
-	CreateAssetSource(w http.ResponseWriter, r *http.Request)
+	CreateAssetSources(w http.ResponseWriter, r *http.Request)
 	GetAssetSources(w http.ResponseWriter, r *http.Request)
 }
 
@@ -22,10 +22,10 @@ func NewFinanceHandler(app app.Application) *financeHandler {
 	}
 }
 
-func HandleServerFromMux(r chi.Router, handler FinanceHandlerInterface) http.Handler {
+func HandleFinanceFromMux(r chi.Router, handler FinanceHandlerInterface) http.Handler {
 	r.Route("/v1/asset-sources", func(r chi.Router) {
 		r.Get("/", handler.GetAssetSources)
-		r.Post("/", handler.CreateAssetSource)
+		r.Post("/", handler.CreateAssetSources)
 	})
 
 	return r

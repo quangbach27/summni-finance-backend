@@ -30,7 +30,7 @@ type AuthHandlerInterface interface {
 	HandleLogout(http.ResponseWriter, *http.Request)
 }
 
-func HandleServerFromMux(r chi.Router, si AuthHandlerInterface) http.Handler {
+func HandleAuthFromMux(r chi.Router, si AuthHandlerInterface) http.Handler {
 	r.Route("/v1/auth", func(r chi.Router) {
 		r.Get("/login", si.HandleLogin)
 		r.Get("/callback", si.HandleCallback)

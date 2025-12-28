@@ -57,7 +57,7 @@ func main() {
 			*/
 
 			// Finance Port
-			financePorts.HandleServerFromMux(
+			financePorts.HandleFinanceFromMux(
 				protectedRoute,
 				financePorts.NewFinanceHandler(financeApplication),
 			)

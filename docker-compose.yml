@@ -27,7 +27,7 @@ services:
       GOCACHE: /go-cache
     depends_on:
       - sumni-finance-db
-      - keycloak
+      # - keycloak
 
   sumni-finance-db:
     image: postgres:16-alpine

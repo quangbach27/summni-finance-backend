@@ -122,9 +122,7 @@ func (handler *authHandler) HandleCallback(w http.ResponseWriter, r *http.Reques
 	// 5. Set Session Cookie
 	handler.setCookie(w, SessionKey, sessionID, SessionMaxAge)
 
-	// 6. Validate and redirect to PostLoginURL
 	postLoginURL := config.GetConfig().Keycloak().PostLoginURL()
-
 	http.Redirect(w, r, postLoginURL, http.StatusFound)
 }
 

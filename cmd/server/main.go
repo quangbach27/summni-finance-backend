@@ -2,10 +2,7 @@ package main
 
 import (
 	"context"
-	"log/slog"
 	"net/http"
-	"os"
-	"sumni-finance-backend/internal/auth"
 	"sumni-finance-backend/internal/common/db"
 	"sumni-finance-backend/internal/common/logs"
 	"sumni-finance-backend/internal/common/server"
@@ -22,17 +19,20 @@ func main() {
 
 	connPool := db.MustNewPgConnectionPool(ctx)
 
-	tokenRepo, err := auth.NewInMemoryTokenRepository()
-	if err != nil {
-		slog.Error("critical failure", "err", err)
-		os.Exit(1)
-	}
+	// TODO: Uncomment when enable authentication
+	/*
+		tokenRepo, err := auth.NewInMemoryTokenRepository()
+		if err != nil {
+			slog.Error("critical failure", "err", err)
+			os.Exit(1)
+		}
 
-	keycloakClient, err := auth.NewKeycloakClient()
-	if err != nil {
-		slog.Error("critical failure", "err", err)
-		os.Exit(1)
-	}
+		keycloakClient, err := auth.NewKeycloakClient()
+		if err != nil {
+			slog.Error("critical failure", "err", err)
+			os.Exit(1)
+		}
+	*/
 
 	financeApplication := financeService.NewApplication(connPool)
 
@@ -43,17 +43,18 @@ func main() {
 			render.JSON(w, r, map[string]string{"status": "ok"})
 		})
 
-		authHandler := auth.NewAuthHandler(keycloakClient, tokenRepo)
-		auth.HandleServerFromMux(router, authHandler)
+		// TODO: Uncomment when enable authentication
+		/*
+			authHandler := auth.NewAuthHandler(keycloakClient, tokenRepo)
+			auth.HandleServerFromMux(router, authHandler)
+		*/
 
 		// Protected routes
 		router.Group(func(protectedRoute chi.Router) {
-			protectedRoute.Use(authHandler.AuthMiddleware)
-
-			protectedRoute.Get("/healthp", func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusOK)
-				render.JSON(w, r, map[string]string{"status": "ok"})
-			})
+			// TODO: Uncomment when enable authentication
+			/*
+				protectedRoute.Use(authHandler.AuthMiddleware)
+			*/
 
 			// Finance Port
 			financePorts.HandleServerFromMux(

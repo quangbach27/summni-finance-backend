@@ -10,11 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// NOTE: This test file assumes that the Validator and ErrorList structs
-// are accessible via the `validator` package and that the ErrorList
-// implements the standard Go `error` interface and has the public `Errors` map
-// used for assertion checks.
-
 // --- 1. Test Core Functionality and Fluent Interface ---
 
 func TestValidator_Err(t *testing.T) {

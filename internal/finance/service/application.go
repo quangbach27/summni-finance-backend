@@ -11,8 +11,6 @@ import (
 )
 
 func NewApplication(connPool *pgxpool.Pool) app.Application {
-	// ctx := context.Background()
-	// connPool := common_db.MustNewPgConnectionPool(ctx)
 	queries := store.New(connPool)
 
 	assetRepo := db.NewAssetsourceRepo(connPool, queries)

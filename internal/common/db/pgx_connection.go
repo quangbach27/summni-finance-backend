@@ -24,7 +24,6 @@ func MustNewPgConnectionPool(ctx context.Context) *pgxpool.Pool {
 		dbConfig.Name(),
 	)
 
-	// Configuration settings (optional but recommended)
 	config, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
 		logger.Error("failed to parse DSN", "err", err)
@@ -36,7 +35,6 @@ func MustNewPgConnectionPool(ctx context.Context) *pgxpool.Pool {
 	config.MaxConnLifetime = time.Duration(dbConfig.MaxConnLifeTime()) * time.Minute
 	config.MaxConnIdleTime = time.Duration(dbConfig.MaxConnIdleTime()) * time.Minute
 
-	// Connect to the database
 	connPool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		logger.Error("failed to create connection pool", "err", err)

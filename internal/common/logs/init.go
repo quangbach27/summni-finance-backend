@@ -32,6 +32,5 @@ func Init() {
 		logger = slog.New(humanslog.NewHandler(os.Stdout, opts))
 	}
 
-	// optional: set global logger
 	slog.SetDefault(logger)
 }

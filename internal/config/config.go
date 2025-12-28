@@ -135,10 +135,10 @@ func getEnvAsInt32(key string, defaultValue int32) int32 {
 		return defaultValue
 	}
 
-	formatedValue, err := strconv.ParseInt(value, 10, 32)
+	formattedValue, err := strconv.ParseInt(value, 10, 32)
 	if err != nil {
 		slog.Warn(fmt.Sprintf("Could not parse environment variable %s='%s' as integer: %s. Using default value %d.", key, value, err.Error(), defaultValue))
 	}
 
-	return int32(formatedValue)
+	return int32(formattedValue)
 }

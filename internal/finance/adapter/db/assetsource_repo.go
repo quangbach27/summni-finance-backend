@@ -71,6 +71,7 @@ func (repo *assetsourceRepo) Create(ctx context.Context, assetSourceList []*asse
 			OwnerID:       assetSource.OwnerID(),
 			Balance:       assetSource.Balance().Amount(),
 			CurrencyCode:  assetSource.Balance().Currency().Code(),
+			SourceType:    assetSource.Type().Code(),
 			BankName:      bankName,
 			AccountNumber: accountNumber,
 		})

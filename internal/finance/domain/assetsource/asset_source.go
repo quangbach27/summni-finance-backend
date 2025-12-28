@@ -38,7 +38,7 @@ func newBaseAssetSource(
 	validator := validator.New()
 
 	validator.Check(ownerID != uuid.Nil, "ownerID", "ownerID is required")
-	validator.Check(amount >= 0, "amount", "amount is positive")
+	validator.Check(amount >= 0, "amount", "amount must be positive")
 	validator.Check(!currency.IsZero(), "currency", "currency is required")
 	validator.Check(!sourceType.IsZero(), "sourceType", "sourceType is required")
 
@@ -119,8 +119,8 @@ var (
 	BankType = SourceType{code: "BANK"}
 )
 
-func NewSourceTypeFromStr(soureTypeStr string) (SourceType, error) {
-	code := strings.TrimSpace(strings.ToUpper(soureTypeStr))
+func NewSourceTypeFromStr(sourceTypeStr string) (SourceType, error) {
+	code := strings.TrimSpace(strings.ToUpper(sourceTypeStr))
 	if code == CashType.code {
 		return CashType, nil
 	}
@@ -129,7 +129,7 @@ func NewSourceTypeFromStr(soureTypeStr string) (SourceType, error) {
 		return BankType, nil
 	}
 
-	return SourceType{}, errors.New("unknow asset source type: " + soureTypeStr)
+	return SourceType{}, errors.New("unknown asset source type: " + sourceTypeStr)
 }
 
 func (st SourceType) Code() string { return st.code }

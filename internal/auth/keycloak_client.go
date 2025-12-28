@@ -44,7 +44,7 @@ func NewKeycloakClient() (*keycloakClient, error) {
 		if err != nil {
 			return nil, err
 		}
-		return nil, errors.New("can not initizalize OIDC provider")
+		return nil, errors.New("cannot initizalize OIDC provider")
 	}
 
 	return &keycloakClient{

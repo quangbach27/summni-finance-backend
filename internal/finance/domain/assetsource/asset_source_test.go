@@ -17,6 +17,7 @@ import (
 // --- Fixtures ---
 var (
 	testOwnerID   = uuid.New()
+	testOfficeID  = uuid.New()
 	usd, _        = valueobject.NewCurrency("USD")
 	bankName      = "techcombank"
 	accountNumber = "7777777317"
@@ -33,6 +34,7 @@ func TestAssetSource_NewBankAssetSource(t *testing.T) {
 		inputCurrency      valueobject.Currency
 		inputBankName      string
 		inputAccountNumner string
+		inputOfficeID      uuid.UUID
 
 		expectedErrorFields []string // Used for asserting specific field failures
 		wantErr             bool
@@ -44,6 +46,7 @@ func TestAssetSource_NewBankAssetSource(t *testing.T) {
 			inputCurrency:      usd,
 			inputBankName:      bankName,
 			inputAccountNumner: accountNumber,
+			inputOfficeID:      testOfficeID,
 			wantErr:            false,
 		},
 		{
@@ -53,6 +56,7 @@ func TestAssetSource_NewBankAssetSource(t *testing.T) {
 			inputCurrency:       usd,
 			inputBankName:       bankName,
 			inputAccountNumner:  accountNumber,
+			inputOfficeID:       testOfficeID,
 			expectedErrorFields: []string{"ownerID"},
 			wantErr:             true,
 		},
@@ -63,6 +67,7 @@ func TestAssetSource_NewBankAssetSource(t *testing.T) {
 			inputCurrency:       usd,
 			inputBankName:       bankName,
 			inputAccountNumner:  accountNumber,
+			inputOfficeID:       testOfficeID,
 			expectedErrorFields: []string{"amount"},
 			wantErr:             true,
 		},
@@ -73,6 +78,7 @@ func TestAssetSource_NewBankAssetSource(t *testing.T) {
 			inputCurrency:       valueobject.Currency{},
 			inputBankName:       bankName,
 			inputAccountNumner:  accountNumber,
+			inputOfficeID:       testOfficeID,
 			expectedErrorFields: []string{"currency"},
 			wantErr:             true,
 		},
@@ -83,6 +89,7 @@ func TestAssetSource_NewBankAssetSource(t *testing.T) {
 			inputCurrency:       usd,
 			inputBankName:       "", // Missing local check field
 			inputAccountNumner:  accountNumber,
+			inputOfficeID:       testOfficeID,
 			expectedErrorFields: []string{"bankName"}, // Assuming NewBankDetails combines both errors
 			wantErr:             true,
 		},
@@ -93,6 +100,7 @@ func TestAssetSource_NewBankAssetSource(t *testing.T) {
 			inputCurrency:       usd,
 			inputBankName:       bankName, // Missing local check field
 			inputAccountNumner:  "",
+			inputOfficeID:       testOfficeID,
 			expectedErrorFields: []string{"accountNumber"}, // Assuming NewBankDetails combines both errors
 			wantErr:             true,
 		},
@@ -103,7 +111,8 @@ func TestAssetSource_NewBankAssetSource(t *testing.T) {
 			inputCurrency:       valueobject.Currency{},
 			inputBankName:       "",
 			inputAccountNumner:  "",
-			expectedErrorFields: []string{"ownerID", "amount", "currency", "bankName", "accountNumber"},
+			inputOfficeID:       uuid.UUID{},
+			expectedErrorFields: []string{"ownerID", "amount", "currency", "bankName", "accountNumber", "officeID"},
 			wantErr:             true,
 		},
 	}
@@ -116,6 +125,7 @@ func TestAssetSource_NewBankAssetSource(t *testing.T) {
 				tt.inputCurrency,
 				tt.inputBankName,
 				tt.inputAccountNumner,
+				tt.inputOfficeID,
 			)
 
 			if tt.wantErr {
@@ -154,6 +164,7 @@ func TestAssetSource_NewCashAssetSource(t *testing.T) {
 		inputOwnerID    uuid.UUID
 		inputInitAmount int64
 		inputCurrency   valueobject.Currency
+		inputOfficeID   uuid.UUID
 
 		expectedErrorFields []string
 		wantErr             bool
@@ -163,6 +174,7 @@ func TestAssetSource_NewCashAssetSource(t *testing.T) {
 			inputOwnerID:    testOwnerID,
 			inputInitAmount: 1000,
 			inputCurrency:   usd,
+			inputOfficeID:   testOfficeID,
 			wantErr:         false,
 		},
 		{
@@ -170,6 +182,7 @@ func TestAssetSource_NewCashAssetSource(t *testing.T) {
 			inputOwnerID:        uuid.UUID{},
 			inputInitAmount:     1000,
 			inputCurrency:       usd,
+			inputOfficeID:       testOfficeID,
 			expectedErrorFields: []string{"ownerID"},
 			wantErr:             true,
 		},
@@ -178,6 +191,7 @@ func TestAssetSource_NewCashAssetSource(t *testing.T) {
 			inputOwnerID:        testOwnerID,
 			inputInitAmount:     -10,
 			inputCurrency:       usd,
+			inputOfficeID:       testOfficeID,
 			expectedErrorFields: []string{"amount"},
 			wantErr:             true,
 		},
@@ -186,6 +200,7 @@ func TestAssetSource_NewCashAssetSource(t *testing.T) {
 			inputOwnerID:        testOwnerID,
 			inputInitAmount:     1000,
 			inputCurrency:       valueobject.Currency{},
+			inputOfficeID:       testOfficeID,
 			expectedErrorFields: []string{"currency"},
 			wantErr:             true,
 		},
@@ -197,6 +212,7 @@ func TestAssetSource_NewCashAssetSource(t *testing.T) {
 				tt.inputOwnerID,
 				tt.inputInitAmount,
 				tt.inputCurrency,
+				tt.inputOfficeID,
 			)
 
 			if tt.wantErr {
@@ -238,6 +254,7 @@ func TestAssetSource_GetterValues(t *testing.T) {
 			expectedBalance.Currency(),
 			expectedBankDetails.BankName(),
 			expectedBankDetails.AccountNumber(),
+			testOfficeID,
 		)
 
 		require.NoError(t, err)
@@ -260,6 +277,7 @@ func TestAssetSource_GetterValues(t *testing.T) {
 			expectedOwnerID,
 			expectedBalance.Amount(),
 			expectedBalance.Currency(),
+			testOfficeID,
 		)
 
 		require.NoError(t, err)

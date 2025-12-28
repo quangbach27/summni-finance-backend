@@ -2,7 +2,6 @@ package ports
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"sumni-finance-backend/internal/common/server/httperr"
 	"sumni-finance-backend/internal/finance/app/command"
@@ -12,10 +11,6 @@ import (
 )
 
 type CreateAssetSourceRequest struct {
-	AssetSources []CreateAssetSourceItem `json:"assetSources"`
-}
-
-type CreateAssetSourceItem struct {
 	Name          string `json:"name"`
 	OwnerID       string `json:"ownerId"`
 	InitBalance   int64  `json:"initBalance"`
@@ -38,26 +33,15 @@ func (h *financeHandler) CreateAssetSources(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if len(req.AssetSources) == 0 {
-		httperr.BadRequest("asset-source-empty", errors.New("assetSource is required"), w, r)
-		return
-	}
-
 	cmd := command.CreateAssetSourceCmd{
-		AssetSourceList: make([]command.CreateAssetSourceItem, len(req.AssetSources)),
-	}
-	for i, as := range req.AssetSources {
-
-		cmd.AssetSourceList[i] = command.CreateAssetSourceItem{
-			Name:          as.Name,
-			OwnerID:       as.OwnerID,
-			InitBalance:   as.InitBalance,
-			SourceType:    as.SourceType,
-			CurrencyCode:  as.CurrencyCode,
-			BankName:      as.BankName,
-			AccountNumber: as.AccountNumber,
-			OfficeID:      as.OfficeID,
-		}
+		Name:          req.Name,
+		OwnerID:       req.OwnerID,
+		InitBalance:   req.InitBalance,
+		SourceType:    req.SourceType,
+		CurrencyCode:  req.CurrencyCode,
+		BankName:      req.BankName,
+		AccountNumber: req.AccountNumber,
+		OfficeID:      req.OfficeID,
 	}
 
 	err := h.app.Commands.CreateAssetSourceHandler.Handle(r.Context(), cmd)

@@ -39,7 +39,7 @@ func (_m *MockRepository) EXPECT() *MockRepository_Expecter {
 }
 
 // Create provides a mock function for the type MockRepository
-func (_mock *MockRepository) Create(ctx context.Context, assetSourceList []*assetsource.AssetSource) error {
+func (_mock *MockRepository) Create(ctx context.Context, assetSourceList *assetsource.AssetSource) error {
 	ret := _mock.Called(ctx, assetSourceList)
 
 	if len(ret) == 0 {
@@ -47,7 +47,7 @@ func (_mock *MockRepository) Create(ctx context.Context, assetSourceList []*asse
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []*assetsource.AssetSource) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *assetsource.AssetSource) error); ok {
 		r0 = returnFunc(ctx, assetSourceList)
 	} else {
 		r0 = ret.Error(0)
@@ -62,20 +62,20 @@ type MockRepository_Create_Call struct {
 
 // Create is a helper method to define mock.On call
 //   - ctx context.Context
-//   - assetSourceList []*assetsource.AssetSource
+//   - assetSourceList *assetsource.AssetSource
 func (_e *MockRepository_Expecter) Create(ctx interface{}, assetSourceList interface{}) *MockRepository_Create_Call {
 	return &MockRepository_Create_Call{Call: _e.mock.On("Create", ctx, assetSourceList)}
 }
 
-func (_c *MockRepository_Create_Call) Run(run func(ctx context.Context, assetSourceList []*assetsource.AssetSource)) *MockRepository_Create_Call {
+func (_c *MockRepository_Create_Call) Run(run func(ctx context.Context, assetSourceList *assetsource.AssetSource)) *MockRepository_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 []*assetsource.AssetSource
+		var arg1 *assetsource.AssetSource
 		if args[1] != nil {
-			arg1 = args[1].([]*assetsource.AssetSource)
+			arg1 = args[1].(*assetsource.AssetSource)
 		}
 		run(
 			arg0,
@@ -90,7 +90,7 @@ func (_c *MockRepository_Create_Call) Return(err error) *MockRepository_Create_C
 	return _c
 }
 
-func (_c *MockRepository_Create_Call) RunAndReturn(run func(ctx context.Context, assetSourceList []*assetsource.AssetSource) error) *MockRepository_Create_Call {
+func (_c *MockRepository_Create_Call) RunAndReturn(run func(ctx context.Context, assetSourceList *assetsource.AssetSource) error) *MockRepository_Create_Call {
 	_c.Call.Return(run)
 	return _c
 }

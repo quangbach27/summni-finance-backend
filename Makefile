@@ -1,15 +1,15 @@
 SERVICE := sumni-finance-backend
 # Database Config Variables (Use environment variables if set, otherwise use default placeholders)
-POSTGRES_USER ?= user
-POSTGRES_PASSWORD ?= password
+POSTGRES_USER ?= sumni
+POSTGRES_PASSWORD ?= sumni
 POSTGRES_HOST ?= localhost
-POSTGRES_DATABASE ?= db
+POSTGRES_DATABASE ?= sumni-finance
 POSTGRES_PORT ?= 5432
 
 DB_URL := postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}?sslmode=disable
 MIGRATE_PATH := db/migrations
 
-.PHONY: test test-ci dev stop lint migrate-create migrate-up migrate-down
+.PHONY: test test-ci dev stop down lint migrate-create migrate-up migrate-down sqlc-generate
 
 test:
 	@./scripts/test.sh .e2e.env
@@ -25,6 +25,9 @@ logs:
 
 stop:
 	docker compose down $(SERVICE)
+
+down:
+	docker compose down -v
 	
 lint:
 	golangci-lint run
@@ -44,3 +47,6 @@ migrate-down:
 migrate-status:
 	@echo "Checking migration status..."
 	@migrate -database "$(DB_URL)" -path $(MIGRATE_PATH) version
+
+sqlc-generate:
+	sqlc generate -f ./internal/$(DOMAIN)/adapter/db/store/sqlc.yml

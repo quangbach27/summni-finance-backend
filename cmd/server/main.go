@@ -1,11 +1,12 @@
 package main
 
 import (
+	"context"
 	"net/http"
+	"sumni-finance-backend/internal/common/db"
 	"sumni-finance-backend/internal/common/logs"
 	"sumni-finance-backend/internal/common/server"
 	financePorts "sumni-finance-backend/internal/finance/ports"
-	"sumni-finance-backend/internal/finance/ports/handler"
 	financeService "sumni-finance-backend/internal/finance/service"
 
 	"github.com/go-chi/chi/v5"
@@ -14,8 +15,26 @@ import (
 
 func main() {
 	logs.Init()
+	ctx := context.Background()
 
-	financeApp := financeService.NewApplication()
+	connPool := db.MustNewPgConnectionPool(ctx)
+
+	// TODO: Uncomment when enable authentication
+	/*
+		tokenRepo, err := auth.NewInMemoryTokenRepository()
+		if err != nil {
+			slog.Error("critical failure", "err", err)
+			os.Exit(1)
+		}
+
+		keycloakClient, err := auth.NewKeycloakClient()
+		if err != nil {
+			slog.Error("critical failure", "err", err)
+			os.Exit(1)
+		}
+	*/
+
+	financeApplication := financeService.NewApplication(connPool)
 
 	server.RunHTTPServer(func(router chi.Router) http.Handler {
 		// HealthCheck
@@ -24,11 +43,25 @@ func main() {
 			render.JSON(w, r, map[string]string{"status": "ok"})
 		})
 
-		// Finance Port
-		financePorts.HandleFinanceFromMux(
-			router,
-			handler.NewFinanceServerInterface(financeApp),
-		)
+		// TODO: Uncomment when enable authentication
+		/*
+			authHandler := auth.NewAuthHandler(keycloakClient, tokenRepo)
+			auth.HandleServerFromMux(router, authHandler)
+		*/
+
+		// Protected routes
+		router.Group(func(protectedRoute chi.Router) {
+			// TODO: Uncomment when enable authentication
+			/*
+				protectedRoute.Use(authHandler.AuthMiddleware)
+			*/
+
+			// Finance Port
+			financePorts.HandleFinanceFromMux(
+				protectedRoute,
+				financePorts.NewFinanceHandler(financeApplication),
+			)
+		})
 
 		return router
 	})

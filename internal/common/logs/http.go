@@ -15,17 +15,17 @@ type ctxLoggerKey int
 const loggerKey ctxLoggerKey = 0
 
 // Middleware factory (same as Logrus version)
-func NewStructuredLogger(logger *slog.Logger) func(next http.Handler) http.Handler {
-	return middleware.RequestLogger(&StructuredLogger{Logger: logger})
+func Middleware(logger *slog.Logger) func(next http.Handler) http.Handler {
+	return middleware.RequestLogger(&Logger{Logger: logger})
 }
 
-// StructuredLogger holds the base slog logger
-type StructuredLogger struct {
+// Logger holds the base slog logger
+type Logger struct {
 	Logger *slog.Logger
 }
 
-func (sl *StructuredLogger) NewLogEntry(r *http.Request) middleware.LogEntry {
-	entry := &StructuredLoggerEntry{}
+func (sl *Logger) NewLogEntry(r *http.Request) middleware.LogEntry {
+	entry := &Entry{}
 
 	attrs := []any{
 		"http_method", r.Method,
@@ -53,11 +53,11 @@ func (sl *StructuredLogger) NewLogEntry(r *http.Request) middleware.LogEntry {
 // Log Entry Implementation
 // ----------------------
 
-type StructuredLoggerEntry struct {
+type Entry struct {
 	Logger *slog.Logger
 }
 
-func (entry *StructuredLoggerEntry) Write(status, bytes int, header http.Header, elapsed time.Duration, extra interface{}) {
+func (entry *Entry) Write(status, bytes int, header http.Header, elapsed time.Duration, extra interface{}) {
 	entry.Logger.Info("Request completed",
 		"resp_status", status,
 		"resp_bytes_length", bytes,
@@ -65,19 +65,11 @@ func (entry *StructuredLoggerEntry) Write(status, bytes int, header http.Header,
 	)
 }
 
-func (entry *StructuredLoggerEntry) Panic(v interface{}, stack []byte) {
+func (entry *Entry) Panic(v interface{}, stack []byte) {
 	entry.Logger.Error("Panic occurred",
 		"panic", fmt.Sprintf("%+v", v),
 		"stack", string(stack),
 	)
-}
-
-// ----------------------
-// Access Log Entry Logger (same API)
-// ----------------------
-func GetLogEntry(r *http.Request) *slog.Logger {
-	entry := middleware.GetLogEntry(r).(*StructuredLoggerEntry)
-	return entry.Logger
 }
 
 func FromContext(ctx context.Context) *slog.Logger {

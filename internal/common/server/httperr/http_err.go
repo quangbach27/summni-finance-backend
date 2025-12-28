@@ -1,8 +1,8 @@
 package httperr
 
 import (
+	"errors"
 	"net/http"
-	common_errors "sumni-finance-backend/internal/common/errors"
 	"sumni-finance-backend/internal/common/logs"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -10,28 +10,28 @@ import (
 )
 
 func InternalError(slug string, err error, w http.ResponseWriter, r *http.Request) {
-	httpRespondWithError(err, slug, w, r, "Internal server error", http.StatusInternalServerError)
+	httpRespondWithError(err, slug, w, r, err.Error(), http.StatusInternalServerError)
 }
 
 func Unauthorised(slug string, err error, w http.ResponseWriter, r *http.Request) {
-	httpRespondWithError(err, slug, w, r, "Unauthorised", http.StatusUnauthorized)
+	httpRespondWithError(err, slug, w, r, err.Error(), http.StatusUnauthorized)
 }
 
 func BadRequest(slug string, err error, w http.ResponseWriter, r *http.Request) {
-	httpRespondWithError(err, slug, w, r, "Bad request", http.StatusBadRequest)
+	httpRespondWithError(err, slug, w, r, err.Error(), http.StatusBadRequest)
 }
 
 func RespondWithSlugError(err error, w http.ResponseWriter, r *http.Request) {
-	slugError, ok := err.(common_errors.SlugError)
+	slugError, ok := err.(SlugError)
 	if !ok {
 		InternalError("internal-server-error", err, w, r)
 		return
 	}
 
 	switch slugError.ErrorType() {
-	case common_errors.ErrorTypeAuthorization:
+	case ErrorTypeAuthorization:
 		Unauthorised(slugError.Slug(), slugError, w, r)
-	case common_errors.ErrorTypeIncorrectInput:
+	case ErrorTypeIncorrectInput:
 		BadRequest(slugError.Slug(), slugError, w, r)
 	default:
 		InternalError(slugError.Slug(), slugError, w, r)
@@ -39,8 +39,13 @@ func RespondWithSlugError(err error, w http.ResponseWriter, r *http.Request) {
 }
 
 func httpRespondWithError(err error, slug string, w http.ResponseWriter, r *http.Request, logMSg string, status int) {
-	logger := logs.GetLogEntry(r).With(
-		"error", err,
+	wrappedErr := errors.Unwrap(err)
+	if wrappedErr == nil {
+		wrappedErr = err // If no wrapping occurred, use the error itself
+	}
+
+	logger := logs.FromContext(r.Context()).With(
+		"error", wrappedErr,
 		"error_slug", slug,
 	)
 
@@ -56,7 +61,7 @@ func httpRespondWithError(err error, slug string, w http.ResponseWriter, r *http
 	resp := ErrorResponse{slug, status, logMSg, requestID}
 
 	if err := render.Render(w, r, resp); err != nil {
-		panic(err)
+		logger.Error("failed to render resp: " + err.Error())
 	}
 }
 
@@ -64,7 +69,7 @@ type ErrorResponse struct {
 	Slug       string `json:"slug"`
 	httpStatus int
 	Message    string `json:"message"`
-	TraceID    string `json:"trace_id"`
+	RequestID  string `json:"request_id"`
 }
 
 func (e ErrorResponse) Render(w http.ResponseWriter, r *http.Request) error {

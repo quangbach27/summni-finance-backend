@@ -12,6 +12,19 @@ import (
 
 type ID uuid.UUID
 
+func NewID(idStr string) (ID, error) {
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		return ID{}, fmt.Errorf("invalid id format: %w", err)
+	}
+
+	return ID(id), nil
+}
+
+func (id ID) String() string {
+	return uuid.UUID(id).String()
+}
+
 // AssetSource: Aggregate Root
 type AssetSource struct {
 	id         ID
@@ -19,16 +32,18 @@ type AssetSource struct {
 	ownerID    uuid.UUID
 	sourceType SourceType
 	officeID   uuid.UUID
+	currency   valueobject.Currency
 
 	bankDetails *BankDetails // Nil if SourceType is Cash
 }
 
-func (as *AssetSource) ID() ID                     { return as.id }
-func (as *AssetSource) Balance() valueobject.Money { return as.balance }
-func (as *AssetSource) OwnerID() uuid.UUID         { return as.ownerID }
-func (as *AssetSource) Type() SourceType           { return as.sourceType }
-func (as *AssetSource) BankDetails() *BankDetails  { return as.bankDetails }
-func (as *AssetSource) OfficeID() uuid.UUID        { return as.officeID }
+func (as *AssetSource) ID() ID                         { return as.id }
+func (as *AssetSource) Balance() valueobject.Money     { return as.balance }
+func (as *AssetSource) OwnerID() uuid.UUID             { return as.ownerID }
+func (as *AssetSource) Type() SourceType               { return as.sourceType }
+func (as *AssetSource) BankDetails() *BankDetails      { return as.bankDetails }
+func (as *AssetSource) OfficeID() uuid.UUID            { return as.officeID }
+func (as *AssetSource) Currency() valueobject.Currency { return as.currency }
 
 // newBaseAssetSource: Private template for shared asset initialization logic
 func newBaseAssetSource(
@@ -66,6 +81,7 @@ func newBaseAssetSource(
 		ownerID:    ownerID,
 		sourceType: sourceType,
 		officeID:   officeID,
+		currency:   currency,
 	}, nil
 }
 

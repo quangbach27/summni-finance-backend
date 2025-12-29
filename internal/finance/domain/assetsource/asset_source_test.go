@@ -23,6 +23,32 @@ var (
 	accountNumber = "7777777317"
 )
 
+func TestAssetSource_NewID(t *testing.T) {
+	t.Run("invalid ID", func(t *testing.T) {
+		//Given
+		assetSourceID := "invalid_id"
+
+		// When
+		wantID, err := assetsource.NewID(assetSourceID)
+
+		// Then
+		assert.Error(t, err)
+		assert.Equal(t, assetsource.ID{}, wantID)
+	})
+
+	t.Run("valid ID", func(t *testing.T) {
+		// Given
+		assetSourceID := uuid.New().String()
+
+		// When
+		wantID, err := assetsource.NewID(assetSourceID)
+
+		assert.NoError(t, err)
+		assert.Equal(t, wantID.String(), assetSourceID)
+
+	})
+}
+
 // --- Test AssetSource Factory ---
 
 func TestAssetSource_NewBankAssetSource(t *testing.T) {

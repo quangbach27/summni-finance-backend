@@ -14,34 +14,38 @@ import (
 const createWallet = `-- name: CreateWallet :exec
 INSERT INTO finance.wallets (
     id,
-    name,
+    wallet_name,
     currency_code,
     balance,
-    is_strict_mode
+    is_strict_mode,
+    office_id
 )
-VALUES ($1, $2, $3, $4, $5)
+VALUES ($1, $2, $3, $4, $5, $6)
 `
 
 type CreateWalletParams struct {
 	ID           uuid.UUID
-	Name         string
+	WalletName   string
 	CurrencyCode string
 	Balance      int64
 	IsStrictMode bool
+	OfficeID     uuid.UUID
 }
 
 func (q *Queries) CreateWallet(ctx context.Context, arg CreateWalletParams) error {
 	_, err := q.db.Exec(ctx, createWallet,
 		arg.ID,
-		arg.Name,
+		arg.WalletName,
 		arg.CurrencyCode,
 		arg.Balance,
 		arg.IsStrictMode,
+		arg.OfficeID,
 	)
 	return err
 }
 
-type CreateWalletAssetSourceAssociateBatchParams struct {
+type CreateWalletsAllocationBatchParams struct {
 	AssetSourceID uuid.UUID
 	WalletID      uuid.UUID
+	Amount        int64
 }

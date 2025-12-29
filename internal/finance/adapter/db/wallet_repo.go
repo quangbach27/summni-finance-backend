@@ -55,10 +55,11 @@ func (repo *walletRepository) Create(ctx context.Context, wallet *wallet.Wallet)
 
 	arg := store.CreateWalletParams{
 		ID:           uuid.UUID(wallet.ID()),
-		Name:         wallet.Name(),
+		WalletName:   wallet.Name(),
 		CurrencyCode: wallet.Currency().Code(),
 		Balance:      balance.Amount(),
 		IsStrictMode: wallet.IsStrictMode(),
+		OfficeID:     wallet.OfficeID(),
 	}
 
 	err = txQueries.CreateWallet(ctx, arg)
@@ -66,15 +67,16 @@ func (repo *walletRepository) Create(ctx context.Context, wallet *wallet.Wallet)
 		return err
 	}
 
-	associateParams := make([]store.CreateWalletAssetSourceAssociateBatchParams, 0, len(wallet.Allocations()))
+	allocationParams := make([]store.CreateWalletsAllocationBatchParams, 0, len(wallet.Allocations()))
 	for _, allocation := range wallet.Allocations() {
-		associateParams = append(associateParams, store.CreateWalletAssetSourceAssociateBatchParams{
+		allocationParams = append(allocationParams, store.CreateWalletsAllocationBatchParams{
 			AssetSourceID: uuid.UUID(allocation.AssetSourceID()),
 			WalletID:      uuid.UUID(wallet.ID()),
+			Amount:        allocation.Amount().Amount(),
 		})
 	}
 
-	_, err = txQueries.CreateWalletAssetSourceAssociateBatch(ctx, associateParams)
+	_, err = txQueries.CreateWalletsAllocationBatch(ctx, allocationParams)
 	if err != nil {
 		return err
 	}

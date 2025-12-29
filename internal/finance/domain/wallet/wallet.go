@@ -12,11 +12,23 @@ import (
 
 type ID uuid.UUID
 
+func NewID(str string) (ID, error) {
+	id, err := uuid.Parse(str)
+	if err != nil {
+		return ID{}, fmt.Errorf("invalid id format: %w", err)
+	}
+
+	return ID(id), nil
+}
+
+func (i ID) String() string { return uuid.UUID(i).String() }
+
 type Wallet struct {
 	id           ID
 	name         string
 	isStrictMode bool
 	currency     valueobject.Currency
+	officeID     uuid.UUID
 
 	allocations []*Allocation
 }
@@ -25,6 +37,7 @@ func NewWallet(
 	name string,
 	currency valueobject.Currency,
 	isStrictMode bool,
+	officeID uuid.UUID,
 	allocations []*Allocation,
 ) (*Wallet, error) {
 	validator := validator.New()
@@ -34,6 +47,7 @@ func NewWallet(
 	validator.Check(len(allocations) != 0, "allocations", "allocation is required")
 	for _, alloc := range allocations {
 		validator.Check(alloc != nil && *alloc != Allocation{}, "allocation", "allocation is required")
+		validator.Check(officeID == alloc.OfficeID(), "allocations", "officeID missmatch between wallet and allocations")
 	}
 
 	if err := validator.Err(); err != nil {
@@ -60,18 +74,19 @@ func (w *Wallet) Name() string                   { return w.name }
 func (w *Wallet) IsStrictMode() bool             { return w.isStrictMode }
 func (w *Wallet) Currency() valueobject.Currency { return w.currency }
 func (w *Wallet) Allocations() []*Allocation     { return w.allocations }
+func (w *Wallet) OfficeID() uuid.UUID            { return w.officeID }
 
 // --- DOMAIN BEHAVIOR ---
 func (w *Wallet) TotalBalance() (valueobject.Money, error) {
 	total, err := valueobject.NewMoney(0, w.currency)
 	if err != nil {
-		return valueobject.Money{}, fmt.Errorf("fail to calculate wallet(ID: %s)'s total balance: %w", uuid.UUID(w.id).String(), err)
+		return valueobject.Money{}, fmt.Errorf("fail to calculate wallet(ID: %s)'s total balance: %w", w.id.String(), err)
 	}
 
-	for _, a := range w.allocations {
-		total, err = total.Add(a.amount)
+	for _, alloc := range w.allocations {
+		total, err = total.Add(alloc.Amount())
 		if err != nil {
-			return valueobject.Money{}, fmt.Errorf("fail to calculate wallet(ID: %s)'s total balance: %w", uuid.UUID(w.id).String(), err)
+			return valueobject.Money{}, fmt.Errorf("fail to calculate wallet(ID: %s)'s total balance: %w", w.id.String(), err)
 		}
 	}
 
@@ -87,10 +102,9 @@ func (w *Wallet) TopUp(assetSourceID assetsource.ID, amount valueobject.Money) e
 		return fmt.Errorf("wallet currency is %s but top-up amount is %s", w.currency.Code(), amount.Currency().Code())
 	}
 
-	// Find existing allocation and update it
 	for _, alloc := range w.allocations {
 		if alloc.assetSourceID == assetSourceID {
-			newAmount, err := alloc.amount.Add(amount)
+			newAmount, err := alloc.Amount().Add(amount)
 			if err != nil {
 				return err
 			}
@@ -100,7 +114,6 @@ func (w *Wallet) TopUp(assetSourceID assetsource.ID, amount valueobject.Money) e
 		}
 	}
 
-	// returning error if not found source
 	return fmt.Errorf("asset source %s not found in this wallet", assetSourceID)
 }
 
@@ -113,7 +126,7 @@ func (w *Wallet) Withdraw(assetSourceID assetsource.ID, amount valueobject.Money
 		if alloc.assetSourceID == assetSourceID {
 			// Check if enough balance
 			// Assuming Money.Subtract returns error if result < 0
-			newAmount, err := alloc.amount.Subtract(amount)
+			newAmount, err := alloc.Amount().Subtract(amount)
 			if err != nil {
 				return fmt.Errorf("insufficient funds in asset source %s: %w", assetSourceID, err)
 			}
@@ -123,6 +136,5 @@ func (w *Wallet) Withdraw(assetSourceID assetsource.ID, amount valueobject.Money
 		}
 	}
 
-	// returning error if not found source
 	return fmt.Errorf("asset source %s not found in this wallet", assetSourceID)
 }

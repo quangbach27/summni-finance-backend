@@ -10,29 +10,31 @@ SET search_path TO finance, public;
 CREATE TABLE finance.asset_sources (
     id uuid PRIMARY KEY NOT NULL,
     owner_id uuid NOT NULL,
-    
+    assetsource_name varchar(255) NOT NULL UNIQUE, 
     balance bigint NOT NULL DEFAULT 0,
     source_type varchar(100) NOT NULL DEFAULT 'CASH',
     currency_code CHAR(3) NOT NULL DEFAULT 'VND',
+    office_id uuid NOT NULL,
     
     bank_name varchar(255),
-    account_number varchar(255),
-    office_id uuid NOT NULL
+    account_number varchar(255)
 );
 
 -- 3. CREATE TABLE wallets
 CREATE TABLE finance.wallets(
     id uuid PRIMARY KEY NOT NULL,
-    name varchar(255) NOT NULL,
+    wallet_name varchar(255) NOT NULL UNIQUE,
     currency_code CHAR(3) NOT NULL,
     balance bigint NOT NULL DEFAULT 0,
-    is_strict_mode boolean NOT NULL DEFAULT false
+    is_strict_mode boolean NOT NULL DEFAULT false,
+    office_id uuid NOT NULL
 );
 
 -- 4. CREATE TABLE assetsource_wallet (Junction Table)
-CREATE TABLE finance.assetsource_wallet(
+CREATE TABLE finance.wallets_allocation(
     asset_source_id uuid NOT NULL,
     wallet_id uuid NOT NULL,
+    amount bigint NOT NULL,
 
     PRIMARY KEY (asset_source_id, wallet_id),
 

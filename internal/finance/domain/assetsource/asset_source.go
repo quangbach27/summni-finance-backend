@@ -28,6 +28,7 @@ func (id ID) String() string {
 // AssetSource: Aggregate Root
 type AssetSource struct {
 	id         ID
+	name       string
 	balance    valueobject.Money
 	ownerID    uuid.UUID
 	sourceType SourceType
@@ -38,6 +39,7 @@ type AssetSource struct {
 }
 
 func (as *AssetSource) ID() ID                         { return as.id }
+func (as *AssetSource) Name() string                   { return as.name }
 func (as *AssetSource) Balance() valueobject.Money     { return as.balance }
 func (as *AssetSource) OwnerID() uuid.UUID             { return as.ownerID }
 func (as *AssetSource) Type() SourceType               { return as.sourceType }
@@ -48,6 +50,7 @@ func (as *AssetSource) Currency() valueobject.Currency { return as.currency }
 // newBaseAssetSource: Private template for shared asset initialization logic
 func newBaseAssetSource(
 	ownerID uuid.UUID,
+	name string,
 	amount int64,
 	currency valueobject.Currency,
 	sourceType SourceType,
@@ -56,6 +59,7 @@ func newBaseAssetSource(
 	validator := validator.New()
 
 	validator.Check(ownerID != uuid.Nil, "ownerID", "ownerID is required")
+	validator.Required(name, "name")
 	validator.Check(amount >= 0, "amount", "amount must be positive")
 	validator.Check(!currency.IsZero(), "currency", "currency is required")
 	validator.Check(!sourceType.IsZero(), "sourceType", "sourceType is required")
@@ -77,6 +81,7 @@ func newBaseAssetSource(
 
 	return &AssetSource{
 		id:         ID(newID),
+		name:       name,
 		balance:    initbalance,
 		ownerID:    ownerID,
 		sourceType: sourceType,
@@ -88,6 +93,7 @@ func newBaseAssetSource(
 // --- Factory 1: BANK ASSET ---
 func NewBankAssetSource(
 	ownerID uuid.UUID,
+	name string,
 	initAmount int64,
 	currency valueobject.Currency,
 	bankName string,
@@ -96,7 +102,7 @@ func NewBankAssetSource(
 ) (*AssetSource, error) {
 	validator := validator.New()
 
-	assetSource, err := newBaseAssetSource(ownerID, initAmount, currency, BankType, officeID)
+	assetSource, err := newBaseAssetSource(ownerID, name, initAmount, currency, BankType, officeID)
 	if err != nil {
 		if !validator.TryMerge(err) {
 			return nil, err
@@ -122,11 +128,12 @@ func NewBankAssetSource(
 // --- Factory 2: CASH ASSET ---
 func NewCashAssetSource(
 	ownerID uuid.UUID,
+	name string,
 	initAmount int64,
 	currency valueobject.Currency,
 	officeID uuid.UUID,
 ) (*AssetSource, error) {
-	assetSource, err := newBaseAssetSource(ownerID, initAmount, currency, CashType, officeID)
+	assetSource, err := newBaseAssetSource(ownerID, name, initAmount, currency, CashType, officeID)
 	if err != nil {
 		return nil, err
 	}
@@ -137,6 +144,7 @@ func NewCashAssetSource(
 func UnmarshallFromDatabase(
 	id uuid.UUID,
 	ownerID uuid.UUID,
+	name string,
 	balance int64,
 	sourceTypeStr string,
 	currencyCode string,
@@ -161,6 +169,7 @@ func UnmarshallFromDatabase(
 
 	assetSource := AssetSource{
 		id:         ID(id),
+		name:       name,
 		balance:    balanceDomain,
 		ownerID:    ownerID,
 		sourceType: sourceType,

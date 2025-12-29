@@ -9,13 +9,13 @@ import (
 	"context"
 )
 
-// iteratorForCreateWalletAssetSourceAssociateBatch implements pgx.CopyFromSource.
-type iteratorForCreateWalletAssetSourceAssociateBatch struct {
-	rows                 []CreateWalletAssetSourceAssociateBatchParams
+// iteratorForCreateWalletsAllocationBatch implements pgx.CopyFromSource.
+type iteratorForCreateWalletsAllocationBatch struct {
+	rows                 []CreateWalletsAllocationBatchParams
 	skippedFirstNextCall bool
 }
 
-func (r *iteratorForCreateWalletAssetSourceAssociateBatch) Next() bool {
+func (r *iteratorForCreateWalletsAllocationBatch) Next() bool {
 	if len(r.rows) == 0 {
 		return false
 	}
@@ -27,17 +27,18 @@ func (r *iteratorForCreateWalletAssetSourceAssociateBatch) Next() bool {
 	return len(r.rows) > 0
 }
 
-func (r iteratorForCreateWalletAssetSourceAssociateBatch) Values() ([]interface{}, error) {
+func (r iteratorForCreateWalletsAllocationBatch) Values() ([]interface{}, error) {
 	return []interface{}{
 		r.rows[0].AssetSourceID,
 		r.rows[0].WalletID,
+		r.rows[0].Amount,
 	}, nil
 }
 
-func (r iteratorForCreateWalletAssetSourceAssociateBatch) Err() error {
+func (r iteratorForCreateWalletsAllocationBatch) Err() error {
 	return nil
 }
 
-func (q *Queries) CreateWalletAssetSourceAssociateBatch(ctx context.Context, arg []CreateWalletAssetSourceAssociateBatchParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"finance", "assetsource_wallet"}, []string{"asset_source_id", "wallet_id"}, &iteratorForCreateWalletAssetSourceAssociateBatch{rows: arg})
+func (q *Queries) CreateWalletsAllocationBatch(ctx context.Context, arg []CreateWalletsAllocationBatchParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"finance", "wallets_allocation"}, []string{"asset_source_id", "wallet_id", "amount"}, &iteratorForCreateWalletsAllocationBatch{rows: arg})
 }

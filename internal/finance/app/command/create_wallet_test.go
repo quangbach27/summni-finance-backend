@@ -52,7 +52,7 @@ func TestCreateWalletHandler_Handle(t *testing.T) {
 		m := NewCreateWalletManager(t)
 
 		cmd := command.CreateWalletCmd{
-			Allocations: []command.AllocationItem{
+			Allocations: []command.CreateWalletAllocation{
 				{
 					AssetSourceID: "invalid_id",
 					Amount:        1000,
@@ -80,10 +80,12 @@ func TestCreateWalletHandler_Handle(t *testing.T) {
 			Return(nil, errAssetSourceNotFound)
 
 		cmd := command.CreateWalletCmd{
-			Allocations: []command.AllocationItem{
+			OfficeID: uuid.New().String(),
+			Allocations: []command.CreateWalletAllocation{
 				{
 					AssetSourceID: assetSourceID,
 					Amount:        1000,
+					OfficeID:      uuid.New().String(),
 				},
 			},
 		}
@@ -102,10 +104,12 @@ func TestCreateWalletHandler_Handle(t *testing.T) {
 		cmd := command.CreateWalletCmd{
 			Name:         "My Wallet",
 			CurrencyCode: "INVALID",
-			Allocations: []command.AllocationItem{
+			OfficeID:     uuid.New().String(),
+			Allocations: []command.CreateWalletAllocation{
 				{
 					AssetSourceID: uuid.New().String(),
 					Amount:        1000,
+					OfficeID:      uuid.New().String(),
 				},
 			},
 		}
@@ -113,6 +117,7 @@ func TestCreateWalletHandler_Handle(t *testing.T) {
 
 		assetSource, err := assetsource.NewBankAssetSource(
 			uuid.New(),
+			"Test Asset Source",
 			5000,
 			usd,
 			"Test Bank",
@@ -139,14 +144,16 @@ func TestCreateWalletHandler_Handle(t *testing.T) {
 
 		errPersist := errors.New("database-error")
 		usd := valueobject.USD
+		officeID := uuid.New()
 
 		assetSource, err := assetsource.NewBankAssetSource(
 			uuid.New(),
+			"Test Asset Source",
 			5000,
 			usd,
 			"Test Bank",
 			"1234567890",
-			uuid.New(),
+			officeID,
 		)
 		assert.NoError(t, err)
 
@@ -163,10 +170,12 @@ func TestCreateWalletHandler_Handle(t *testing.T) {
 		cmd := command.CreateWalletCmd{
 			Name:         "My Wallet",
 			CurrencyCode: "USD",
-			Allocations: []command.AllocationItem{
+			OfficeID:     officeID.String(),
+			Allocations: []command.CreateWalletAllocation{
 				{
 					AssetSourceID: assetSource.ID().String(),
 					Amount:        1000,
+					OfficeID:      officeID.String(),
 				},
 			},
 		}
@@ -178,19 +187,21 @@ func TestCreateWalletHandler_Handle(t *testing.T) {
 		assertHttpError(t, err, "persist-wallet-failed", errPersist)
 	})
 
-	t.Run("Successfull creation", func(t *testing.T) {
+	t.Run("Successful creation", func(t *testing.T) {
 		// Given
 		m := NewCreateWalletManager(t)
 
 		usd := valueobject.USD
+		officeID := uuid.New()
 
 		assetSource, err := assetsource.NewBankAssetSource(
 			uuid.New(),
+			"Test Asset Source",
 			5000,
 			usd,
 			"Test Bank",
 			"1234567890",
-			uuid.New(),
+			officeID,
 		)
 		assert.NoError(t, err)
 
@@ -208,10 +219,12 @@ func TestCreateWalletHandler_Handle(t *testing.T) {
 			Name:         "My Wallet",
 			CurrencyCode: "USD",
 			IsStrictMode: true,
-			Allocations: []command.AllocationItem{
+			OfficeID:     officeID.String(),
+			Allocations: []command.CreateWalletAllocation{
 				{
 					AssetSourceID: assetSource.ID().String(),
 					Amount:        1000,
+					OfficeID:      officeID.String(),
 				},
 			},
 		}

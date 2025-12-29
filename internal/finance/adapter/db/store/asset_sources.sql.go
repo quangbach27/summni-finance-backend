@@ -17,24 +17,26 @@ INSERT INTO finance.asset_sources (
     id, 
     owner_id, 
     balance, 
+    assetsource_name,
     source_type, 
     currency_code, 
     bank_name, 
     account_number,
     office_id
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 `
 
 type CreateAssetSourceParams struct {
-	ID            uuid.UUID
-	OwnerID       uuid.UUID
-	Balance       int64
-	SourceType    string
-	CurrencyCode  string
-	BankName      pgtype.Text
-	AccountNumber pgtype.Text
-	OfficeID      uuid.UUID
+	ID              uuid.UUID
+	OwnerID         uuid.UUID
+	Balance         int64
+	AssetsourceName string
+	SourceType      string
+	CurrencyCode    string
+	BankName        pgtype.Text
+	AccountNumber   pgtype.Text
+	OfficeID        uuid.UUID
 }
 
 func (q *Queries) CreateAssetSource(ctx context.Context, arg CreateAssetSourceParams) error {
@@ -42,6 +44,7 @@ func (q *Queries) CreateAssetSource(ctx context.Context, arg CreateAssetSourcePa
 		arg.ID,
 		arg.OwnerID,
 		arg.Balance,
+		arg.AssetsourceName,
 		arg.SourceType,
 		arg.CurrencyCode,
 		arg.BankName,
@@ -55,6 +58,7 @@ const getAssetSourceByID = `-- name: GetAssetSourceByID :one
 SELECT 
     id,
     owner_id,
+    assetsource_name,
     balance,
     source_type,
     currency_code,
@@ -65,12 +69,25 @@ FROM finance.asset_sources
 WHERE id = $1
 `
 
-func (q *Queries) GetAssetSourceByID(ctx context.Context, id uuid.UUID) (FinanceAssetSource, error) {
+type GetAssetSourceByIDRow struct {
+	ID              uuid.UUID
+	OwnerID         uuid.UUID
+	AssetsourceName string
+	Balance         int64
+	SourceType      string
+	CurrencyCode    string
+	BankName        pgtype.Text
+	AccountNumber   pgtype.Text
+	OfficeID        uuid.UUID
+}
+
+func (q *Queries) GetAssetSourceByID(ctx context.Context, id uuid.UUID) (GetAssetSourceByIDRow, error) {
 	row := q.db.QueryRow(ctx, getAssetSourceByID, id)
-	var i FinanceAssetSource
+	var i GetAssetSourceByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.OwnerID,
+		&i.AssetsourceName,
 		&i.Balance,
 		&i.SourceType,
 		&i.CurrencyCode,

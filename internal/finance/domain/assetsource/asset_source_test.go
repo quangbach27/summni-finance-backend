@@ -45,7 +45,6 @@ func TestAssetSource_NewID(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Equal(t, wantID.String(), assetSourceID)
-
 	})
 }
 
@@ -147,6 +146,7 @@ func TestAssetSource_NewBankAssetSource(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			asset, err := assetsource.NewBankAssetSource(
 				tt.inputOwnerID,
+				"name",
 				tt.inputInitAmount,
 				tt.inputCurrency,
 				tt.inputBankName,
@@ -236,6 +236,7 @@ func TestAssetSource_NewCashAssetSource(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			asset, err := assetsource.NewCashAssetSource(
 				tt.inputOwnerID,
+				"name",
 				tt.inputInitAmount,
 				tt.inputCurrency,
 				tt.inputOfficeID,
@@ -276,6 +277,7 @@ func TestAssetSource_GetterValues(t *testing.T) {
 	t.Run("BankAsset Getters", func(t *testing.T) {
 		bankAsset, err := assetsource.NewBankAssetSource(
 			expectedOwnerID,
+			"name",
 			expectedBalance.Amount(),
 			expectedBalance.Currency(),
 			expectedBankDetails.BankName(),
@@ -301,6 +303,7 @@ func TestAssetSource_GetterValues(t *testing.T) {
 	t.Run("CashAsset Getters", func(t *testing.T) {
 		cashAsset, err := assetsource.NewCashAssetSource(
 			expectedOwnerID,
+			"name",
 			expectedBalance.Amount(),
 			expectedBalance.Currency(),
 			testOfficeID,

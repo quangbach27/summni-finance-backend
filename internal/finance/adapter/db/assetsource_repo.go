@@ -41,6 +41,7 @@ func (repo *assetsourceRepo) GetByID(ctx context.Context, id assetsource.ID) (*a
 	assetSourceDomain, err := assetsource.UnmarshallFromDatabase(
 		model.ID,
 		model.OwnerID,
+		model.AssetsourceName,
 		model.Balance,
 		model.SourceType,
 		model.CurrencyCode,
@@ -69,14 +70,15 @@ func (repo *assetsourceRepo) Create(ctx context.Context, assetSource *assetsourc
 	}
 
 	err = repo.queries.CreateAssetSource(ctx, store.CreateAssetSourceParams{
-		ID:            uuid.UUID(assetSource.ID()),
-		OwnerID:       assetSource.OwnerID(),
-		Balance:       assetSource.Balance().Amount(),
-		CurrencyCode:  assetSource.Balance().Currency().Code(),
-		SourceType:    assetSource.Type().Code(),
-		BankName:      bankName,
-		AccountNumber: accountNumber,
-		OfficeID:      assetSource.OfficeID(),
+		ID:              uuid.UUID(assetSource.ID()),
+		OwnerID:         assetSource.OwnerID(),
+		AssetsourceName: assetSource.Name(),
+		Balance:         assetSource.Balance().Amount(),
+		CurrencyCode:    assetSource.Balance().Currency().Code(),
+		SourceType:      assetSource.Type().Code(),
+		BankName:        bankName,
+		AccountNumber:   accountNumber,
+		OfficeID:        assetSource.OfficeID(),
 	})
 	if err != nil {
 		return err

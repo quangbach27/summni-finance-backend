@@ -3,23 +3,28 @@ package command
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sumni-finance-backend/internal/common/cqrs"
 	"sumni-finance-backend/internal/common/server/httperr"
 	"sumni-finance-backend/internal/common/valueobject"
 	"sumni-finance-backend/internal/finance/domain/assetsource"
 	"sumni-finance-backend/internal/finance/domain/wallet"
+
+	"github.com/google/uuid"
 )
 
 type CreateWalletCmd struct {
 	Name         string
 	CurrencyCode string
 	IsStrictMode bool
-	Allocations  []AllocationItem
+	OfficeID     string
+	Allocations  []CreateWalletAllocation
 }
 
-type AllocationItem struct {
+type CreateWalletAllocation struct {
 	AssetSourceID string
 	Amount        int64
+	OfficeID      string
 }
 
 type CreateWalletHandler cqrs.CommandHandler[CreateWalletCmd]
@@ -64,13 +69,18 @@ func (handler *createWalletHandler) Handle(ctx context.Context, cmd CreateWallet
 	return nil
 }
 
-func (handler *createWalletHandler) buildAllocationListDomain(ctx context.Context, allocationItems []AllocationItem) ([]*wallet.Allocation, error) {
+func (handler *createWalletHandler) buildAllocationListDomain(ctx context.Context, allocationItems []CreateWalletAllocation) ([]*wallet.Allocation, error) {
 	allocationDomainList := make([]*wallet.Allocation, 0, len(allocationItems))
 
 	for _, item := range allocationItems {
 		assetSourceID, err := assetsource.NewID(item.AssetSourceID)
 		if err != nil {
 			return nil, err
+		}
+
+		officeID, err := uuid.Parse(item.OfficeID)
+		if err != nil {
+			return nil, fmt.Errorf("invalid office id: %w", err)
 		}
 
 		// TODO: check this can be applied spec Design Pattern
@@ -84,7 +94,7 @@ func (handler *createWalletHandler) buildAllocationListDomain(ctx context.Contex
 			return nil, err
 		}
 
-		allocationDomain, err := wallet.NewAllocation(assetSourceID, amount)
+		allocationDomain, err := wallet.NewAllocation(assetSourceID, amount, officeID)
 		if err != nil {
 			return nil, err
 		}
@@ -104,7 +114,18 @@ func (handler *createWalletHandler) buildWalletDomain(
 		return nil, err
 	}
 
-	walletDomain, err := wallet.NewWallet(cmd.Name, walletCurrency, cmd.IsStrictMode, allocationDomainList)
+	officeID, err := uuid.Parse(cmd.OfficeID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid office id: %w", err)
+	}
+
+	walletDomain, err := wallet.NewWallet(
+		cmd.Name,
+		walletCurrency,
+		cmd.IsStrictMode,
+		officeID,
+		allocationDomainList,
+	)
 	if err != nil {
 		return nil, err
 	}

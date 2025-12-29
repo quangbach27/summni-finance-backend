@@ -35,54 +35,66 @@ func NewCreateAssetSourceHandler(assetsourceRepo assetsource.Repository) CreateA
 }
 
 func (h *createAssetSourceHandler) Handle(ctx context.Context, cmd CreateAssetSourceCmd) (err error) {
+	assetSource, err := h.buildAssetSource(cmd)
+	if err != nil {
+		return httperr.NewIncorrectInputError(err, "fail-to-create-asset-source")
+	}
+
+	if err = h.assetsourceRepo.Create(ctx, assetSource); err != nil {
+		return httperr.NewUnknowError(err, "failed-to-save-asset-source")
+	}
+
+	return nil
+}
+
+func (h *createAssetSourceHandler) buildAssetSource(cmd CreateAssetSourceCmd) (*assetsource.AssetSource, error) {
 	sourceType, err := assetsource.NewSourceTypeFromStr(cmd.SourceType)
 	if err != nil {
-		return httperr.NewIncorrectInputError(err, "invalid-source-type")
+		return nil, err
 	}
 
 	currency, err := valueobject.NewCurrency(cmd.CurrencyCode)
 	if err != nil {
-		return httperr.NewIncorrectInputError(err, "invalid-currency-code")
+		return nil, err
 	}
 
 	ownerID, err := uuid.Parse(cmd.OwnerID)
 	if err != nil {
-		return httperr.NewIncorrectInputError(err, "fail-to-parse-owner-id")
+		return nil, err
 	}
 
 	officeID, err := uuid.Parse(cmd.OfficeID)
 	if err != nil {
-		return httperr.NewIncorrectInputError(err, "fail-to-parse-office-id")
+		return nil, err
 	}
 
-	var assetSource *assetsource.AssetSource
 	if sourceType.IsCash() {
-		assetSource, err = assetsource.NewCashAssetSource(
+		cashAssetSource, err := assetsource.NewCashAssetSource(
 			ownerID,
+			cmd.Name,
 			cmd.InitBalance,
 			currency,
 			officeID,
 		)
 		if err != nil {
-			return httperr.NewIncorrectInputError(err, "failed-to-create-cash-asset-source")
+			return nil, err
 		}
-	} else {
-		assetSource, err = assetsource.NewBankAssetSource(
-			ownerID,
-			cmd.InitBalance,
-			currency,
-			cmd.BankName,
-			cmd.AccountNumber,
-			officeID,
-		)
-		if err != nil {
-			return httperr.NewIncorrectInputError(err, "failed-to-create-bank-asset-source")
-		}
+
+		return cashAssetSource, nil
 	}
 
-	if err = h.assetsourceRepo.Create(ctx, assetSource); err != nil {
-		return httperr.NewUnknowError(err, "failed-to-save-asset-source-to-db")
+	bankAssetSource, err := assetsource.NewBankAssetSource(
+		ownerID,
+		cmd.Name,
+		cmd.InitBalance,
+		currency,
+		cmd.BankName,
+		cmd.AccountNumber,
+		officeID,
+	)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	return bankAssetSource, nil
 }

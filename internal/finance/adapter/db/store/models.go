@@ -10,25 +10,28 @@ import (
 )
 
 type FinanceAssetSource struct {
-	ID            uuid.UUID
-	OwnerID       uuid.UUID
-	Balance       int64
-	SourceType    string
-	CurrencyCode  string
-	BankName      pgtype.Text
-	AccountNumber pgtype.Text
-	OfficeID      uuid.UUID
-}
-
-type FinanceAssetsourceWallet struct {
-	AssetSourceID uuid.UUID
-	WalletID      uuid.UUID
+	ID              uuid.UUID
+	OwnerID         uuid.UUID
+	AssetsourceName string
+	Balance         int64
+	SourceType      string
+	CurrencyCode    string
+	OfficeID        uuid.UUID
+	BankName        pgtype.Text
+	AccountNumber   pgtype.Text
 }
 
 type FinanceWallet struct {
 	ID           uuid.UUID
-	Name         string
+	WalletName   string
 	CurrencyCode string
 	Balance      int64
 	IsStrictMode bool
+	OfficeID     uuid.UUID
+}
+
+type FinanceWalletsAllocation struct {
+	AssetSourceID uuid.UUID
+	WalletID      uuid.UUID
+	Amount        int64
 }

@@ -98,7 +98,7 @@ func TestCreateAssetSources_Handle(t *testing.T) {
 		require.Error(t, err)
 		var slugErr httperr.SlugError
 		require.True(t, errors.As(err, &slugErr))
-		require.Equal(t, "invalid-source-type", slugErr.Slug())
+		require.Equal(t, "fail-to-create-asset-source", slugErr.Slug())
 	})
 
 	t.Run("should return error when currency code is invalid", func(t *testing.T) {
@@ -120,7 +120,7 @@ func TestCreateAssetSources_Handle(t *testing.T) {
 		require.Error(t, err)
 		var slugErr httperr.SlugError
 		require.True(t, errors.As(err, &slugErr))
-		require.Equal(t, "invalid-currency-code", slugErr.Slug())
+		require.Equal(t, "fail-to-create-asset-source", slugErr.Slug())
 	})
 
 	t.Run("should return error when owner ID is invalid", func(t *testing.T) {
@@ -141,7 +141,7 @@ func TestCreateAssetSources_Handle(t *testing.T) {
 		require.Error(t, err)
 		var slugErr httperr.SlugError
 		require.True(t, errors.As(err, &slugErr))
-		require.Equal(t, "fail-to-parse-owner-id", slugErr.Slug())
+		require.Equal(t, "fail-to-create-asset-source", slugErr.Slug())
 	})
 
 	t.Run("should return error when office ID is invalid", func(t *testing.T) {
@@ -162,7 +162,7 @@ func TestCreateAssetSources_Handle(t *testing.T) {
 		require.Error(t, err)
 		var slugErr httperr.SlugError
 		require.True(t, errors.As(err, &slugErr))
-		require.Equal(t, "fail-to-parse-office-id", slugErr.Slug())
+		require.Equal(t, "fail-to-create-asset-source", slugErr.Slug())
 	})
 
 	t.Run("should return error when bank name is missing", func(t *testing.T) {
@@ -186,7 +186,7 @@ func TestCreateAssetSources_Handle(t *testing.T) {
 		require.Error(t, err)
 		var slugErr httperr.SlugError
 		require.True(t, errors.As(err, &slugErr))
-		require.Equal(t, "failed-to-create-bank-asset-source", slugErr.Slug())
+		require.Equal(t, "fail-to-create-asset-source", slugErr.Slug())
 	})
 
 	t.Run("should return error when repositoryCreate fails", func(t *testing.T) {
@@ -215,6 +215,6 @@ func TestCreateAssetSources_Handle(t *testing.T) {
 
 		var slugErr httperr.SlugError
 		require.True(t, errors.As(err, &slugErr))
-		require.Equal(t, "failed-to-save-asset-source-to-db", slugErr.Slug())
+		require.Equal(t, "failed-to-save-asset-source", slugErr.Slug())
 	})
 }

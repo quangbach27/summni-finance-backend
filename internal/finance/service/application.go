@@ -10,17 +10,26 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func NewApplication(connPool *pgxpool.Pool) app.Application {
+func NewApplication(connPool *pgxpool.Pool) (app.Application, error) {
 	queries := store.New(connPool)
 
-	assetRepo := db.NewAssetsourceRepo(connPool, queries)
+	assetSourceRepo, err := db.NewAssetsourceRepo(connPool, queries)
+	if err != nil {
+		return app.Application{}, err
+	}
+
+	walletRepo, err := db.NewWalletRepository(connPool, queries)
+	if err != nil {
+		return app.Application{}, err
+	}
 
 	return app.Application{
 		Commands: app.Commands{
-			CreateAssetSourceHandler: command.NewCreateAssetSourceHandler(assetRepo),
+			CreateAssetSourceHandler: command.NewCreateAssetSourceHandler(assetSourceRepo),
+			CreateWalletHandler:      command.NewCreateWalletHandler(walletRepo, assetSourceRepo),
 		},
 		Queries: app.Queries{
 			GetAssetSourceHandler: query.NewGetAssetSoureHandler(),
 		},
-	}
+	}, nil
 }

@@ -11,3 +11,15 @@ INSERT INTO finance.asset_sources (
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
 
+-- name: GetAssetSourceByID :one
+SELECT 
+    id,
+    owner_id,
+    balance,
+    source_type,
+    currency_code,
+    bank_name,
+    account_number,
+    office_id
+FROM finance.asset_sources
+WHERE id = $1;

@@ -50,3 +50,33 @@ func (q *Queries) CreateAssetSource(ctx context.Context, arg CreateAssetSourcePa
 	)
 	return err
 }
+
+const getAssetSourceByID = `-- name: GetAssetSourceByID :one
+SELECT 
+    id,
+    owner_id,
+    balance,
+    source_type,
+    currency_code,
+    bank_name,
+    account_number,
+    office_id
+FROM finance.asset_sources
+WHERE id = $1
+`
+
+func (q *Queries) GetAssetSourceByID(ctx context.Context, id uuid.UUID) (FinanceAssetSource, error) {
+	row := q.db.QueryRow(ctx, getAssetSourceByID, id)
+	var i FinanceAssetSource
+	err := row.Scan(
+		&i.ID,
+		&i.OwnerID,
+		&i.Balance,
+		&i.SourceType,
+		&i.CurrencyCode,
+		&i.BankName,
+		&i.AccountNumber,
+		&i.OfficeID,
+	)
+	return i, err
+}

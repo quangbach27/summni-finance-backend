@@ -38,42 +38,42 @@ func (s SlugError) Unwrap() error {
 	return s.wrappedErr
 }
 
-func NewError(err error, slug string) SlugError {
-	if err == nil {
+func NewError(wrappedErr error, slug string) SlugError {
+	if wrappedErr == nil {
 		return NewUnknowError(errors.New("NewError called with nil error"), "internal-error")
 	}
 
 	var validErrs *validator.ErrorList
-	if errors.As(err, &validErrs) {
-		return NewIncorrectInputError(err, "validate-failed")
+	if errors.As(wrappedErr, &validErrs) {
+		return NewIncorrectInputError(wrappedErr, "validate-failed")
 	}
 
-	return NewUnknowError(err, "unknown-error")
+	return NewUnknowError(wrappedErr, "unknown-error")
 }
 
-func NewUnknowError(err error, slug string) SlugError {
+func NewUnknowError(wrappedErr error, slug string) SlugError {
 	return SlugError{
-		logMsg:     err.Error(),
+		logMsg:     wrappedErr.Error(),
 		slug:       slug,
 		errorType:  ErrorTypeUnknown,
-		wrappedErr: err,
+		wrappedErr: wrappedErr,
 	}
 }
 
-func NewAuthorizationError(err error, slug string) SlugError {
+func NewAuthorizationError(wrappedErr error, slug string) SlugError {
 	return SlugError{
-		logMsg:     err.Error(),
+		logMsg:     wrappedErr.Error(),
 		slug:       slug,
 		errorType:  ErrorTypeAuthorization,
-		wrappedErr: err,
+		wrappedErr: wrappedErr,
 	}
 }
 
-func NewIncorrectInputError(err error, slug string) SlugError {
+func NewIncorrectInputError(wrappedErr error, slug string) SlugError {
 	return SlugError{
-		logMsg:     err.Error(),
+		logMsg:     wrappedErr.Error(),
 		slug:       slug,
 		errorType:  ErrorTypeIncorrectInput,
-		wrappedErr: err,
+		wrappedErr: wrappedErr,
 	}
 }

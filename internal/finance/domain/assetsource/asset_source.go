@@ -134,6 +134,52 @@ func NewCashAssetSource(
 	return assetSource, nil
 }
 
+func UnmarshallFromDatabase(
+	id uuid.UUID,
+	ownerID uuid.UUID,
+	balance int64,
+	sourceTypeStr string,
+	currencyCode string,
+	bankName string,
+	accountNumber string,
+	officeID uuid.UUID,
+) (*AssetSource, error) {
+	currency, err := valueobject.NewCurrency(currencyCode)
+	if err != nil {
+		return nil, err
+	}
+
+	balanceDomain, err := valueobject.NewMoney(balance, currency)
+	if err != nil {
+		return nil, err
+	}
+
+	sourceType, err := NewSourceTypeFromStr(sourceTypeStr)
+	if err != nil {
+		return nil, err
+	}
+
+	assetSource := AssetSource{
+		id:         ID(id),
+		balance:    balanceDomain,
+		ownerID:    ownerID,
+		sourceType: sourceType,
+		officeID:   officeID,
+		currency:   currency,
+	}
+
+	if sourceType.IsBank() {
+		bankDetails, err := NewBankDetails(bankName, accountNumber)
+		if err != nil {
+			return nil, err
+		}
+
+		assetSource.bankDetails = &bankDetails
+	}
+
+	return &assetSource, nil
+}
+
 // --- Source Type (Sealed Enum) ---
 type SourceType struct{ code string }
 
@@ -158,3 +204,4 @@ func NewSourceTypeFromStr(sourceTypeStr string) (SourceType, error) {
 func (st SourceType) Code() string { return st.code }
 func (st SourceType) IsZero() bool { return st == SourceType{} }
 func (st SourceType) IsCash() bool { return st == CashType }
+func (st SourceType) IsBank() bool { return st == BankType }

@@ -12,6 +12,7 @@ type Application struct {
 
 type Commands struct {
 	CreateAssetSourceHandler command.CreateAssetSourceHandler
+	CreateWalletHandler      command.CreateWalletHandler
 }
 
 type Queries struct {

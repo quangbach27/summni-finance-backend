@@ -17,24 +17,42 @@ type assetsourceRepo struct {
 	queries *store.Queries
 }
 
-func NewAssetsourceRepo(connPool *pgxpool.Pool, queries *store.Queries) *assetsourceRepo {
+func NewAssetsourceRepo(connPool *pgxpool.Pool, queries *store.Queries) (*assetsourceRepo, error) {
 	if connPool == nil {
-		panic("missing conn pool")
+		return nil, errors.New("missing connection pool")
 	}
 
 	if queries == nil {
-		panic("missing queries")
+		return nil, errors.New("missing queried")
 	}
 
 	return &assetsourceRepo{
 		pool:    connPool,
 		queries: queries,
-	}
+	}, nil
 }
 
-// repo
 func (repo *assetsourceRepo) GetByID(ctx context.Context, id assetsource.ID) (*assetsource.AssetSource, error) {
-	return nil, nil
+	model, err := repo.queries.GetAssetSourceByID(ctx, uuid.UUID(id))
+	if err != nil {
+		return nil, err
+	}
+
+	assetSourceDomain, err := assetsource.UnmarshallFromDatabase(
+		model.ID,
+		model.OwnerID,
+		model.Balance,
+		model.SourceType,
+		model.CurrencyCode,
+		model.BankName.String,
+		model.AccountNumber.String,
+		model.OfficeID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return assetSourceDomain, nil
 }
 
 func (repo *assetsourceRepo) Create(ctx context.Context, assetSource *assetsource.AssetSource) (err error) {

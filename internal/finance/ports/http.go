@@ -8,8 +8,12 @@ import (
 )
 
 type FinanceHandlerInterface interface {
-	CreateAssetSources(w http.ResponseWriter, r *http.Request)
-	GetAssetSources(w http.ResponseWriter, r *http.Request)
+	// AssetSource
+	CreateAssetSources(http.ResponseWriter, *http.Request)
+	GetAssetSources(http.ResponseWriter, *http.Request)
+
+	// Wallet
+	CreateWallet(http.ResponseWriter, *http.Request)
 }
 
 type financeHandler struct {
@@ -26,6 +30,10 @@ func HandleFinanceFromMux(r chi.Router, handler FinanceHandlerInterface) http.Ha
 	r.Route("/v1/asset-sources", func(r chi.Router) {
 		r.Get("/", handler.GetAssetSources)
 		r.Post("/", handler.CreateAssetSources)
+	})
+
+	r.Route("/v1/wallets", func(r chi.Router) {
+		r.Post("/", handler.CreateWallet)
 	})
 
 	return r

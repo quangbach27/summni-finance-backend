@@ -23,10 +23,10 @@ CREATE TABLE finance.asset_sources (
 -- 3. CREATE TABLE wallets
 CREATE TABLE finance.wallets(
     id uuid PRIMARY KEY NOT NULL,
-    owner_id uuid NOT NULL,
     name varchar(255) NOT NULL,
     currency_code CHAR(3) NOT NULL,
-    is_strict_mode boolean DEFAULT false
+    balance bigint NOT NULL DEFAULT 0,
+    is_strict_mode boolean NOT NULL DEFAULT false
 );
 
 -- 4. CREATE TABLE assetsource_wallet (Junction Table)

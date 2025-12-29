@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
+	"os"
 	"sumni-finance-backend/internal/common/db"
 	"sumni-finance-backend/internal/common/logs"
 	"sumni-finance-backend/internal/common/server"
@@ -34,7 +36,11 @@ func main() {
 		}
 	*/
 
-	financeApplication := financeService.NewApplication(connPool)
+	financeApplication, err := financeService.NewApplication(connPool)
+	if err != nil {
+		slog.Error("Critical failure", "err", err)
+		os.Exit(1)
+	}
 
 	server.RunHTTPServer(func(router chi.Router) http.Handler {
 		// HealthCheck

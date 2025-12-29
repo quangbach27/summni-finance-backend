@@ -27,8 +27,8 @@ type FinanceAssetsourceWallet struct {
 
 type FinanceWallet struct {
 	ID           uuid.UUID
-	OwnerID      uuid.UUID
 	Name         string
 	CurrencyCode string
-	IsStrictMode pgtype.Bool
+	Balance      int64
+	IsStrictMode bool
 }

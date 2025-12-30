@@ -29,7 +29,7 @@ func (r *iteratorForCreateWalletsAllocationBatch) Next() bool {
 
 func (r iteratorForCreateWalletsAllocationBatch) Values() ([]interface{}, error) {
 	return []interface{}{
-		r.rows[0].AssetSourceID,
+		r.rows[0].AssetsourceID,
 		r.rows[0].WalletID,
 		r.rows[0].Amount,
 	}, nil
@@ -40,5 +40,5 @@ func (r iteratorForCreateWalletsAllocationBatch) Err() error {
 }
 
 func (q *Queries) CreateWalletsAllocationBatch(ctx context.Context, arg []CreateWalletsAllocationBatchParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"finance", "wallets_allocation"}, []string{"asset_source_id", "wallet_id", "amount"}, &iteratorForCreateWalletsAllocationBatch{rows: arg})
+	return q.db.CopyFrom(ctx, []string{"finance", "wallets_allocation"}, []string{"assetsource_id", "wallet_id", "amount"}, &iteratorForCreateWalletsAllocationBatch{rows: arg})
 }

@@ -48,7 +48,7 @@ func TestCreateAssetSources_Handle(t *testing.T) {
 			Create(mock.Anything, mock.Anything).
 			Return(nil)
 
-		err := manager.newHandler().Handle(context.Background(), cmd)
+		_, err := manager.newHandler().Handle(context.Background(), cmd)
 
 		require.NoError(t, err)
 	})
@@ -74,7 +74,7 @@ func TestCreateAssetSources_Handle(t *testing.T) {
 			Create(mock.Anything, mock.Anything).
 			Return(nil)
 
-		err := manager.newHandler().Handle(context.Background(), cmd)
+		_, err := manager.newHandler().Handle(context.Background(), cmd)
 
 		require.NoError(t, err)
 	})
@@ -93,7 +93,7 @@ func TestCreateAssetSources_Handle(t *testing.T) {
 			OfficeID:     officeID.String(),
 		}
 
-		err := manager.newHandler().Handle(context.Background(), cmd)
+		_, err := manager.newHandler().Handle(context.Background(), cmd)
 
 		require.Error(t, err)
 		var slugErr httperr.SlugError
@@ -115,7 +115,7 @@ func TestCreateAssetSources_Handle(t *testing.T) {
 			OfficeID:     officeID.String(),
 		}
 
-		err := manager.newHandler().Handle(context.Background(), cmd)
+		_, err := manager.newHandler().Handle(context.Background(), cmd)
 
 		require.Error(t, err)
 		var slugErr httperr.SlugError
@@ -136,7 +136,7 @@ func TestCreateAssetSources_Handle(t *testing.T) {
 			OfficeID:     officeID.String(),
 		}
 
-		err := manager.newHandler().Handle(context.Background(), cmd)
+		_, err := manager.newHandler().Handle(context.Background(), cmd)
 
 		require.Error(t, err)
 		var slugErr httperr.SlugError
@@ -157,7 +157,7 @@ func TestCreateAssetSources_Handle(t *testing.T) {
 			OfficeID:     "invalid-uuid",
 		}
 
-		err := manager.newHandler().Handle(context.Background(), cmd)
+		_, err := manager.newHandler().Handle(context.Background(), cmd)
 
 		require.Error(t, err)
 		var slugErr httperr.SlugError
@@ -181,7 +181,7 @@ func TestCreateAssetSources_Handle(t *testing.T) {
 			OfficeID:      officeID.String(),
 		}
 
-		err := manager.newHandler().Handle(context.Background(), cmd)
+		_, err := manager.newHandler().Handle(context.Background(), cmd)
 
 		require.Error(t, err)
 		var slugErr httperr.SlugError
@@ -209,7 +209,7 @@ func TestCreateAssetSources_Handle(t *testing.T) {
 			Create(mock.Anything, mock.Anything).
 			Return(repoErr)
 
-		err := manager.newHandler().Handle(context.Background(), cmd)
+		_, err := manager.newHandler().Handle(context.Background(), cmd)
 
 		require.Error(t, err)
 

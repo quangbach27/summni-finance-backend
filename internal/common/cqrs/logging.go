@@ -5,11 +5,11 @@ import (
 	"sumni-finance-backend/internal/common/logs"
 )
 
-type commandLoggingDecorator[C any] struct {
-	base CommandHandler[C]
+type commandLoggingDecorator[C any, R any] struct {
+	base CommandHandler[C, R]
 }
 
-func (d commandLoggingDecorator[C]) Handle(ctx context.Context, cmd C) (err error) {
+func (d commandLoggingDecorator[C, R]) Handle(ctx context.Context, cmd C) (result R, err error) {
 	handlerType := generateActionName(cmd)
 
 	logger := logs.FromContext(ctx).With(

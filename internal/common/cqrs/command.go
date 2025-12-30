@@ -6,14 +6,14 @@ import (
 	"strings"
 )
 
-func ApplyCommandDecorators[C any](handler CommandHandler[C]) CommandHandler[C] {
-	return commandLoggingDecorator[C]{
+func ApplyCommandDecorators[C any, R any](handler CommandHandler[C, R]) CommandHandler[C, R] {
+	return commandLoggingDecorator[C, R]{
 		base: handler,
 	}
 }
 
-type CommandHandler[C any] interface {
-	Handle(ctx context.Context, cmd C) error
+type CommandHandler[C any, R any] interface {
+	Handle(ctx context.Context, cmd C) (R, error)
 }
 
 func generateActionName(handler any) string {

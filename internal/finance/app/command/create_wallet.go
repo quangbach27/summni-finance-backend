@@ -13,6 +13,10 @@ import (
 	"github.com/google/uuid"
 )
 
+type CreateWalletResult struct {
+	WalletID string `json:"walletId"`
+}
+
 type CreateWalletCmd struct {
 	Name         string
 	CurrencyCode string
@@ -27,7 +31,7 @@ type CreateWalletAllocation struct {
 	OfficeID      string
 }
 
-type CreateWalletHandler cqrs.CommandHandler[CreateWalletCmd]
+type CreateWalletHandler cqrs.CommandHandler[CreateWalletCmd, CreateWalletResult]
 
 type createWalletHandler struct {
 	walletRepo      wallet.Repository
@@ -44,9 +48,9 @@ func NewCreateWalletHandler(
 	})
 }
 
-func (handler *createWalletHandler) Handle(ctx context.Context, cmd CreateWalletCmd) error {
+func (handler *createWalletHandler) Handle(ctx context.Context, cmd CreateWalletCmd) (CreateWalletResult, error) {
 	if len(cmd.Allocations) == 0 {
-		return httperr.NewIncorrectInputError(
+		return CreateWalletResult{}, httperr.NewIncorrectInputError(
 			errors.New("wallet must have at least one allocation"),
 			"missing-allocation",
 		)
@@ -54,19 +58,21 @@ func (handler *createWalletHandler) Handle(ctx context.Context, cmd CreateWallet
 
 	allocationDomainList, err := handler.buildAllocationListDomain(ctx, cmd.Allocations)
 	if err != nil {
-		return httperr.NewIncorrectInputError(err, "fail-to-build-allocation")
+		return CreateWalletResult{}, httperr.NewIncorrectInputError(err, "fail-to-build-allocation")
 	}
 
 	walletDomain, err := handler.buildWalletDomain(cmd, allocationDomainList)
 	if err != nil {
-		return httperr.NewIncorrectInputError(err, "fail-to-build-wallet")
+		return CreateWalletResult{}, httperr.NewIncorrectInputError(err, "fail-to-build-wallet")
 	}
 
 	if err = handler.walletRepo.Create(ctx, walletDomain); err != nil {
-		return httperr.NewUnknowError(err, "persist-wallet-failed")
+		return CreateWalletResult{}, httperr.NewUnknowError(err, "persist-wallet-failed")
 	}
 
-	return nil
+	return CreateWalletResult{
+		WalletID: walletDomain.ID().String(),
+	}, nil
 }
 
 func (handler *createWalletHandler) buildAllocationListDomain(ctx context.Context, allocationItems []CreateWalletAllocation) ([]*wallet.Allocation, error) {

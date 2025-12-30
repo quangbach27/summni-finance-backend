@@ -31,7 +31,7 @@ type FinanceWallet struct {
 }
 
 type FinanceWalletsAllocation struct {
-	AssetSourceID uuid.UUID
+	AssetsourceID uuid.UUID
 	WalletID      uuid.UUID
 	Amount        int64
 }

@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createWallet = `-- name: CreateWallet :exec
@@ -45,7 +46,78 @@ func (q *Queries) CreateWallet(ctx context.Context, arg CreateWalletParams) erro
 }
 
 type CreateWalletsAllocationBatchParams struct {
-	AssetSourceID uuid.UUID
+	AssetsourceID uuid.UUID
 	WalletID      uuid.UUID
 	Amount        int64
+}
+
+const getWalletsWithAllocationsByOfficeID = `-- name: GetWalletsWithAllocationsByOfficeID :many
+SELECT 
+    w.id,
+    w.wallet_name,
+    w.currency_code,
+    w.balance,
+    w.is_strict_mode,
+    w.office_id,
+    a.id as assetsource_id,
+    a.owner_id,
+    a.assetsource_name,
+    a.balance,
+    a.source_type,
+    a.currency_code,
+    wa.amount
+FROM finance.wallets w
+    LEFT JOIN finance.wallets_allocation wa ON w.id = wa.wallet_id 
+    LEFT JOIN finance.asset_sources a ON a.id = wa.assetsource_id
+WHERE w.office_id = $1
+`
+
+type GetWalletsWithAllocationsByOfficeIDRow struct {
+	ID              uuid.UUID
+	WalletName      string
+	CurrencyCode    string
+	Balance         int64
+	IsStrictMode    bool
+	OfficeID        uuid.UUID
+	AssetsourceID   pgtype.UUID
+	OwnerID         pgtype.UUID
+	AssetsourceName pgtype.Text
+	Balance_2       pgtype.Int8
+	SourceType      pgtype.Text
+	CurrencyCode_2  pgtype.Text
+	Amount          pgtype.Int8
+}
+
+func (q *Queries) GetWalletsWithAllocationsByOfficeID(ctx context.Context, officeID uuid.UUID) ([]GetWalletsWithAllocationsByOfficeIDRow, error) {
+	rows, err := q.db.Query(ctx, getWalletsWithAllocationsByOfficeID, officeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetWalletsWithAllocationsByOfficeIDRow
+	for rows.Next() {
+		var i GetWalletsWithAllocationsByOfficeIDRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.WalletName,
+			&i.CurrencyCode,
+			&i.Balance,
+			&i.IsStrictMode,
+			&i.OfficeID,
+			&i.AssetsourceID,
+			&i.OwnerID,
+			&i.AssetsourceName,
+			&i.Balance_2,
+			&i.SourceType,
+			&i.CurrencyCode_2,
+			&i.Amount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

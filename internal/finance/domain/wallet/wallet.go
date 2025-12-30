@@ -64,6 +64,7 @@ func NewWallet(
 		name:         name,
 		currency:     currency,
 		isStrictMode: isStrictMode,
+		officeID:     officeID,
 		allocations:  allocations,
 	}, nil
 }

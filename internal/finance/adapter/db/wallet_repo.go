@@ -70,7 +70,7 @@ func (repo *walletRepository) Create(ctx context.Context, wallet *wallet.Wallet)
 	allocationParams := make([]store.CreateWalletsAllocationBatchParams, 0, len(wallet.Allocations()))
 	for _, allocation := range wallet.Allocations() {
 		allocationParams = append(allocationParams, store.CreateWalletsAllocationBatchParams{
-			AssetSourceID: uuid.UUID(allocation.AssetSourceID()),
+			AssetsourceID: uuid.UUID(allocation.AssetSourceID()),
 			WalletID:      uuid.UUID(wallet.ID()),
 			Amount:        allocation.Amount().Amount(),
 		})

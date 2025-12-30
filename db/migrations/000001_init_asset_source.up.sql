@@ -32,14 +32,14 @@ CREATE TABLE finance.wallets(
 
 -- 4. CREATE TABLE assetsource_wallet (Junction Table)
 CREATE TABLE finance.wallets_allocation(
-    asset_source_id uuid NOT NULL,
+    assetsource_id uuid NOT NULL,
     wallet_id uuid NOT NULL,
     amount bigint NOT NULL,
 
-    PRIMARY KEY (asset_source_id, wallet_id),
+    PRIMARY KEY (assetsource_id, wallet_id),
 
     CONSTRAINT fk_assetsource
-        FOREIGN KEY (asset_source_id)
+        FOREIGN KEY (assetsource_id)
             REFERENCES finance.asset_sources (id)
             ON DELETE CASCADE,
 

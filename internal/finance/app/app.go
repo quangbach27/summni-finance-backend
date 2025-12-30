@@ -17,4 +17,5 @@ type Commands struct {
 
 type Queries struct {
 	GetAssetSourceHandler query.GetAssetSourceHandler
+	GetWalletListHandler  query.GetWalletListHandler
 }

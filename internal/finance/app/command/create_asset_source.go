@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"log/slog"
 	"sumni-finance-backend/internal/common/cqrs"
 	"sumni-finance-backend/internal/common/server/httperr"
 	"sumni-finance-backend/internal/common/valueobject"
@@ -24,7 +25,11 @@ type CreateAssetSourceCmd struct {
 type CreateAssetSourceItem struct {
 }
 
-type CreateAssetSourceHandler cqrs.CommandHandler[CreateAssetSourceCmd]
+type CreateAssetSourceResult struct {
+	AssetSourceId string `json:"assetSourceId"`
+}
+
+type CreateAssetSourceHandler cqrs.CommandHandler[CreateAssetSourceCmd, CreateAssetSourceResult]
 
 type createAssetSourceHandler struct {
 	assetsourceRepo assetsource.Repository
@@ -34,17 +39,20 @@ func NewCreateAssetSourceHandler(assetsourceRepo assetsource.Repository) CreateA
 	return cqrs.ApplyCommandDecorators(&createAssetSourceHandler{assetsourceRepo: assetsourceRepo})
 }
 
-func (h *createAssetSourceHandler) Handle(ctx context.Context, cmd CreateAssetSourceCmd) (err error) {
+func (h *createAssetSourceHandler) Handle(ctx context.Context, cmd CreateAssetSourceCmd) (CreateAssetSourceResult, error) {
 	assetSource, err := h.buildAssetSource(cmd)
 	if err != nil {
-		return httperr.NewIncorrectInputError(err, "fail-to-create-asset-source")
+		return CreateAssetSourceResult{}, httperr.NewIncorrectInputError(err, "fail-to-create-asset-source")
 	}
 
 	if err = h.assetsourceRepo.Create(ctx, assetSource); err != nil {
-		return httperr.NewUnknowError(err, "failed-to-save-asset-source")
+		return CreateAssetSourceResult{}, httperr.NewUnknowError(err, "failed-to-save-asset-source")
 	}
 
-	return nil
+	slog.Info(assetSource.ID().String())
+	return CreateAssetSourceResult{
+		AssetSourceId: assetSource.ID().String(),
+	}, nil
 }
 
 func (h *createAssetSourceHandler) buildAssetSource(cmd CreateAssetSourceCmd) (*assetsource.AssetSource, error) {

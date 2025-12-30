@@ -17,3 +17,7 @@ packages:
   sumni-finance-backend/internal/finance/domain/wallet:
     interfaces:
       Repository:
+  sumni-finance-backend/internal/finance/app/query:
+    interfaces:
+      WalletReadModel:
+  

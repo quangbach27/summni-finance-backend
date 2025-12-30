@@ -23,6 +23,11 @@ func NewApplication(connPool *pgxpool.Pool) (app.Application, error) {
 		return app.Application{}, err
 	}
 
+	walletReadModel, err := db.NewWalletReadModel(queries)
+	if err != nil {
+		return app.Application{}, err
+	}
+
 	return app.Application{
 		Commands: app.Commands{
 			CreateAssetSourceHandler: command.NewCreateAssetSourceHandler(assetSourceRepo),
@@ -30,6 +35,7 @@ func NewApplication(connPool *pgxpool.Pool) (app.Application, error) {
 		},
 		Queries: app.Queries{
 			GetAssetSourceHandler: query.NewGetAssetSoureHandler(),
+			GetWalletListHandler:  query.NewGetWalletListHandler(walletReadModel),
 		},
 	}, nil
 }

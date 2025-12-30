@@ -41,7 +41,7 @@ func TestCreateWalletHandler_Handle(t *testing.T) {
 		}
 
 		// When
-		err := m.NewHandler().Handle(t.Context(), cmd)
+		_, err := m.NewHandler().Handle(t.Context(), cmd)
 
 		// Then
 		assertHttpError(t, err, "missing-allocation", nil)
@@ -61,7 +61,7 @@ func TestCreateWalletHandler_Handle(t *testing.T) {
 		}
 
 		// When
-		err := m.NewHandler().Handle(t.Context(), cmd)
+		_, err := m.NewHandler().Handle(t.Context(), cmd)
 
 		// Then
 		assertHttpError(t, err, "fail-to-build-allocation", nil)
@@ -91,7 +91,7 @@ func TestCreateWalletHandler_Handle(t *testing.T) {
 		}
 
 		// When
-		err := m.NewHandler().Handle(t.Context(), cmd)
+		_, err := m.NewHandler().Handle(t.Context(), cmd)
 
 		// Then
 		assertHttpError(t, err, "fail-to-build-allocation", errAssetSourceNotFound)
@@ -132,7 +132,7 @@ func TestCreateWalletHandler_Handle(t *testing.T) {
 			Return(assetSource, nil)
 
 		// When
-		wantErr := m.NewHandler().Handle(t.Context(), cmd)
+		_, wantErr := m.NewHandler().Handle(t.Context(), cmd)
 
 		// Then
 		assertHttpError(t, wantErr, "fail-to-build-wallet", nil)
@@ -181,7 +181,7 @@ func TestCreateWalletHandler_Handle(t *testing.T) {
 		}
 
 		// When
-		err = m.NewHandler().Handle(t.Context(), cmd)
+		_, err = m.NewHandler().Handle(t.Context(), cmd)
 
 		// Then
 		assertHttpError(t, err, "persist-wallet-failed", errPersist)
@@ -230,7 +230,7 @@ func TestCreateWalletHandler_Handle(t *testing.T) {
 		}
 
 		// When
-		err = m.NewHandler().Handle(t.Context(), cmd)
+		_, err = m.NewHandler().Handle(t.Context(), cmd)
 
 		// Then
 		assert.NoError(t, err)

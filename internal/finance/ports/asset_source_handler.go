@@ -44,15 +44,16 @@ func (h *financeHandler) CreateAssetSources(w http.ResponseWriter, r *http.Reque
 		OfficeID:      req.OfficeID,
 	}
 
-	err := h.app.Commands.CreateAssetSourceHandler.Handle(r.Context(), cmd)
+	result, err := h.app.Commands.CreateAssetSourceHandler.Handle(r.Context(), cmd)
 	if err != nil {
 		httperr.RespondWithSlugError(err, w, r)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	render.JSON(w, r, map[string]any{
+	render.JSON(w, r, envelop{
 		"status": "created",
+		"data":   result,
 	})
 }
 

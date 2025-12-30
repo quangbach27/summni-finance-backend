@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+type envelop map[string]any
 type FinanceHandlerInterface interface {
 	// AssetSource
 	CreateAssetSources(http.ResponseWriter, *http.Request)
@@ -14,6 +15,7 @@ type FinanceHandlerInterface interface {
 
 	// Wallet
 	CreateWallet(http.ResponseWriter, *http.Request)
+	GetAllWallets(http.ResponseWriter, *http.Request)
 }
 
 type financeHandler struct {
@@ -34,6 +36,7 @@ func HandleFinanceFromMux(r chi.Router, handler FinanceHandlerInterface) http.Ha
 
 	r.Route("/v1/wallets", func(r chi.Router) {
 		r.Post("/", handler.CreateWallet)
+		r.Get("/", handler.GetAllWallets)
 	})
 
 	return r

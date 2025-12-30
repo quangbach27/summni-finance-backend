@@ -9,6 +9,8 @@ import (
 )
 
 func TestGetConfig_Singleton(t *testing.T) {
+	t.Parallel()
+
 	const goroutines = 20
 	var wg sync.WaitGroup
 	wg.Add(goroutines)

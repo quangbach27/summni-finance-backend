@@ -14,6 +14,8 @@ import (
 
 func TestValidator_Err(t *testing.T) {
 	t.Run("Should return error when checks fail", func(t *testing.T) {
+		t.Parallel()
+
 		v := validator.New()
 
 		// Test Check and Fluent Interface (fluent methods should return the validator)
@@ -24,6 +26,8 @@ func TestValidator_Err(t *testing.T) {
 	})
 
 	t.Run("Should return nil when no checks fail", func(t *testing.T) {
+		t.Parallel()
+
 		v := validator.New()
 
 		// All checks pass
@@ -34,6 +38,8 @@ func TestValidator_Err(t *testing.T) {
 	})
 
 	t.Run("Should enforce single error per field", func(t *testing.T) {
+		t.Parallel()
+
 		v := validator.New()
 
 		v.Check(false, "field1", "first error").
@@ -50,6 +56,8 @@ func TestValidator_Err(t *testing.T) {
 // --- 2. Test Helper Checkers (Required, MinLength, MaxLength, IsEmail) ---
 func TestValidator_Required(t *testing.T) {
 	t.Run("Should fail on empty string", func(t *testing.T) {
+		t.Parallel()
+
 		v := validator.New()
 
 		v.Required("", "name") // Should fail
@@ -57,6 +65,8 @@ func TestValidator_Required(t *testing.T) {
 	})
 
 	t.Run("Should pass on non-empty string", func(t *testing.T) {
+		t.Parallel()
+
 		v := validator.New()
 		v.Required("test", "name") // Should pass
 		assert.NoError(t, v.Err(), "Required incorrectly failed for non-empty string")
@@ -65,12 +75,16 @@ func TestValidator_Required(t *testing.T) {
 
 func TestValidator_MinLength(t *testing.T) {
 	t.Run("Should fail when value is too short", func(t *testing.T) {
+		t.Parallel()
+
 		v := validator.New()
 		v.MinLength("abc", "code", 4) // Fail (length 3 < 4)
 		assert.Error(t, v.Err(), "MinLength failed to detect short string")
 	})
 
 	t.Run("Should pass when value meets minimum length", func(t *testing.T) {
+		t.Parallel()
+
 		v := validator.New()
 		v.MinLength("abcd", "code", 4) // Pass
 		assert.NoError(t, v.Err(), "MinLength incorrectly failed for exact length")
@@ -79,12 +93,16 @@ func TestValidator_MinLength(t *testing.T) {
 
 func TestValidator_MaxLength(t *testing.T) {
 	t.Run("Should fail when value is too long", func(t *testing.T) {
+		t.Parallel()
+
 		v := validator.New()
 		v.MaxLength("abcd", "code", 3) // Fail (length 4 > 3)
 		assert.Error(t, v.Err(), "MaxLength failed to detect long string")
 	})
 
 	t.Run("Should pass when value meets maximum length", func(t *testing.T) {
+		t.Parallel()
+
 		v := validator.New()
 		v.MaxLength("abc", "code", 3) // Pass
 		assert.NoError(t, v.Err(), "MaxLength incorrectly failed for exact length")
@@ -125,6 +143,8 @@ func TestValidator_IsEmail(t *testing.T) {
 // --- 3. Test TryMerge Functionality ---
 func TestValidator_TryMerge(t *testing.T) {
 	t.Run("Merge Success: Merges nested errors", func(t *testing.T) {
+		t.Parallel()
+
 		// Use require to ensure setup passes
 		v := validator.New()
 		v.Required("", "base_field")
@@ -153,6 +173,8 @@ func TestValidator_TryMerge(t *testing.T) {
 	})
 
 	t.Run("Merge Failure: Non-validation error", func(t *testing.T) {
+		t.Parallel()
+
 		v := validator.New()
 
 		// 1. Create a non-validation error
@@ -167,6 +189,8 @@ func TestValidator_TryMerge(t *testing.T) {
 	})
 
 	t.Run("Merge Success: Nil error", func(t *testing.T) {
+		t.Parallel()
+
 		v := validator.New()
 
 		// Perform the merge with nil
@@ -181,11 +205,15 @@ func TestValidator_TryMerge(t *testing.T) {
 
 func TestValidator_Matches(t *testing.T) {
 	t.Run("Should match regex", func(t *testing.T) {
+		t.Parallel()
+
 		rx := regexp.MustCompile("^a.*c$")
 		assert.True(t, validator.Matches("abc", rx), "Matches failed for a matching string")
 	})
 
 	t.Run("Should not match regex", func(t *testing.T) {
+		t.Parallel()
+
 		rx := regexp.MustCompile("^a.*c$")
 		assert.False(t, validator.Matches("abd", rx), "Matches incorrectly passed for a non-matching string")
 	})
@@ -195,10 +223,14 @@ func TestValidator_In(t *testing.T) {
 	list := []string{"red", "green", "blue"}
 
 	t.Run("Should find existing value", func(t *testing.T) {
+		t.Parallel()
+
 		assert.True(t, validator.In("green", list...), "In failed for an existing value")
 	})
 
 	t.Run("Should not find non-existing value", func(t *testing.T) {
+		t.Parallel()
+
 		assert.False(t, validator.In("yellow", list...), "In incorrectly passed for a non-existing value")
 	})
 }

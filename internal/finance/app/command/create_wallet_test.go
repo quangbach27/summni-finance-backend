@@ -33,6 +33,8 @@ func (m *createWalletManager) NewHandler() command.CreateWalletHandler {
 
 func TestCreateWalletHandler_Handle(t *testing.T) {
 	t.Run("No Alocations", func(t *testing.T) {
+		t.Parallel()
+
 		// Given
 		m := NewCreateWalletManager(t)
 
@@ -48,6 +50,8 @@ func TestCreateWalletHandler_Handle(t *testing.T) {
 	})
 
 	t.Run("Invalid AssetSoourceID", func(t *testing.T) {
+		t.Parallel()
+
 		// Given
 		m := NewCreateWalletManager(t)
 
@@ -68,6 +72,8 @@ func TestCreateWalletHandler_Handle(t *testing.T) {
 	})
 
 	t.Run("Asset source not found", func(t *testing.T) {
+		t.Parallel()
+
 		// Given
 		m := NewCreateWalletManager(t)
 
@@ -98,6 +104,8 @@ func TestCreateWalletHandler_Handle(t *testing.T) {
 	})
 
 	t.Run("Invalid currency code", func(t *testing.T) {
+		t.Parallel()
+
 		// Given
 		m := NewCreateWalletManager(t)
 
@@ -139,6 +147,8 @@ func TestCreateWalletHandler_Handle(t *testing.T) {
 	})
 
 	t.Run("Wallet repository create failed", func(t *testing.T) {
+		t.Parallel()
+
 		// Given
 		m := NewCreateWalletManager(t)
 
@@ -188,6 +198,8 @@ func TestCreateWalletHandler_Handle(t *testing.T) {
 	})
 
 	t.Run("Successful creation", func(t *testing.T) {
+		t.Parallel()
+
 		// Given
 		m := NewCreateWalletManager(t)
 

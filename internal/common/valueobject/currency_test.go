@@ -53,6 +53,8 @@ func TestNewCurrency(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			got, err := valueobject.NewCurrency(tt.input)
 
 			if tt.expectError {
@@ -96,6 +98,8 @@ func TestCurrency_Equal(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			got := tt.base.Equal(tt.other)
 			assert.Equal(t, tt.want, got)
 		})
@@ -104,11 +108,15 @@ func TestCurrency_Equal(t *testing.T) {
 
 func TestCurrency_IsZero(t *testing.T) {
 	t.Run("True for zero value", func(t *testing.T) {
+		t.Parallel()
+
 		c := valueobject.Currency{}
 		assert.True(t, c.IsZero())
 	})
 
 	t.Run("False for initialized value", func(t *testing.T) {
+		t.Parallel()
+
 		c := valueobject.USD
 		assert.False(t, c.IsZero())
 	})

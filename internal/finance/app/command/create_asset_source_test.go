@@ -30,6 +30,8 @@ func (manager *CreateAssetSourcesManager) newHandler() command.CreateAssetSource
 
 func TestCreateAssetSources_Handle(t *testing.T) {
 	t.Run("should successfully create cash asset source", func(t *testing.T) {
+		t.Parallel()
+
 		manager := NewCreateAssetSourcesManager(t)
 		ownerID := uuid.New()
 		officeID := uuid.New()
@@ -54,6 +56,8 @@ func TestCreateAssetSources_Handle(t *testing.T) {
 	})
 
 	t.Run("should successfully create bank asset source", func(t *testing.T) {
+		t.Parallel()
+
 		manager := NewCreateAssetSourcesManager(t)
 		ownerID := uuid.New()
 		officeID := uuid.New()
@@ -80,6 +84,8 @@ func TestCreateAssetSources_Handle(t *testing.T) {
 	})
 
 	t.Run("should return error when source type is invalid", func(t *testing.T) {
+		t.Parallel()
+
 		manager := NewCreateAssetSourcesManager(t)
 		ownerID := uuid.New()
 		officeID := uuid.New()
@@ -102,6 +108,8 @@ func TestCreateAssetSources_Handle(t *testing.T) {
 	})
 
 	t.Run("should return error when currency code is invalid", func(t *testing.T) {
+		t.Parallel()
+
 		manager := NewCreateAssetSourcesManager(t)
 		ownerID := uuid.New()
 		officeID := uuid.New()
@@ -124,6 +132,8 @@ func TestCreateAssetSources_Handle(t *testing.T) {
 	})
 
 	t.Run("should return error when owner ID is invalid", func(t *testing.T) {
+		t.Parallel()
+
 		manager := NewCreateAssetSourcesManager(t)
 		officeID := uuid.New()
 
@@ -145,6 +155,8 @@ func TestCreateAssetSources_Handle(t *testing.T) {
 	})
 
 	t.Run("should return error when office ID is invalid", func(t *testing.T) {
+		t.Parallel()
+
 		manager := NewCreateAssetSourcesManager(t)
 		ownerID := uuid.New()
 
@@ -166,6 +178,8 @@ func TestCreateAssetSources_Handle(t *testing.T) {
 	})
 
 	t.Run("should return error when bank name is missing", func(t *testing.T) {
+		t.Parallel()
+
 		manager := NewCreateAssetSourcesManager(t)
 		ownerID := uuid.New()
 		officeID := uuid.New()
@@ -190,6 +204,8 @@ func TestCreateAssetSources_Handle(t *testing.T) {
 	})
 
 	t.Run("should return error when repositoryCreate fails", func(t *testing.T) {
+		t.Parallel()
+
 		manager := NewCreateAssetSourcesManager(t)
 		ownerID := uuid.New()
 		officeID := uuid.New()

@@ -43,6 +43,8 @@ func TestNewMoney(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			got, err := valueobject.NewMoney(tc.amount, tc.currency)
 
 			if tc.expectError {
@@ -95,6 +97,8 @@ func TestMoney_Add(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			got, err := tt.base.Add(tt.other)
 
 			if tt.expectError {
@@ -165,6 +169,8 @@ func TestMoney_Subtract(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			got, err := tt.base.Subtract(tt.other)
 
 			if tt.expectError {
@@ -217,6 +223,8 @@ func TestMoney_LessOrEqualThan(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			got := tt.base.LessOrEqualThan(tt.other)
 
 			assert.Equal(t, tt.want, got)

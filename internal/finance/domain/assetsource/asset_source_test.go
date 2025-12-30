@@ -25,6 +25,8 @@ var (
 
 func TestAssetSource_NewID(t *testing.T) {
 	t.Run("invalid ID", func(t *testing.T) {
+		t.Parallel()
+
 		//Given
 		assetSourceID := "invalid_id"
 
@@ -37,6 +39,8 @@ func TestAssetSource_NewID(t *testing.T) {
 	})
 
 	t.Run("valid ID", func(t *testing.T) {
+		t.Parallel()
+
 		// Given
 		assetSourceID := uuid.New().String()
 
@@ -144,6 +148,8 @@ func TestAssetSource_NewBankAssetSource(t *testing.T) {
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			asset, err := assetsource.NewBankAssetSource(
 				tt.inputOwnerID,
 				"name",
@@ -234,6 +240,8 @@ func TestAssetSource_NewCashAssetSource(t *testing.T) {
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			asset, err := assetsource.NewCashAssetSource(
 				tt.inputOwnerID,
 				"name",
@@ -275,6 +283,8 @@ func TestAssetSource_GetterValues(t *testing.T) {
 
 	// 2. Test Case 1: Bank Asset (with BankDetails)
 	t.Run("BankAsset Getters", func(t *testing.T) {
+		t.Parallel()
+
 		bankAsset, err := assetsource.NewBankAssetSource(
 			expectedOwnerID,
 			"name",
@@ -301,6 +311,8 @@ func TestAssetSource_GetterValues(t *testing.T) {
 
 	// 3. Test Case 2: Cash Asset (without BankDetails)
 	t.Run("CashAsset Getters", func(t *testing.T) {
+		t.Parallel()
+
 		cashAsset, err := assetsource.NewCashAssetSource(
 			expectedOwnerID,
 			"name",
@@ -373,6 +385,8 @@ func TestSourceType_NewSourceTypeFromStr(t *testing.T) {
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			got, err := assetsource.NewSourceTypeFromStr(tt.input)
 
 			if tt.wantErr {
@@ -389,10 +403,14 @@ func TestSourceType_NewSourceTypeFromStr(t *testing.T) {
 
 func TestSourceType_Getter(t *testing.T) {
 	t.Run("CashType Code", func(t *testing.T) {
+		t.Parallel()
+
 		assert.Equal(t, "CASH", assetsource.CashType.Code(), "CashType Code() should return 'CASH'")
 	})
 
 	t.Run("BankType Code", func(t *testing.T) {
+		t.Parallel()
+
 		assert.Equal(t, "BANK", assetsource.BankType.Code(), "BankType Code() should return 'BANK'")
 	})
 }
@@ -402,11 +420,15 @@ func TestSourceType_IsZero(t *testing.T) {
 	var zeroSourceType assetsource.SourceType
 
 	t.Run("Non-Zero Constants", func(t *testing.T) {
+		t.Parallel()
+
 		assert.False(t, assetsource.CashType.IsZero(), "CashType should not be zero")
 		assert.False(t, assetsource.BankType.IsZero(), "BankType should not be zero")
 	})
 
 	t.Run("Zero Value", func(t *testing.T) {
+		t.Parallel()
+
 		assert.True(t, zeroSourceType.IsZero(), "Zero-initialized SourceType should be zero")
 	})
 }

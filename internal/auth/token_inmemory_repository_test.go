@@ -46,6 +46,8 @@ func TestInMemoryAuthRepository(t *testing.T) {
 	})
 
 	t.Run("should delete token successfully", func(t *testing.T) {
+		t.Parallel()
+
 		authRepo, _ := auth.NewInMemoryTokenRepository()
 		sessionID := "session-to-delete"
 		token := &oauth2.Token{AccessToken: "secret"}
@@ -65,6 +67,8 @@ func TestInMemoryAuthRepository(t *testing.T) {
 }
 
 func TestInmemoryAuthRepository_Race(t *testing.T) {
+	t.Parallel()
+
 	authRepo, err := auth.NewInMemoryTokenRepository()
 	require.NoError(t, err)
 

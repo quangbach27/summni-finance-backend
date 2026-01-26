@@ -6,8 +6,6 @@ import (
 	"sumni-finance-backend/internal/common/db"
 	"sumni-finance-backend/internal/common/logs"
 	"sumni-finance-backend/internal/common/server"
-	financePorts "sumni-finance-backend/internal/finance/ports"
-	financeService "sumni-finance-backend/internal/finance/service"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
@@ -17,7 +15,7 @@ func main() {
 	logs.Init()
 	ctx := context.Background()
 
-	connPool := db.MustNewPgConnectionPool(ctx)
+	_ = db.MustNewPgConnectionPool(ctx)
 
 	// TODO: Uncomment when enable authentication
 	/*
@@ -33,8 +31,6 @@ func main() {
 			os.Exit(1)
 		}
 	*/
-
-	financeApplication := financeService.NewApplication(connPool)
 
 	server.RunHTTPServer(func(router chi.Router) http.Handler {
 		// HealthCheck
@@ -56,11 +52,6 @@ func main() {
 				protectedRoute.Use(authHandler.AuthMiddleware)
 			*/
 
-			// Finance Port
-			financePorts.HandleFinanceFromMux(
-				protectedRoute,
-				financePorts.NewFinanceHandler(financeApplication),
-			)
 		})
 
 		return router

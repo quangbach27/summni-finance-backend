@@ -28,10 +28,10 @@ func TestNewMoney(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name:        "Failure: Negative amount",
+			name:        "Success: Negative amount",
 			amount:      -100,
 			currency:    valueobject.KRW,
-			expectError: true,
+			expectError: false,
 		},
 		{
 			name:        "Failure: Missing currency",
@@ -41,16 +41,16 @@ func TestNewMoney(t *testing.T) {
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			got, err := valueobject.NewMoney(tc.amount, tc.currency)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := valueobject.NewMoney(tt.amount, tt.currency)
 
-			if tc.expectError {
+			if tt.expectError {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, tc.amount, got.Amount())
-				assert.Equal(t, tc.currency, got.Currency())
+				assert.Equal(t, tt.amount, got.Amount())
+				assert.Equal(t, tt.currency, got.Currency())
 			}
 		})
 	}
@@ -148,11 +148,11 @@ func TestMoney_Subtract(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name:        "Failure: Result negative",
+			name:        "Sucess: Result negative",
 			base:        usd100,
 			other:       usd150,
-			wantAmount:  0,
-			expectError: true,
+			wantAmount:  -50,
+			expectError: false,
 		},
 		{
 			name:        "Failure: Different currencies",
@@ -218,6 +218,147 @@ func TestMoney_LessOrEqualThan(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.base.LessOrEqualThan(tt.other)
+
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestMoney_LessThan(t *testing.T) {
+	// Setup fixtures
+	usd150, _ := valueobject.NewMoney(150, valueobject.USD)
+	usd100, _ := valueobject.NewMoney(100, valueobject.USD)
+	krw1000, _ := valueobject.NewMoney(1000, valueobject.KRW)
+
+	tests := []struct {
+		name  string
+		base  valueobject.Money
+		other valueobject.Money
+		want  bool
+	}{
+		{
+			name:  "True: 100 < 150",
+			base:  usd100,
+			other: usd150,
+			want:  true,
+		},
+		{
+			name:  "False: 100 < 100",
+			base:  usd100,
+			other: usd100,
+			want:  false,
+		},
+		{
+			name:  "False: 150 < 100",
+			base:  usd150,
+			other: usd100,
+			want:  false,
+		},
+		{
+			name:  "False: Different currencies",
+			base:  usd100,
+			other: krw1000,
+			want:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.base.LessThan(tt.other)
+
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestMoney_GreaterThan(t *testing.T) {
+	// Setup fixtures
+	usd150, _ := valueobject.NewMoney(150, valueobject.USD)
+	usd100, _ := valueobject.NewMoney(100, valueobject.USD)
+	krw1000, _ := valueobject.NewMoney(1000, valueobject.KRW)
+
+	tests := []struct {
+		name  string
+		base  valueobject.Money
+		other valueobject.Money
+		want  bool
+	}{
+		{
+			name:  "True: 150 > 100",
+			base:  usd150,
+			other: usd100,
+			want:  true,
+		},
+		{
+			name:  "False: 100 > 100",
+			base:  usd100,
+			other: usd100,
+			want:  false,
+		},
+		{
+			name:  "False: 100 > 150",
+			base:  usd100,
+			other: usd150,
+			want:  false,
+		},
+		{
+			name:  "False: Different currencies",
+			base:  usd100,
+			other: krw1000,
+			want:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.base.GreaterThan(tt.other)
+
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestMoney_GreaterOrEqualThan(t *testing.T) {
+	// Setup fixtures
+	usd150, _ := valueobject.NewMoney(150, valueobject.USD)
+	usd100, _ := valueobject.NewMoney(100, valueobject.USD)
+	krw1000, _ := valueobject.NewMoney(1000, valueobject.KRW)
+
+	tests := []struct {
+		name  string
+		base  valueobject.Money
+		other valueobject.Money
+		want  bool
+	}{
+		{
+			name:  "True: 150 >= 100",
+			base:  usd150,
+			other: usd100,
+			want:  true,
+		},
+		{
+			name:  "True: 100 >= 100",
+			base:  usd100,
+			other: usd100,
+			want:  true,
+		},
+		{
+			name:  "False: 100 >= 150",
+			base:  usd100,
+			other: usd150,
+			want:  false,
+		},
+		{
+			name:  "False: Different currencies",
+			base:  usd100,
+			other: krw1000,
+			want:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.base.GreaterOrEqualThan(tt.other)
 
 			assert.Equal(t, tt.want, got)
 		})

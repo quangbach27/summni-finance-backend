@@ -37,8 +37,8 @@ func (m Money) IsZero() bool { return m == Money{} }
 // Add sums two money objects.
 func (m Money) Add(other Money) (Money, error) {
 	// 1. Allow adding Zero (No error needed)
-	if other.IsZero() || other.amount == 0 {
-		return m, nil
+	if other.IsZero() {
+		return Money{}, errors.New("empty input money when adding")
 	}
 
 	// 2. Validate Currency
@@ -68,6 +68,10 @@ func (m Money) Subtract(other Money) (Money, error) {
 		amount:   m.amount - other.amount,
 		currency: m.currency,
 	}, nil
+}
+
+func (m Money) IsNegative() bool {
+	return m.amount < 0
 }
 
 // LessOrEqualThan compares amounts.

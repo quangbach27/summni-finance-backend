@@ -148,7 +148,7 @@ func TestMoney_Subtract(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name:        "Sucess: Result negative",
+			name:        "Success: Result negative",
 			base:        usd100,
 			other:       usd150,
 			wantAmount:  -50,

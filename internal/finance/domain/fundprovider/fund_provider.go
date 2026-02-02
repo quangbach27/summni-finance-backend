@@ -19,16 +19,14 @@ type FundProvider struct {
 	balance          valueobject.Money
 	currency         valueobject.Currency
 	fundProviderType FundProviderType
-	allocation       Allocation
 
 	providerDetails ProviderDetails
-	aggVerion       int32
+	version         int32
 }
 
 func NewFundProvider(
 	balance valueobject.Money,
 	fundProviderType FundProviderType,
-	allocation Allocation,
 	options ProviderDetailsOptions,
 ) (*FundProvider, error) {
 	v := validator.New()
@@ -55,7 +53,6 @@ func NewFundProvider(
 		balance:          balance,
 		currency:         balance.Currency(),
 		fundProviderType: fundProviderType,
-		allocation:       allocation,
 		providerDetails:  providerDetails,
 	}, nil
 }
@@ -64,58 +61,24 @@ func (f *FundProvider) ID() uuid.UUID                      { return f.id }
 func (f *FundProvider) Balance() valueobject.Money         { return f.balance }
 func (f *FundProvider) Currency() valueobject.Currency     { return f.currency }
 func (f *FundProvider) FundProviderType() FundProviderType { return f.fundProviderType }
-func (f *FundProvider) Allocation() Allocation             { return f.allocation }
-func (f *FundProvider) AggVersion() int32                  { return f.aggVerion }
-
-func (f *FundProvider) AllocateToWallet(
-	walletID uuid.UUID,
-	amount valueobject.Money,
-) error {
-	newAllocation, err := f.allocation.Allocate(walletID, amount)
-	if err != nil {
-		return err
-	}
-
-	if newAllocation.totalAllocated.GreaterThan(f.balance) {
-		return ErrInsufficientBalance
-	}
-
-	f.allocation = newAllocation
-
-	return nil
-}
+func (f *FundProvider) Version() int32                     { return f.version }
 
 func (f *FundProvider) TopUp(
-	walletID uuid.UUID,
 	amount valueobject.Money,
 ) error {
-	// Update balance
 	newBalance, err := f.balance.Add(amount)
 	if err != nil {
 		return err
 	}
 
-	// Update allocation
-	newAllocation, err := f.allocation.IncreaseAllocation(walletID, amount)
-	if err != nil {
-		return err
-	}
-
-	if newAllocation.totalAllocated.GreaterThan(f.balance) {
-		return ErrInsufficientBalance
-	}
-
 	f.balance = newBalance
-	f.allocation = newAllocation
 
 	return nil
 }
 
 func (f *FundProvider) Withdraw(
-	walletID uuid.UUID,
 	amount valueobject.Money,
 ) error {
-	// Update balance
 	newBalance, err := f.balance.Subtract(amount)
 	if err != nil {
 		return err
@@ -125,14 +88,7 @@ func (f *FundProvider) Withdraw(
 		return ErrInsufficientBalance
 	}
 
-	// Update Allocation
-	newAllocation, err := f.allocation.DecreaseAllocation(walletID, amount)
-	if err != nil {
-		return err
-	}
-
 	f.balance = newBalance
-	f.allocation = newAllocation
 
 	return nil
 }

@@ -50,3 +50,7 @@ migrate-status:
 
 sqlc-generate:
 	sqlc generate -f ./internal/$(DOMAIN)/adapter/db/store/sqlc.yml
+
+.PHONY: openapi_http
+openapi_http:
+	@./scripts/openapi-http.sh $(SERVICE) $(OUTPUT) $(PACKAGE)

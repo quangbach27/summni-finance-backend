@@ -8,7 +8,6 @@ run:
   go: "1.17"
   relative-path-mode: wd
 linters:
-  
   default: none
   enable:
     - asciicheck
@@ -47,9 +46,6 @@ linters:
           - noctx
           - unparam
         path: _test\.go
-      - linters:
-          - gosec
-        path: fixtures.go
       - path: (.+)\.go$
         text: composite literal uses unkeyed fields
     paths:

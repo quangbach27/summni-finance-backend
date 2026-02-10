@@ -1,8 +1,12 @@
 package wallet
 
-import "context"
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
 
 type Repository interface {
-	
+	GetByID(ctx context.Context, wID uuid.UUID) (*Wallet, error)
 	Create(ctx context.Context, wallet *Wallet) error
 }

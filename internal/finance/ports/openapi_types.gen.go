@@ -18,8 +18,8 @@ type CreateFundProviderRequest struct {
 
 // CreateWalletRequest defines model for CreateWalletRequest.
 type CreateWalletRequest struct {
-	// Allocation List of fund provider allocations
-	Allocation []ProviderAllocation `json:"allocation"`
+	// Allocations List of fund provider allocations
+	Allocations []ProviderAllocation `json:"allocations"`
 
 	// Currency Currency code (e.g., USD, VND, KRW)
 	Currency string `json:"currency"`

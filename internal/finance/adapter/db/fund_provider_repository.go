@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"errors"
+	"sumni-finance-backend/internal/common/valueobject"
 	"sumni-finance-backend/internal/finance/adapter/db/store"
 	"sumni-finance-backend/internal/finance/domain/fundprovider"
 
@@ -24,7 +25,37 @@ func NewFundProviderRepository(queries *store.Queries) (*fundProviderRepository,
 }
 
 func (r *fundProviderRepository) GetByID(ctx context.Context, fpID uuid.UUID) (*fundprovider.FundProvider, error) {
-	return nil, nil
+	model, err := r.queries.GetFundProviderByID(ctx, fpID)
+	if err != nil {
+		return nil, err
+	}
+
+	currency, err := valueobject.NewCurrency(model.Currency)
+	if err != nil {
+		return nil, err
+	}
+
+	balance, err := valueobject.NewMoney(model.Balance, currency)
+	if err != nil {
+		return nil, err
+	}
+
+	availableAmount, err := valueobject.NewMoney(int64(model.AvailableAmount), currency)
+	if err != nil {
+		return nil, err
+	}
+
+	fundProvider, err := fundprovider.UnmarshallFundProviderFromDatabase(
+		model.ID,
+		balance,
+		availableAmount,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return fundProvider, nil
 }
 
 func (r *fundProviderRepository) Create(ctx context.Context, fundProvider *fundprovider.FundProvider) error {

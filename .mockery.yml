@@ -14,3 +14,6 @@ packages:
   sumni-finance-backend/internal/finance/domain/fundprovider:
     interfaces:
       Repository:
+  sumni-finance-backend/internal/finance/domain/wallet:
+    interfaces:
+      Repository:

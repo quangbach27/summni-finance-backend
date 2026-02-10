@@ -58,18 +58,29 @@ func httpRespondWithError(err error, slug string, w http.ResponseWriter, r *http
 		logger.Warn(logMSg)
 	}
 
-	resp := ErrorResponse{slug, status, logMSg, requestID}
+	resp := ErrorResponse{
+		RequestID: requestID,
+		Error: ErrorDetail{
+			Slug:    slug,
+			Message: logMSg,
+		},
+		httpStatus: status,
+	}
 
 	if err := render.Render(w, r, resp); err != nil {
 		logger.Error("failed to render resp: " + err.Error())
 	}
 }
 
+type ErrorDetail struct {
+	Slug    string `json:"slug"`
+	Message string `json:"message"`
+}
+
 type ErrorResponse struct {
-	Slug       string `json:"slug"`
+	RequestID  string      `json:"request_id"`
+	Error      ErrorDetail `json:"error"`
 	httpStatus int
-	Message    string `json:"message"`
-	RequestID  string `json:"request_id"`
 }
 
 func (e ErrorResponse) Render(w http.ResponseWriter, r *http.Request) error {

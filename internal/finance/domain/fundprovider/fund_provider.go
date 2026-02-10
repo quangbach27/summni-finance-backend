@@ -26,7 +26,7 @@ func NewFundProvider(
 	balance valueobject.Money,
 ) (*FundProvider, error) {
 	if balance.IsZero() {
-		return nil, errors.New("balance is requried")
+		return nil, errors.New("balance is required")
 	}
 
 	if balance.Amount() < 0 {

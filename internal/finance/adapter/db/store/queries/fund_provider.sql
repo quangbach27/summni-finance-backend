@@ -16,7 +16,11 @@ SELECT
     id,
     balance,
     currency,
-    version
-FROM finance.fund_providers
-WHERE id = $1;
+    version,
+    fp.balance - COALESCE(SUM(fpa.allocated_amount), 0) as available_amount
+FROM finance.fund_providers fp
+    LEFT JOIN finance.fund_provider_allocation fpa
+        ON fp.id = fpa.fund_provider_id
+WHERE id = $1
+GROUP BY fp.id;
 

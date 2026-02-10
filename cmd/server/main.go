@@ -57,7 +57,6 @@ func main() {
 				protectedRoute.Use(authHandler.AuthMiddleware)
 			*/
 			ports.HandlerFromMux(financeHttpServer, protectedRoute)
-
 		})
 
 		return router

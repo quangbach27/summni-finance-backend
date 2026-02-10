@@ -22,6 +22,7 @@ var (
 type Wallet struct {
 	id      uuid.UUID
 	balance valueobject.Money
+	version int32
 
 	providerManager *ProviderManager
 }
@@ -44,6 +45,7 @@ func NewWallet(currency valueobject.Currency) (*Wallet, error) {
 	return &Wallet{
 		id:      id,
 		balance: balance,
+		version: 0,
 		providerManager: &ProviderManager{
 			providers: make(map[uuid.UUID]ProviderAllocation),
 		},
@@ -53,6 +55,7 @@ func NewWallet(currency valueobject.Currency) (*Wallet, error) {
 func UnmarshalWalletFromDatabase(
 	id uuid.UUID,
 	balance valueobject.Money,
+	version int32,
 	providerAllocations []ProviderAllocation,
 ) (*Wallet, error) {
 	v := validator.New()
@@ -82,12 +85,15 @@ func UnmarshalWalletFromDatabase(
 	return &Wallet{
 		id:              id,
 		balance:         balance,
+		version:         version,
 		providerManager: providerManager,
 	}, nil
 }
 
+func (w *Wallet) ID() uuid.UUID                     { return w.id }
 func (w *Wallet) Balance() valueobject.Money        { return w.balance }
 func (w *Wallet) ProviderManager() *ProviderManager { return w.providerManager }
+func (w *Wallet) Version() int32                    { return w.version }
 
 func (w *Wallet) AddFundProvider(
 	fundProvider *fundprovider.FundProvider,

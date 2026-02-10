@@ -47,19 +47,32 @@ SELECT
     id,
     balance,
     currency,
-    version
-FROM finance.fund_providers
+    version,
+    fp.balance - COALESCE(SUM(fpa.allocated_amount), 0) as available_amount
+FROM finance.fund_providers fp
+    LEFT JOIN finance.fund_provider_allocation fpa
+        ON fp.id = fpa.fund_provider_id
 WHERE id = $1
+GROUP BY fp.id
 `
 
-func (q *Queries) GetFundProviderByID(ctx context.Context, id uuid.UUID) (FinanceFundProvider, error) {
+type GetFundProviderByIDRow struct {
+	ID              uuid.UUID
+	Balance         int64
+	Currency        string
+	Version         int32
+	AvailableAmount int32
+}
+
+func (q *Queries) GetFundProviderByID(ctx context.Context, id uuid.UUID) (GetFundProviderByIDRow, error) {
 	row := q.db.QueryRow(ctx, getFundProviderByID, id)
-	var i FinanceFundProvider
+	var i GetFundProviderByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.Balance,
 		&i.Currency,
 		&i.Version,
+		&i.AvailableAmount,
 	)
 	return i, err
 }

@@ -15,6 +15,14 @@ type ProviderAllocation struct {
 	allocated    valueobject.Money
 }
 
+func (pa ProviderAllocation) FundProvider() *fundprovider.FundProvider {
+	return pa.fundProvider
+}
+
+func (pa ProviderAllocation) Allocated() valueobject.Money {
+	return pa.allocated
+}
+
 func NewProviderAllocation(
 	fundProvider *fundprovider.FundProvider,
 	allocated valueobject.Money,
@@ -36,6 +44,16 @@ func NewProviderAllocation(
 
 type ProviderManager struct {
 	providers map[uuid.UUID]ProviderAllocation
+}
+
+func (m *ProviderManager) GetFundProviderAllocations() []ProviderAllocation {
+	providerAllocations := make([]ProviderAllocation, 0, len(m.providers))
+
+	for _, provider := range m.providers {
+		providerAllocations = append(providerAllocations, provider)
+	}
+
+	return providerAllocations
 }
 
 func NewProviderManager(allocations []ProviderAllocation) (*ProviderManager, error) {

@@ -96,7 +96,7 @@ components:
       type: object
       required:
         - currency
-        - allocation
+        - allocations
       properties:
         currency:
           type: string
@@ -105,7 +105,7 @@ components:
           pattern: "^[a-zA-Z]{3}$"
           minLength: 3
           maxLength: 3
-        allocation:
+        allocations:
           type: array
           description: List of fund provider allocations
           minItems: 1
@@ -140,16 +140,25 @@ components:
 
     ErrorResponse:
       type: object
+      required:
+        - request_id
+        - error
       properties:
-        slug:
-          type: string
-          description: Error slug identifier
-          example: "invalid-currency"
-        message:
-          type: string
-          description: Human-readable error message
-          example: "Currency code must be 3 uppercase letters"
         request_id:
           type: string
           description: Request identifier for tracking
           example: "abc123xyz"
+        error:
+          type: object
+          required:
+            - slug
+            - message
+          properties:
+            slug:
+              type: string
+              description: Error slug identifier
+              example: "invalid-currency"
+            message:
+              type: string
+              description: Human-readable error message
+              example: "Currency code must be 3 uppercase letters"

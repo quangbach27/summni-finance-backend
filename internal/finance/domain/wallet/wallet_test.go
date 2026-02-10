@@ -56,6 +56,7 @@ func TestWallet_AddFundProvider(t *testing.T) {
 		walletDomain, err := wallet.UnmarshalWalletFromDatabase(
 			uuid.New(),
 			walletBalance,
+			0,
 			[]wallet.ProviderAllocation{providerAllocation1},
 		)
 		require.NoError(t, err)
@@ -82,6 +83,7 @@ func TestWallet_AddFundProvider(t *testing.T) {
 		walletDomain, err := wallet.UnmarshalWalletFromDatabase(
 			uuid.New(),
 			walletBalance,
+			0,
 			[]wallet.ProviderAllocation{providerAllocation1},
 		)
 		require.NoError(t, err)
@@ -110,6 +112,7 @@ func TestWallet_AddFundProvider(t *testing.T) {
 		walletDomain, err := wallet.UnmarshalWalletFromDatabase(
 			uuid.New(),
 			walletBalance,
+			0,
 			[]wallet.ProviderAllocation{providerAllocation1},
 		)
 		require.NoError(t, err)
@@ -138,6 +141,7 @@ func TestWallet_AddFundProvider(t *testing.T) {
 		walletDomain, err := wallet.UnmarshalWalletFromDatabase(
 			uuid.New(),
 			walletBalance,
+			0,
 			[]wallet.ProviderAllocation{providerAllocation1},
 		)
 		require.NoError(t, err)

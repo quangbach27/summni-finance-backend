@@ -109,3 +109,7 @@ func (m Money) GreaterOrEqualThan(other Money) bool {
 
 	return m.amount >= other.amount
 }
+
+func (m Money) Equal(other Money) bool {
+	return m.amount == other.amount && m.currency == other.currency
+}

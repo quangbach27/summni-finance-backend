@@ -1,4 +1,4 @@
-package wallet
+package fundprovider
 
 import (
 	"errors"
@@ -18,6 +18,8 @@ type FundProvider struct {
 	id                           uuid.UUID
 	balance                      valueobject.Money
 	availableAmountForAllocation valueobject.Money
+
+	version int32
 }
 
 func NewFundProvider(
@@ -40,6 +42,7 @@ func NewFundProvider(
 		id:                           id,
 		balance:                      balance,
 		availableAmountForAllocation: balance,
+		version:                      0,
 	}, nil
 }
 
@@ -70,6 +73,7 @@ func (p *FundProvider) Balance() valueobject.Money { return p.balance }
 func (p *FundProvider) AvailableAmountForAllocation() valueobject.Money {
 	return p.availableAmountForAllocation
 }
+func (p *FundProvider) Verions() int32 { return p.version }
 
 func (p *FundProvider) TopUp(amount valueobject.Money) error {
 	if !p.isAmountCurrencyValid(amount.Currency()) {

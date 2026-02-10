@@ -5,22 +5,23 @@ import (
 	"fmt"
 	"sumni-finance-backend/internal/common/validator"
 	"sumni-finance-backend/internal/common/valueobject"
+	"sumni-finance-backend/internal/finance/domain/fundprovider"
 
 	"github.com/google/uuid"
 )
 
 type ProviderAllocation struct {
-	fundProvider *FundProvider
+	fundProvider *fundprovider.FundProvider
 	allocated    valueobject.Money
 }
 
 func NewProviderAllocation(
-	fundProvider *FundProvider,
+	fundProvider *fundprovider.FundProvider,
 	allocated valueobject.Money,
 ) (ProviderAllocation, error) {
 	v := validator.New()
 
-	v.Check(fundProvider != nil && *fundProvider != FundProvider{}, "fundProvider", "fundProvider is required")
+	v.Check(fundProvider != nil, "fundProvider", "fundProvider is required")
 	v.Check(!allocated.IsZero(), "allocated", "allocated is required")
 
 	if err := v.Err(); err != nil {
@@ -63,7 +64,7 @@ func NewProviderManager(allocations []ProviderAllocation) (*ProviderManager, err
 }
 
 func (m ProviderManager) AddAndAllocate(
-	fundProvider *FundProvider,
+	fundProvider *fundprovider.FundProvider,
 	allocated valueobject.Money,
 ) error {
 	if fundProvider == nil || allocated.IsZero() {
@@ -91,7 +92,7 @@ func (m ProviderManager) HasFundProvider(fID uuid.UUID) bool {
 	return exist
 }
 
-func (m ProviderManager) GetFundProvider(fID uuid.UUID) *FundProvider {
+func (m ProviderManager) GetFundProvider(fID uuid.UUID) *fundprovider.FundProvider {
 	if providerAllocation, exist := m.providers[fID]; exist {
 		return providerAllocation.fundProvider
 	}

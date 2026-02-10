@@ -2,6 +2,7 @@ package wallet_test
 
 import (
 	"sumni-finance-backend/internal/common/valueobject"
+	"sumni-finance-backend/internal/finance/domain/fundprovider"
 	"sumni-finance-backend/internal/finance/domain/wallet"
 	"testing"
 
@@ -24,7 +25,7 @@ func TestWallet_AddFundProvider(t *testing.T) {
 		walletDomain, err := wallet.NewWallet(valueobject.USD)
 		require.NoError(t, err)
 
-		err = walletDomain.AddFundProvider(&wallet.FundProvider{}, assertNewMoney(t, 100, valueobject.USD))
+		err = walletDomain.AddFundProvider(&fundprovider.FundProvider{}, assertNewMoney(t, 100, valueobject.USD))
 		require.Error(t, err)
 		assert.ErrorIs(t, err, wallet.ErrCurrencyMismatch)
 	})
@@ -34,7 +35,7 @@ func TestWallet_AddFundProvider(t *testing.T) {
 		require.NoError(t, err)
 
 		err = walletDomain.AddFundProvider(
-			&wallet.FundProvider{},
+			&fundprovider.FundProvider{},
 			valueobject.Money{},
 		)
 
@@ -121,7 +122,7 @@ func TestWallet_AddFundProvider(t *testing.T) {
 		// When
 		err = walletDomain.AddFundProvider(newFundProvider, newAllocated)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, wallet.ErrInsufficientAvailable)
+		assert.ErrorIs(t, err, fundprovider.ErrInsufficientAvailable)
 	})
 
 	t.Run("should success when provider have enough available amount and provider does not exist", func(t *testing.T) {
@@ -172,10 +173,10 @@ func TestWallet_AddFundProvider(t *testing.T) {
 	})
 }
 
-func assertNewFundProvider(t *testing.T, balance valueobject.Money) *wallet.FundProvider {
+func assertNewFundProvider(t *testing.T, balance valueobject.Money) *fundprovider.FundProvider {
 	t.Helper()
 
-	fundProvider, err := wallet.NewFundProvider(balance)
+	fundProvider, err := fundprovider.NewFundProvider(balance)
 	require.NoError(t, err, "newFundProvider should not have error")
 
 	return fundProvider

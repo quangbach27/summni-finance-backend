@@ -25,8 +25,8 @@ services:
     environment:
       DEBUG: "${DEBUG:-false}"
       GOCACHE: /go-cache
-    # depends_on:
-    # - sumni-finance-db
+    depends_on:
+    - sumni-finance-db
     # - keycloak
 
   sumni-finance-db:

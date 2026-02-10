@@ -4,8 +4,15 @@ import (
 	"errors"
 	"sumni-finance-backend/internal/common/validator"
 	"sumni-finance-backend/internal/common/valueobject"
+	"sumni-finance-backend/internal/finance/domain/fundprovider"
 
 	"github.com/google/uuid"
+)
+
+var (
+	ErrCurrencyMismatch      = errors.New("currency mismatch")
+	ErrInsufficientBalance   = errors.New("insufficient balance")
+	ErrInsufficientAvailable = errors.New("insufficient available amount")
 )
 
 var (
@@ -83,14 +90,18 @@ func (w *Wallet) Balance() valueobject.Money        { return w.balance }
 func (w *Wallet) ProviderManager() *ProviderManager { return w.providerManager }
 
 func (w *Wallet) AddFundProvider(
-	provider *FundProvider,
+	fundProvider *fundprovider.FundProvider,
 	allocated valueobject.Money,
 ) error {
-	if !w.isCurrencyValidForAllocation(provider, allocated) {
+	if fundProvider == nil || allocated.IsZero() {
+		return errors.New("FundProvider or allocated is required")
+	}
+
+	if !w.isCurrencyValidForAllocation(fundProvider, allocated) {
 		return ErrCurrencyMismatch
 	}
 
-	err := w.providerManager.AddAndAllocate(provider, allocated)
+	err := w.providerManager.AddAndAllocate(fundProvider, allocated)
 	if err != nil {
 		return err
 	}
@@ -107,6 +118,6 @@ func (w *Wallet) AddFundProvider(
 
 func (w *Wallet) walletCurrency() valueobject.Currency { return w.balance.Currency() }
 
-func (w *Wallet) isCurrencyValidForAllocation(fundProvider *FundProvider, allocated valueobject.Money) bool {
-	return fundProvider.balance.Currency().Equal(w.walletCurrency()) && allocated.Currency().Equal(w.walletCurrency())
+func (w *Wallet) isCurrencyValidForAllocation(fundProvider *fundprovider.FundProvider, allocated valueobject.Money) bool {
+	return fundProvider.Balance().Currency().Equal(w.walletCurrency()) && allocated.Currency().Equal(w.walletCurrency())
 }

@@ -2,6 +2,7 @@ package fundprovider
 
 import (
 	"errors"
+	"fmt"
 	"sumni-finance-backend/internal/common/validator"
 	"sumni-finance-backend/internal/common/valueobject"
 
@@ -10,80 +11,118 @@ import (
 
 var (
 	ErrCurrencyMismatch      = errors.New("currency mismatch")
-	ErrInsufficientBalance   = errors.New("insufficient balance")
-	ErrInsufficientAvailable = errors.New("insufficient available amount")
+	ErrInsufficientBalance   = errors.New("balance amount must be greater or equal 0")
+	ErrInsufficientAvailable = errors.New("available amount must be greater or equal 0")
+	ErrInsufficientAmount    = errors.New("amount must be greater or equal 0")
 )
 
 type FundProvider struct {
-	id                           uuid.UUID
-	balance                      valueobject.Money
-	availableAmountForAllocation valueobject.Money
+	id                 uuid.UUID
+	balance            valueobject.Money
+	unallocatedBalance valueobject.Money
 
 	version int32
 }
 
 func NewFundProvider(
-	balance valueobject.Money,
-) (*FundProvider, error) {
-	if balance.IsZero() {
-		return nil, errors.New("balance is required")
-	}
-
-	if balance.Amount() < 0 {
-		return nil, errors.New("balance must be positive or equal zero")
-	}
-
-	id, err := uuid.NewV7()
-	if err != nil {
-		return nil, err
-	}
-
-	return &FundProvider{
-		id:                           id,
-		balance:                      balance,
-		availableAmountForAllocation: balance,
-		version:                      0,
-	}, nil
-}
-
-func UnmarshallFundProviderFromDatabase(
-	id uuid.UUID,
-	balance valueobject.Money,
-	availableAmountForAllocation valueobject.Money,
-	version int32,
+	initBalanceAmount int64,
+	currencyCode string,
 ) (*FundProvider, error) {
 	v := validator.New()
 
-	v.Check(id != uuid.Nil, "id", "id is required")
-	v.Check(!balance.IsZero(), "balance", "balance is required")
-	v.Check(!availableAmountForAllocation.IsZero(), "availableAmountForAllocation", "availableAmountForAllocation is required")
+	v.Check(initBalanceAmount >= 0, "initBalance", "initBalance must be greater or equal than 0")
+	v.Required(currencyCode, "currency")
 
 	if err := v.Err(); err != nil {
 		return nil, err
 	}
 
+	currency, err := valueobject.NewCurrency(currencyCode)
+	if err != nil {
+		return nil, err
+	}
+
+	initBalance, err := valueobject.NewMoney(initBalanceAmount, currency)
+	if err != nil {
+		return nil, err
+	}
+
+	id, err := uuid.NewV7()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create fundProviderID: %w", err)
+	}
+
 	return &FundProvider{
-		id:                           id,
-		balance:                      balance,
-		availableAmountForAllocation: availableAmountForAllocation,
-		version:                      version,
+		id:                 id,
+		balance:            initBalance,
+		unallocatedBalance: initBalance,
+		version:            0,
 	}, nil
 }
 
-func (p *FundProvider) ID() uuid.UUID                  { return p.id }
-func (p *FundProvider) Balance() valueobject.Money     { return p.balance }
-func (p *FundProvider) Currency() valueobject.Currency { return p.balance.Currency() }
-func (p *FundProvider) AvailableAmountForAllocation() valueobject.Money {
-	return p.availableAmountForAllocation
-}
-func (p *FundProvider) Verions() int32 { return p.version }
+func UnmarshallFundProviderFromDatabase(
+	id uuid.UUID,
+	balanceAmount int64,
+	unallocatedBalanceAmount int64,
+	currencyCode string,
+	version int32,
+) (*FundProvider, error) {
+	v := validator.New()
 
-func (p *FundProvider) TopUp(amount valueobject.Money) error {
-	if !p.isAmountValid(amount.Currency()) {
-		return ErrCurrencyMismatch
+	v.Check(id != uuid.Nil, "id", "id is required")
+	v.Check(balanceAmount >= 0, "balance", "balance must greater or equal than 0")
+	v.Check(unallocatedBalanceAmount >= 0, "unallocatedBalance", "unallocatedBalance must greater or equal than 0")
+	v.Check(balanceAmount >= unallocatedBalanceAmount, "unallocatedBalanceAmount", "unallocatedBalanceAmount must smaller than provider balance")
+	v.Check(version >= 0, "version", "version must greater or equal than 0")
+
+	if err := v.Err(); err != nil {
+		return nil, err
 	}
 
-	newBalance, err := p.balance.Add(amount)
+	currency, err := valueobject.NewCurrency(currencyCode)
+	if err != nil {
+		return nil, err
+	}
+
+	balance, err := valueobject.NewMoney(balanceAmount, currency)
+	if err != nil {
+		return nil, err
+	}
+
+	unallocatedBalance, err := valueobject.NewMoney(unallocatedBalanceAmount, currency)
+	if err != nil {
+		return nil, err
+	}
+
+	return &FundProvider{
+		id:                 id,
+		balance:            balance,
+		unallocatedBalance: unallocatedBalance,
+		version:            version,
+	}, nil
+}
+
+func (p *FundProvider) ID() uuid.UUID                         { return p.id }
+func (p *FundProvider) Balance() valueobject.Money            { return p.balance }
+func (p *FundProvider) Currency() valueobject.Currency        { return p.balance.Currency() }
+func (p *FundProvider) UnallocatedBalance() valueobject.Money { return p.unallocatedBalance }
+func (p *FundProvider) Version() int32                        { return p.version }
+func (p *FundProvider) AllocatedBalance() valueobject.Money {
+	allocatedBalance, _ := p.balance.Subtract(p.unallocatedBalance)
+	return allocatedBalance
+}
+
+func (p *FundProvider) TopUp(amount int64) error {
+	if amount <= 0 {
+		return ErrInsufficientAmount
+	}
+
+	topupMoney, err := valueobject.NewMoney(amount, p.Currency())
+	if err != nil {
+		return err
+	}
+
+	newBalance, err := p.balance.Add(topupMoney)
 	if err != nil {
 		return err
 	}
@@ -92,16 +131,17 @@ func (p *FundProvider) TopUp(amount valueobject.Money) error {
 	return nil
 }
 
-func (p *FundProvider) Withdraw(amount valueobject.Money) error {
-	if !p.isAmountValid(amount.Currency()) {
-		return ErrCurrencyMismatch
+func (p *FundProvider) Withdraw(amount int64) error {
+	if amount <= 0 || amount > p.AllocatedBalance().Amount() {
+		return ErrInsufficientAmount
 	}
 
-	if amount.GreaterThan(p.balance) {
-		return ErrInsufficientBalance
+	withdrawMoney, err := valueobject.NewMoney(amount, p.Currency())
+	if err != nil {
+		return err
 	}
 
-	newBalance, err := p.balance.Subtract(amount)
+	newBalance, err := p.balance.Subtract(withdrawMoney)
 	if err != nil {
 		return err
 	}
@@ -114,21 +154,22 @@ func (p *FundProvider) Withdraw(amount valueobject.Money) error {
 // It reduces the availableAmountForAllocation by the specified allocatedAmount.
 // Returns ErrInsufficientAvailable if the requested amount exceeds the available balance.
 func (p *FundProvider) Allocate(
-	allocatedAmount valueobject.Money,
+	allocatedAmount int64,
 ) error {
-	if allocatedAmount.GreaterThan(p.availableAmountForAllocation) {
-		return ErrInsufficientAvailable
+	if allocatedAmount < 0 || allocatedAmount > p.unallocatedBalance.Amount() {
+		return ErrInsufficientAmount
 	}
 
-	newAvailableAmount, err := p.availableAmountForAllocation.Subtract(allocatedAmount)
+	allocated, err := valueobject.NewMoney(allocatedAmount, p.Currency())
 	if err != nil {
 		return err
 	}
 
-	p.availableAmountForAllocation = newAvailableAmount
-	return nil
-}
+	newUnallocatedAmount, err := p.unallocatedBalance.Subtract(allocated)
+	if err != nil {
+		return err
+	}
 
-func (p *FundProvider) isAmountValid(currency valueobject.Currency) bool {
-	return p.balance.Currency().Equal(currency)
+	p.unallocatedBalance = newUnallocatedAmount
+	return nil
 }

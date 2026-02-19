@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type CreatFundProviderAllocationParams struct {
@@ -46,4 +47,74 @@ func (q *Queries) CreateWallet(ctx context.Context, arg CreateWalletParams) erro
 		arg.Version,
 	)
 	return err
+}
+
+const getWalletByID = `-- name: GetWalletByID :one
+SELECT
+    id, 
+    balance,
+    currency,
+    version
+FROM finance.wallets
+WHERE id = $1
+`
+
+func (q *Queries) GetWalletByID(ctx context.Context, id uuid.UUID) (FinanceWallet, error) {
+	row := q.db.QueryRow(ctx, getWalletByID, id)
+	var i FinanceWallet
+	err := row.Scan(
+		&i.ID,
+		&i.Balance,
+		&i.Currency,
+		&i.Version,
+	)
+	return i, err
+}
+
+const updateFundProviderAllocation = `-- name: UpdateFundProviderAllocation :exec
+UPDATE finance.fund_provider_allocation
+SET
+    allocated_amount = $1
+WHERE fund_provider_id = $2 AND wallet_id = $3
+`
+
+type UpdateFundProviderAllocationParams struct {
+	AllocatedAmount int64
+	FundProviderID  uuid.UUID
+	WalletID        uuid.UUID
+}
+
+func (q *Queries) UpdateFundProviderAllocation(ctx context.Context, arg UpdateFundProviderAllocationParams) error {
+	_, err := q.db.Exec(ctx, updateFundProviderAllocation, arg.AllocatedAmount, arg.FundProviderID, arg.WalletID)
+	return err
+}
+
+const updateWalletPartial = `-- name: UpdateWalletPartial :execrows
+UPDATE finance.wallets
+SET
+    balance = COALESCE($1, balance),
+    currency = COALESCE($2, currency),
+    version = version + 1
+WHERE id = $3
+  AND version = $4
+`
+
+type UpdateWalletPartialParams struct {
+	Balance  pgtype.Int8
+	Currency pgtype.Text
+	ID       uuid.UUID
+	Version  int32
+}
+
+func (q *Queries) UpdateWalletPartial(ctx context.Context, arg UpdateWalletPartialParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateWalletPartial,
+		arg.Balance,
+		arg.Currency,
+		arg.ID,
+		arg.Version,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }

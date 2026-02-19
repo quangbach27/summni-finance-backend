@@ -124,6 +124,7 @@ func TestCreateWallet_Handle(t *testing.T) {
 			providerID,
 			assertNewMoney(t, 100, valueobject.USD),
 			assertNewMoney(t, 100, valueobject.USD),
+			0,
 		)
 		require.NoError(t, err)
 
@@ -168,6 +169,7 @@ func TestCreateWallet_Handle(t *testing.T) {
 			providerID1,
 			assertNewMoney(t, 100, valueobject.USD),
 			assertNewMoney(t, 100, valueobject.USD),
+			0,
 		)
 		require.NoError(t, err)
 
@@ -175,6 +177,7 @@ func TestCreateWallet_Handle(t *testing.T) {
 			providerID2,
 			assertNewMoney(t, 100, valueobject.USD),
 			assertNewMoney(t, 100, valueobject.USD),
+			0,
 		)
 		require.NoError(t, err)
 
@@ -225,6 +228,7 @@ func TestCreateWallet_Handle(t *testing.T) {
 			providerID,
 			assertNewMoney(t, 100, valueobject.USD),
 			assertNewMoney(t, 100, valueobject.USD),
+			0,
 		)
 		require.NoError(t, err)
 

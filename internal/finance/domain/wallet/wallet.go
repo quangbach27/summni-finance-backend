@@ -10,12 +10,9 @@ import (
 )
 
 var (
-	ErrCurrencyMismatch      = errors.New("currency mismatch")
-	ErrInsufficientBalance   = errors.New("insufficient balance")
-	ErrInsufficientAvailable = errors.New("insufficient available amount")
-)
-
-var (
+	ErrCurrencyMismatch              = errors.New("currency mismatch")
+	ErrInsufficientBalance           = errors.New("insufficient balance")
+	ErrInsufficientAvailable         = errors.New("insufficient available amount")
 	ErrFundProviderAlreadyRegistered = errors.New("fund provider already registered")
 )
 
@@ -56,7 +53,7 @@ func UnmarshalWalletFromDatabase(
 	id uuid.UUID,
 	balance valueobject.Money,
 	version int32,
-	providerAllocations []ProviderAllocation,
+	providerAllocations ...ProviderAllocation,
 ) (*Wallet, error) {
 	v := validator.New()
 
@@ -77,6 +74,12 @@ func UnmarshalWalletFromDatabase(
 	if err != nil {
 		return nil, err
 	}
+	if totalAllocated.IsZero() {
+		totalAllocated, err = valueobject.NewMoney(0, balance.Currency())
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	if !totalAllocated.Equal(balance) {
 		return nil, errors.New("total allocated does not match with wallet balance")
@@ -92,6 +95,7 @@ func UnmarshalWalletFromDatabase(
 
 func (w *Wallet) ID() uuid.UUID                     { return w.id }
 func (w *Wallet) Balance() valueobject.Money        { return w.balance }
+func (w *Wallet) Currency() valueobject.Currency    { return w.balance.Currency() }
 func (w *Wallet) ProviderManager() *ProviderManager { return w.providerManager }
 func (w *Wallet) Version() int32                    { return w.version }
 

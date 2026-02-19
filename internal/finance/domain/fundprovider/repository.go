@@ -9,4 +9,5 @@ import (
 type Repository interface {
 	Create(ctx context.Context, fundProvider *FundProvider) error
 	GetByID(ctx context.Context, fpID uuid.UUID) (*FundProvider, error)
+	GetByIDs(ctx context.Context, fpID []uuid.UUID) ([]*FundProvider, error)
 }

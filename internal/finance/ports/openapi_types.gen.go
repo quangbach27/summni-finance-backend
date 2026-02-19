@@ -7,6 +7,15 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// AllocateFundProviderRequest defines model for AllocateFundProviderRequest.
+type AllocateFundProviderRequest struct {
+	// Providers List of fund provider allocations
+	Providers []ProviderAllocation `json:"providers"`
+
+	// WalletId Wallet unique identifier
+	WalletId openapi_types.UUID `json:"walletId"`
+}
+
 // CreateFundProviderRequest defines model for CreateFundProviderRequest.
 type CreateFundProviderRequest struct {
 	// Balance Initial balance for the fund provider
@@ -33,14 +42,16 @@ type CreateWalletResponse struct {
 
 // ErrorResponse defines model for ErrorResponse.
 type ErrorResponse struct {
-	// Message Human-readable error message
-	Message *string `json:"message,omitempty"`
+	Error struct {
+		// Message Human-readable error message
+		Message string `json:"message"`
+
+		// Slug Error slug identifier
+		Slug string `json:"slug"`
+	} `json:"error"`
 
 	// RequestId Request identifier for tracking
-	RequestId *string `json:"request_id,omitempty"`
-
-	// Slug Error slug identifier
-	Slug *string `json:"slug,omitempty"`
+	RequestId string `json:"request_id"`
 }
 
 // ProviderAllocation defines model for ProviderAllocation.
@@ -57,3 +68,6 @@ type CreateFundProviderJSONRequestBody = CreateFundProviderRequest
 
 // CreateWalletJSONRequestBody defines body for CreateWallet for application/json ContentType.
 type CreateWalletJSONRequestBody = CreateWalletRequest
+
+// AllocateFundProviderJSONRequestBody defines body for AllocateFundProvider for application/json ContentType.
+type AllocateFundProviderJSONRequestBody = AllocateFundProviderRequest

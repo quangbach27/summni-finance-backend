@@ -57,7 +57,7 @@ func TestWallet_AddFundProvider(t *testing.T) {
 			uuid.New(),
 			walletBalance,
 			0,
-			[]wallet.ProviderAllocation{providerAllocation1},
+			providerAllocation1,
 		)
 		require.NoError(t, err)
 
@@ -84,7 +84,7 @@ func TestWallet_AddFundProvider(t *testing.T) {
 			uuid.New(),
 			walletBalance,
 			0,
-			[]wallet.ProviderAllocation{providerAllocation1},
+			providerAllocation1,
 		)
 		require.NoError(t, err)
 
@@ -113,7 +113,7 @@ func TestWallet_AddFundProvider(t *testing.T) {
 			uuid.New(),
 			walletBalance,
 			0,
-			[]wallet.ProviderAllocation{providerAllocation1},
+			providerAllocation1,
 		)
 		require.NoError(t, err)
 
@@ -142,7 +142,7 @@ func TestWallet_AddFundProvider(t *testing.T) {
 			uuid.New(),
 			walletBalance,
 			0,
-			[]wallet.ProviderAllocation{providerAllocation1},
+			providerAllocation1,
 		)
 		require.NoError(t, err)
 

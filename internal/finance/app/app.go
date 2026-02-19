@@ -15,8 +15,9 @@ type Application struct {
 }
 
 type Commands struct {
-	CreateFundProvider command.CreateFundProviderHandler
-	CreateWallet       command.CreateWalletHandler
+	CreateFundProvider   command.CreateFundProviderHandler
+	CreateWallet         command.CreateWalletHandler
+	AllocateFundProvider command.AllocateFundProviderHandler
 }
 
 type Queries struct {
@@ -32,15 +33,16 @@ func NewApplication(
 		panic(err)
 	}
 
-	walletProviderRepo, err := db.NewWalletRepository(quries, pgxPool)
+	walletRepo, err := db.NewWalletRepository(quries, pgxPool)
 	if err != nil {
 		panic(err)
 	}
 
 	return Application{
 		Commands: Commands{
-			CreateFundProvider: cqrs.ApplyCommandDecorators(command.NewCreateFundProviderHandler(fundProviderRepo)),
-			CreateWallet:       cqrs.ApplyCommandDecorators(command.NewCreateWalletHandler(walletProviderRepo, fundProviderRepo)),
+			CreateFundProvider:   cqrs.ApplyCommandDecorators(command.NewCreateFundProviderHandler(fundProviderRepo)),
+			CreateWallet:         cqrs.ApplyCommandDecorators(command.NewCreateWalletHandler(walletRepo, fundProviderRepo)),
+			AllocateFundProvider: cqrs.ApplyCommandDecorators(command.NewAllocateFundProviderHandler(fundProviderRepo, walletRepo)),
 		},
 		Queries: Queries{},
 	}

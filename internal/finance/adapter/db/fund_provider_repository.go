@@ -49,6 +49,7 @@ func (r *fundProviderRepository) GetByID(ctx context.Context, fpID uuid.UUID) (*
 		model.ID,
 		balance,
 		availableAmount,
+		model.Version,
 	)
 
 	if err != nil {
@@ -60,11 +61,16 @@ func (r *fundProviderRepository) GetByID(ctx context.Context, fpID uuid.UUID) (*
 
 func (r *fundProviderRepository) Create(ctx context.Context, fundProvider *fundprovider.FundProvider) error {
 	params := store.CreateFundProviderParams{
-		ID:       fundProvider.ID(),
-		Balance:  fundProvider.Balance().Amount(),
-		Currency: fundProvider.Balance().Currency().Code(),
-		Version:  fundProvider.Verions(),
+		ID:              fundProvider.ID(),
+		Balance:         fundProvider.Balance().Amount(),
+		Currency:        fundProvider.Balance().Currency().Code(),
+		AvailableAmount: fundProvider.AvailableAmountForAllocation().Amount(),
+		Version:         fundProvider.Verions(),
 	}
 
 	return r.queries.CreateFundProvider(ctx, params)
+}
+
+func (r *fundProviderRepository) GetByIDs(ctx context.Context, fpIDs []uuid.UUID) ([]*fundprovider.FundProvider, error) {
+	return nil, nil
 }

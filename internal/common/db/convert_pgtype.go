@@ -12,3 +12,10 @@ func ToPgText(s string) pgtype.Text {
 		Valid:  true,
 	}
 }
+
+func ToPgInt8(value int64) pgtype.Int8 {
+	return pgtype.Int8{
+		Int64: value,
+		Valid: true,
+	}
+}

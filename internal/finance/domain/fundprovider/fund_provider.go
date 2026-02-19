@@ -50,6 +50,7 @@ func UnmarshallFundProviderFromDatabase(
 	id uuid.UUID,
 	balance valueobject.Money,
 	availableAmountForAllocation valueobject.Money,
+	version int32,
 ) (*FundProvider, error) {
 	v := validator.New()
 
@@ -65,18 +66,20 @@ func UnmarshallFundProviderFromDatabase(
 		id:                           id,
 		balance:                      balance,
 		availableAmountForAllocation: availableAmountForAllocation,
+		version:                      version,
 	}, nil
 }
 
-func (p *FundProvider) ID() uuid.UUID              { return p.id }
-func (p *FundProvider) Balance() valueobject.Money { return p.balance }
+func (p *FundProvider) ID() uuid.UUID                  { return p.id }
+func (p *FundProvider) Balance() valueobject.Money     { return p.balance }
+func (p *FundProvider) Currency() valueobject.Currency { return p.balance.Currency() }
 func (p *FundProvider) AvailableAmountForAllocation() valueobject.Money {
 	return p.availableAmountForAllocation
 }
 func (p *FundProvider) Verions() int32 { return p.version }
 
 func (p *FundProvider) TopUp(amount valueobject.Money) error {
-	if !p.isAmountCurrencyValid(amount.Currency()) {
+	if !p.isAmountValid(amount.Currency()) {
 		return ErrCurrencyMismatch
 	}
 
@@ -90,7 +93,7 @@ func (p *FundProvider) TopUp(amount valueobject.Money) error {
 }
 
 func (p *FundProvider) Withdraw(amount valueobject.Money) error {
-	if !p.isAmountCurrencyValid(amount.Currency()) {
+	if !p.isAmountValid(amount.Currency()) {
 		return ErrCurrencyMismatch
 	}
 
@@ -107,6 +110,9 @@ func (p *FundProvider) Withdraw(amount valueobject.Money) error {
 	return nil
 }
 
+// Allocate reserves a portion of the provider's available funds for a wallet.
+// It reduces the availableAmountForAllocation by the specified allocatedAmount.
+// Returns ErrInsufficientAvailable if the requested amount exceeds the available balance.
 func (p *FundProvider) Allocate(
 	allocatedAmount valueobject.Money,
 ) error {
@@ -123,6 +129,6 @@ func (p *FundProvider) Allocate(
 	return nil
 }
 
-func (p *FundProvider) isAmountCurrencyValid(currency valueobject.Currency) bool {
+func (p *FundProvider) isAmountValid(currency valueobject.Currency) bool {
 	return p.balance.Currency().Equal(currency)
 }

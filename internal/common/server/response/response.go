@@ -9,7 +9,13 @@ import (
 
 type Envelop map[string]any
 
-func WriteJSON(w http.ResponseWriter, r *http.Request, status int, data Envelop, headers http.Header) {
+func WriteJSON(
+	w http.ResponseWriter,
+	r *http.Request,
+	status int,
+	data Envelop,
+	headers http.Header,
+) {
 	requestID := middleware.GetReqID(r.Context())
 
 	for key, value := range headers {

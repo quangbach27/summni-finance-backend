@@ -7,7 +7,11 @@ import (
 )
 
 type Repository interface {
-	GetByID(ctx context.Context, wID uuid.UUID) (*Wallet, error)
+	GetByID(
+		ctx context.Context,
+		wID uuid.UUID,
+		fpIDs ...uuid.UUID,
+	) (*Wallet, error)
 	Create(ctx context.Context, wallet *Wallet) error
 	Update(ctx context.Context, wallet *Wallet) error
 }

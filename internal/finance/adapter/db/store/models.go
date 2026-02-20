@@ -9,11 +9,11 @@ import (
 )
 
 type FinanceFundProvider struct {
-	ID              uuid.UUID
-	Balance         int64
-	Currency        string
-	AvailableAmount int64
-	Version         int32
+	ID                uuid.UUID
+	Balance           int64
+	Currency          string
+	UnallocatedAmount int64
+	Version           int32
 }
 
 type FinanceFundProviderAllocation struct {

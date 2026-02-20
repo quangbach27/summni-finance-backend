@@ -1,8 +1,6 @@
 package wallet_test
 
 import (
-	"sumni-finance-backend/internal/common/valueobject"
-	"sumni-finance-backend/internal/finance/domain/fundprovider"
 	"sumni-finance-backend/internal/finance/domain/wallet"
 	"testing"
 
@@ -11,186 +9,116 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestWallet_AddFundProvider(t *testing.T) {
-	t.Run("should fail when fundProvider is nil", func(t *testing.T) {
-		walletDomain, err := wallet.NewWallet(valueobject.USD)
-		require.NoError(t, err)
+func TestNewWallet(t *testing.T) {
+	testCases := []struct {
+		name         string
+		currencyCode string
+		hasErr       bool
+	}{
+		{
+			name:         "cannot init wallet when currency code is empty",
+			currencyCode: "",
+			hasErr:       true,
+		},
+		{
+			name:         "cannot init wallet when currency code is invalid",
+			currencyCode: "INVALID",
+			hasErr:       true,
+		},
+		{
+			name:         "can init wallet success",
+			currencyCode: "USD",
+			hasErr:       false,
+		},
+	}
 
-		err = walletDomain.AddFundProvider(nil, assertNewMoney(t, 100, valueobject.USD))
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "FundProvider or allocated is required")
-	})
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			wallet, err := wallet.NewWallet(tt.currencyCode)
 
-	t.Run("should fail when fundProvider is empty", func(t *testing.T) {
-		walletDomain, err := wallet.NewWallet(valueobject.USD)
-		require.NoError(t, err)
+			if tt.hasErr {
+				require.Error(t, err)
+				assert.Nil(t, wallet)
+			} else {
+				require.NoError(t, err)
 
-		err = walletDomain.AddFundProvider(&fundprovider.FundProvider{}, assertNewMoney(t, 100, valueobject.USD))
-		require.Error(t, err)
-		assert.ErrorIs(t, err, wallet.ErrCurrencyMismatch)
-	})
-
-	t.Run("should fail when allocated amount is empty", func(t *testing.T) {
-		walletDomain, err := wallet.NewWallet(valueobject.USD)
-		require.NoError(t, err)
-
-		err = walletDomain.AddFundProvider(
-			&fundprovider.FundProvider{},
-			valueobject.Money{},
-		)
-
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "FundProvider or allocated is required")
-	})
-
-	t.Run("should failed when provider is exist", func(t *testing.T) {
-		walletBalance := assertNewMoney(t, 10, valueobject.USD)
-
-		// Assume already has allocated fundProvider for wallet
-		newBalanceFundProvider1 := assertNewMoney(t, 100, valueobject.USD)
-		fundProvider1 := assertNewFundProvider(t, newBalanceFundProvider1)
-		allocated1 := walletBalance
-		providerAllocation1, err := wallet.NewProviderAllocation(fundProvider1, allocated1)
-		require.NoError(t, err)
-
-		walletDomain, err := wallet.UnmarshalWalletFromDatabase(
-			uuid.New(),
-			walletBalance,
-			0,
-			providerAllocation1,
-		)
-		require.NoError(t, err)
-
-		// The FundProvider will be allocated
-		newAllocated := assertNewMoney(t, 10, valueobject.USD)
-
-		// When
-		err = walletDomain.AddFundProvider(fundProvider1, newAllocated)
-		require.Error(t, err)
-		assert.ErrorIs(t, err, wallet.ErrFundProviderAlreadyRegistered)
-	})
-
-	t.Run("should failed when allocation mismatch currency with wallet", func(t *testing.T) {
-		walletBalance := assertNewMoney(t, 10, valueobject.USD)
-
-		// Assume already has allocated fundProvider for wallet
-		newBalanceFundProvider1 := assertNewMoney(t, 100, valueobject.USD)
-		fundProvider1 := assertNewFundProvider(t, newBalanceFundProvider1)
-		allocated1 := walletBalance
-		providerAllocation1, err := wallet.NewProviderAllocation(fundProvider1, allocated1)
-		require.NoError(t, err)
-
-		walletDomain, err := wallet.UnmarshalWalletFromDatabase(
-			uuid.New(),
-			walletBalance,
-			0,
-			providerAllocation1,
-		)
-		require.NoError(t, err)
-
-		// The FundProvider will be allocated
-		newFundProviderBalance := assertNewMoney(t, 100, valueobject.USD)
-		newFundProvider := assertNewFundProvider(t, newFundProviderBalance)
-		newAllocated := assertNewMoney(t, 10, valueobject.VND)
-
-		// When
-		err = walletDomain.AddFundProvider(newFundProvider, newAllocated)
-		require.Error(t, err)
-		assert.ErrorIs(t, err, wallet.ErrCurrencyMismatch)
-	})
-
-	t.Run("should failed when provider does not have enough available amount for allocation", func(t *testing.T) {
-		walletBalance := assertNewMoney(t, 10, valueobject.USD)
-
-		// Assume already has allocated fundProvider for wallet
-		newBalanceFundProvider1 := assertNewMoney(t, 100, valueobject.USD)
-		fundProvider1 := assertNewFundProvider(t, newBalanceFundProvider1)
-		allocated1 := walletBalance
-		providerAllocation1, err := wallet.NewProviderAllocation(fundProvider1, allocated1)
-		require.NoError(t, err)
-
-		walletDomain, err := wallet.UnmarshalWalletFromDatabase(
-			uuid.New(),
-			walletBalance,
-			0,
-			providerAllocation1,
-		)
-		require.NoError(t, err)
-
-		// The FundProvider will be allocated
-		newFundProviderBalance := assertNewMoney(t, 100, valueobject.USD)
-		newFundProvider := assertNewFundProvider(t, newFundProviderBalance)
-		newAllocated := assertNewMoney(t, 110, valueobject.USD)
-
-		// When
-		err = walletDomain.AddFundProvider(newFundProvider, newAllocated)
-		require.Error(t, err)
-		assert.ErrorIs(t, err, fundprovider.ErrInsufficientAvailable)
-	})
-
-	t.Run("should success when provider have enough available amount and provider does not exist", func(t *testing.T) {
-		walletBalance := assertNewMoney(t, 10, valueobject.USD)
-
-		// Assume already has allocated fundProvider for wallet
-		newBalanceFundProvider1 := assertNewMoney(t, 100, valueobject.USD)
-		fundProvider1 := assertNewFundProvider(t, newBalanceFundProvider1)
-		allocated1 := walletBalance
-		providerAllocation1, err := wallet.NewProviderAllocation(fundProvider1, allocated1)
-		require.NoError(t, err)
-
-		walletDomain, err := wallet.UnmarshalWalletFromDatabase(
-			uuid.New(),
-			walletBalance,
-			0,
-			providerAllocation1,
-		)
-		require.NoError(t, err)
-
-		// The FundProvider will be allocated
-		newFundProviderBalance := assertNewMoney(t, 100, valueobject.USD)
-		newFundProvider := assertNewFundProvider(t, newFundProviderBalance)
-		newAllocated := assertNewMoney(t, 10, valueobject.USD)
-
-		// When
-		err = walletDomain.AddFundProvider(newFundProvider, newAllocated)
-		require.NoError(t, err)
-
-		// Then
-		// Check wallet balance
-		expectedWalletBalance, err := newAllocated.Add(allocated1)
-		require.NoError(t, err)
-
-		assert.True(t, walletDomain.Balance().Equal(expectedWalletBalance))
-
-		// Check allocation manager
-		// Check total allocated
-		totalAllocated, err := walletDomain.ProviderManager().CalculateTotalProviderAllocated()
-		require.NoError(t, err)
-
-		assert.True(t, totalAllocated.Equal(expectedWalletBalance))
-		assert.True(t, walletDomain.ProviderManager().HasFundProvider(newFundProvider.ID()))
-
-		// Check avaibleBalance of fundProvider
-		expectedAvailableBalance, err := newFundProviderBalance.Subtract(newAllocated)
-		require.NoError(t, err)
-		assert.True(t, walletDomain.ProviderManager().GetFundProvider(newFundProvider.ID()).AvailableAmountForAllocation().Equal(expectedAvailableBalance))
-	})
+				var expectedBalance int64 = 0
+				assert.Equal(t, expectedBalance, wallet.Balance().Amount())
+				assert.Equal(t, tt.currencyCode, wallet.Currency().Code())
+			}
+		})
+	}
 }
+func TestUnmarshalWalletFromDatabase(t *testing.T) {
+	testCases := []struct {
+		name          string
+		id            uuid.UUID
+		balanceAmount int64
+		currencyCode  string
+		hasErr        bool
+	}{
+		{
+			name:   "cannot init wallet when id is empty",
+			id:     uuid.UUID{},
+			hasErr: true,
+		},
+		{
+			name:          "cannot init wallet when balance is negative",
+			id:            uuid.New(),
+			balanceAmount: -10,
+			currencyCode:  "USD",
+			hasErr:        true,
+		},
+		{
+			name:          "can init wallet when balance is zero",
+			id:            uuid.New(),
+			balanceAmount: 0,
+			currencyCode:  "USD",
+			hasErr:        false,
+		},
+		{
+			name:          "cannot init wallet when currency code is empty",
+			id:            uuid.New(),
+			balanceAmount: 0,
+			currencyCode:  "",
+			hasErr:        true,
+		},
+		{
+			name:          "cannot init wallet when currency code is not valid",
+			id:            uuid.New(),
+			balanceAmount: 0,
+			currencyCode:  "INVALID",
+			hasErr:        true,
+		},
+		{
+			name:          "can init wallet success",
+			id:            uuid.New(),
+			balanceAmount: 10,
+			currencyCode:  "USD",
+			hasErr:        false,
+		},
+	}
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			var version int32 = 1
+			wallet, err := wallet.UnmarshalWalletFromDatabase(
+				tt.id,
+				tt.balanceAmount,
+				tt.currencyCode,
+				version,
+			)
 
-func assertNewFundProvider(t *testing.T, balance valueobject.Money) *fundprovider.FundProvider {
-	t.Helper()
+			if tt.hasErr {
+				require.Error(t, err)
+				assert.Nil(t, wallet)
+			} else {
+				require.NoError(t, err)
 
-	fundProvider, err := fundprovider.NewFundProvider(balance)
-	require.NoError(t, err, "newFundProvider should not have error")
-
-	return fundProvider
-}
-
-func assertNewMoney(t *testing.T, amount int64, currency valueobject.Currency) valueobject.Money {
-	t.Helper()
-
-	money, err := valueobject.NewMoney(amount, currency)
-	require.NoError(t, err, "newMoney should not have error")
-
-	return money
+				assert.Equal(t, tt.id, wallet.ID())
+				assert.Equal(t, tt.balanceAmount, wallet.Balance().Amount())
+				assert.Equal(t, tt.currencyCode, wallet.Currency().Code())
+				assert.Equal(t, version, wallet.Version())
+			}
+		})
+	}
 }

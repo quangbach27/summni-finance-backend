@@ -81,30 +81,6 @@ func NewProviderManager(allocations []ProviderAllocation) (*ProviderManager, err
 	}, nil
 }
 
-func (m ProviderManager) AddAndAllocate(
-	fundProvider *fundprovider.FundProvider,
-	allocated valueobject.Money,
-) error {
-	if fundProvider == nil || allocated.IsZero() {
-		return errors.New("FundProvider or allocated is required")
-	}
-
-	if m.HasFundProvider(fundProvider.ID()) {
-		return ErrFundProviderAlreadyRegistered
-	}
-
-	if err := fundProvider.Allocate(allocated); err != nil {
-		return err
-	}
-
-	m.providers[fundProvider.ID()] = ProviderAllocation{
-		fundProvider: fundProvider,
-		allocated:    allocated,
-	}
-
-	return nil
-}
-
 func (m ProviderManager) HasFundProvider(fID uuid.UUID) bool {
 	_, exist := m.providers[fID]
 	return exist
@@ -116,24 +92,4 @@ func (m ProviderManager) GetFundProvider(fID uuid.UUID) *fundprovider.FundProvid
 	}
 
 	return nil
-}
-
-func (m ProviderManager) CalculateTotalProviderAllocated() (valueobject.Money, error) {
-	var total valueobject.Money
-	var err error
-
-	for _, allocation := range m.providers {
-		if !total.IsZero() {
-			total, err = total.Add(allocation.allocated)
-			if err != nil {
-				return valueobject.Money{}, err
-			}
-
-			continue
-		}
-
-		total = allocation.allocated
-	}
-
-	return total, nil
 }

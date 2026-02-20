@@ -4,7 +4,6 @@ import (
 	"errors"
 	"sumni-finance-backend/internal/common/validator"
 	"sumni-finance-backend/internal/common/valueobject"
-	"sumni-finance-backend/internal/finance/domain/fundprovider"
 
 	"github.com/google/uuid"
 )
@@ -24,9 +23,10 @@ type Wallet struct {
 	providerManager *ProviderManager
 }
 
-func NewWallet(currency valueobject.Currency) (*Wallet, error) {
-	if currency.IsZero() {
-		return nil, errors.New("currency is required")
+func NewWallet(currencyCode string) (*Wallet, error) {
+	currency, err := valueobject.NewCurrency(currencyCode)
+	if err != nil {
+		return nil, err
 	}
 
 	id, err := uuid.NewV7()
@@ -51,38 +51,34 @@ func NewWallet(currency valueobject.Currency) (*Wallet, error) {
 
 func UnmarshalWalletFromDatabase(
 	id uuid.UUID,
-	balance valueobject.Money,
+	balanceAmount int64,
+	currencyCode string,
 	version int32,
 	providerAllocations ...ProviderAllocation,
 ) (*Wallet, error) {
 	v := validator.New()
 
 	v.Check(id != uuid.Nil, "id", "id is required")
-	v.Check(!balance.IsZero(), "balance", "balance is required")
-	v.Check(balance.Amount() >= 0, "balance", "balance must be positive")
+	v.Check(balanceAmount >= 0, "balance", "balance must greater or equal than 0")
+	v.Required(currencyCode, "currency")
 
 	if err := v.Err(); err != nil {
+		return nil, err
+	}
+
+	currency, err := valueobject.NewCurrency(currencyCode)
+	if err != nil {
+		return nil, err
+	}
+
+	balance, err := valueobject.NewMoney(balanceAmount, currency)
+	if err != nil {
 		return nil, err
 	}
 
 	providerManager, err := NewProviderManager(providerAllocations)
 	if err != nil {
 		return nil, err
-	}
-
-	totalAllocated, err := providerManager.CalculateTotalProviderAllocated()
-	if err != nil {
-		return nil, err
-	}
-	if totalAllocated.IsZero() {
-		totalAllocated, err = valueobject.NewMoney(0, balance.Currency())
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if !totalAllocated.Equal(balance) {
-		return nil, errors.New("total allocated does not match with wallet balance")
 	}
 
 	return &Wallet{
@@ -98,36 +94,3 @@ func (w *Wallet) Balance() valueobject.Money        { return w.balance }
 func (w *Wallet) Currency() valueobject.Currency    { return w.balance.Currency() }
 func (w *Wallet) ProviderManager() *ProviderManager { return w.providerManager }
 func (w *Wallet) Version() int32                    { return w.version }
-
-func (w *Wallet) AddFundProvider(
-	fundProvider *fundprovider.FundProvider,
-	allocated valueobject.Money,
-) error {
-	if fundProvider == nil || allocated.IsZero() {
-		return errors.New("FundProvider or allocated is required")
-	}
-
-	if !w.isCurrencyValidForAllocation(fundProvider, allocated) {
-		return ErrCurrencyMismatch
-	}
-
-	err := w.providerManager.AddAndAllocate(fundProvider, allocated)
-	if err != nil {
-		return err
-	}
-
-	newBalance, err := w.balance.Add(allocated)
-	if err != nil {
-		return err
-	}
-
-	w.balance = newBalance
-
-	return nil
-}
-
-func (w *Wallet) walletCurrency() valueobject.Currency { return w.balance.Currency() }
-
-func (w *Wallet) isCurrencyValidForAllocation(fundProvider *fundprovider.FundProvider, allocated valueobject.Money) bool {
-	return fundProvider.Balance().Currency().Equal(w.walletCurrency()) && allocated.Currency().Equal(w.walletCurrency())
-}

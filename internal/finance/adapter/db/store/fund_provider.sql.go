@@ -9,7 +9,6 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createFundProvider = `-- name: CreateFundProvider :exec
@@ -17,23 +16,23 @@ INSERT INTO finance.fund_providers (
     id,
     balance,
     currency,
-    available_amount,
+    unallocated_amount,
     version
 ) VALUES(
     $1, -- id
     $2, -- balance
     $3, -- currency
-    $4, -- available_amount
+    $4, -- unallocated_amount
     $5  -- version
 )
 `
 
 type CreateFundProviderParams struct {
-	ID              uuid.UUID
-	Balance         int64
-	Currency        string
-	AvailableAmount int64
-	Version         int32
+	ID                uuid.UUID
+	Balance           int64
+	Currency          string
+	UnallocatedAmount int64
+	Version           int32
 }
 
 func (q *Queries) CreateFundProvider(ctx context.Context, arg CreateFundProviderParams) error {
@@ -41,115 +40,8 @@ func (q *Queries) CreateFundProvider(ctx context.Context, arg CreateFundProvider
 		arg.ID,
 		arg.Balance,
 		arg.Currency,
-		arg.AvailableAmount,
+		arg.UnallocatedAmount,
 		arg.Version,
 	)
 	return err
-}
-
-const getFundProviderByID = `-- name: GetFundProviderByID :one
-SELECT 
-    id,
-    balance,
-    currency,
-    available_amount,
-    version
-FROM finance.fund_providers
-WHERE id = $1
-`
-
-func (q *Queries) GetFundProviderByID(ctx context.Context, id uuid.UUID) (FinanceFundProvider, error) {
-	row := q.db.QueryRow(ctx, getFundProviderByID, id)
-	var i FinanceFundProvider
-	err := row.Scan(
-		&i.ID,
-		&i.Balance,
-		&i.Currency,
-		&i.AvailableAmount,
-		&i.Version,
-	)
-	return i, err
-}
-
-const getFundProvidersByWalletID = `-- name: GetFundProvidersByWalletID :many
-SELECT
-    fp.id,
-    fp.balance,
-    fp.currency,
-    fp.available_amount,
-    fp.version,
-    fpa.allocated_amount
-FROM finance.fund_providers fp
-    LEFT JOIN finance.fund_provider_allocation fpa
-        ON fp.id = fpa.fund_provider_id
-WHERE fpa.wallet_id = $1
-`
-
-type GetFundProvidersByWalletIDRow struct {
-	ID              uuid.UUID
-	Balance         int64
-	Currency        string
-	AvailableAmount int64
-	Version         int32
-	AllocatedAmount pgtype.Int8
-}
-
-func (q *Queries) GetFundProvidersByWalletID(ctx context.Context, walletID uuid.UUID) ([]GetFundProvidersByWalletIDRow, error) {
-	rows, err := q.db.Query(ctx, getFundProvidersByWalletID, walletID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetFundProvidersByWalletIDRow
-	for rows.Next() {
-		var i GetFundProvidersByWalletIDRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Balance,
-			&i.Currency,
-			&i.AvailableAmount,
-			&i.Version,
-			&i.AllocatedAmount,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const updateFundProviderPartial = `-- name: UpdateFundProviderPartial :execrows
-UPDATE finance.fund_providers
-SET
-    balance = COALESCE($1, balance),
-    currency = COALESCE($2, currency),
-    available_amount = COALESCE($3, available_amount),
-    version = version + 1
-WHERE id = $4
-  AND version = $5
-`
-
-type UpdateFundProviderPartialParams struct {
-	Balance         pgtype.Int8
-	Currency        pgtype.Text
-	AvailableAmount pgtype.Int8
-	ID              uuid.UUID
-	Version         int32
-}
-
-func (q *Queries) UpdateFundProviderPartial(ctx context.Context, arg UpdateFundProviderPartialParams) (int64, error) {
-	result, err := q.db.Exec(ctx, updateFundProviderPartial,
-		arg.Balance,
-		arg.Currency,
-		arg.AvailableAmount,
-		arg.ID,
-		arg.Version,
-	)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
 }

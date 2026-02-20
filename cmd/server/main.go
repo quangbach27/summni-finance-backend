@@ -2,10 +2,14 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
+	"os"
 	"sumni-finance-backend/internal/common/db"
 	"sumni-finance-backend/internal/common/logs"
 	"sumni-finance-backend/internal/common/server"
+	finance_app "sumni-finance-backend/internal/finance/app"
+	"sumni-finance-backend/internal/finance/ports"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
@@ -30,8 +34,18 @@ func main() {
 			slog.Error("critical failure", "err", err)
 			os.Exit(1)
 		}
+
+		authHandler := auth.NewAuthHandler(keycloakClient, tokenRepo)
 	*/
-	_ = db.MustNewPgConnectionPool(ctx)
+
+	pgPool := db.MustNewPgConnectionPool(ctx)
+	financeApp, err := finance_app.NewApplication(pgPool)
+	if err != nil {
+		slog.Error("failed to init finance app", "error", err)
+		os.Exit(1)
+	}
+
+	financeServer := ports.NewHttpServer(financeApp)
 
 	server.RunHTTPServer(func(router chi.Router) http.Handler {
 		// HealthCheck
@@ -42,7 +56,6 @@ func main() {
 
 		// TODO: Uncomment when enable authentication
 		/*
-			authHandler := auth.NewAuthHandler(keycloakClient, tokenRepo)
 			auth.HandleServerFromMux(router, authHandler)
 		*/
 
@@ -52,6 +65,7 @@ func main() {
 			/*
 				protectedRoute.Use(authHandler.AuthMiddleware)
 			*/
+			ports.HandlerFromMux(financeServer, protectedRoute)
 		})
 
 		return router

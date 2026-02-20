@@ -18,9 +18,6 @@ type ServerInterface interface {
 	// Create a new wallet
 	// (POST /v1/wallet)
 	CreateWallet(w http.ResponseWriter, r *http.Request)
-	// Allocate fund providers to a wallet
-	// (PUT /v1/wallet/allocate-fund-provider)
-	AllocateFundProvider(w http.ResponseWriter, r *http.Request)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -36,12 +33,6 @@ func (_ Unimplemented) CreateFundProvider(w http.ResponseWriter, r *http.Request
 // Create a new wallet
 // (POST /v1/wallet)
 func (_ Unimplemented) CreateWallet(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Allocate fund providers to a wallet
-// (PUT /v1/wallet/allocate-fund-provider)
-func (_ Unimplemented) AllocateFundProvider(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -73,20 +64,6 @@ func (siw *ServerInterfaceWrapper) CreateWallet(w http.ResponseWriter, r *http.R
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateWallet(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// AllocateFundProvider operation middleware
-func (siw *ServerInterfaceWrapper) AllocateFundProvider(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AllocateFundProvider(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -214,9 +191,6 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/v1/wallet", wrapper.CreateWallet)
-	})
-	r.Group(func(r chi.Router) {
-		r.Put(options.BaseURL+"/v1/wallet/allocate-fund-provider", wrapper.AllocateFundProvider)
 	})
 
 	return r

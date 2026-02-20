@@ -70,50 +70,15 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /v1/wallet/allocate-fund-provider:
-    put:
-      summary: Allocate fund providers to a wallet
-      description: Updates the fund provider allocations for an existing wallet
-      operationId: allocateFundProvider
-      tags:
-        - Wallet
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/AllocateFundProviderRequest"
-      responses:
-        "204":
-          description: Fund providers allocated successfully
-        "400":
-          description: Bad request - Invalid input
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: Wallet not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
 components:
   schemas:
     CreateFundProviderRequest:
       type: object
       required:
-        - balance
+        - initBalance
         - currency
       properties:
-        balance:
+        initBalance:
           type: integer
           format: int64
           description: Initial balance for the fund provider
@@ -131,7 +96,6 @@ components:
       type: object
       required:
         - currency
-        - allocations
       properties:
         currency:
           type: string
@@ -140,48 +104,6 @@ components:
           pattern: "^[a-zA-Z]{3}$"
           minLength: 3
           maxLength: 3
-        allocations:
-          type: array
-          description: List of fund provider allocations
-          minItems: 1
-          items:
-            $ref: "#/components/schemas/ProviderAllocation"
-
-    AllocateFundProviderRequest:
-      type: object
-      required:
-        - walletId
-        - providers
-      properties:
-        walletId:
-          type: string
-          format: uuid
-          description: Wallet unique identifier
-          example: "019c46dc-d55a-71d0-a542-b56cd41440ae"
-        providers:
-          type: array
-          description: List of fund provider allocations
-          minItems: 1
-          items:
-            $ref: "#/components/schemas/ProviderAllocation"
-
-    ProviderAllocation:
-      type: object
-      required:
-        - providerID
-        - allocated
-      properties:
-        providerID:
-          type: string
-          format: uuid
-          description: Fund provider unique identifier
-          example: "019c46dc-d55a-71d0-a542-b56cd41440ae"
-        allocated:
-          type: integer
-          format: int64
-          description: Amount allocated from this provider
-          example: 1000000
-          minimum: 1
 
     CreateWalletResponse:
       type: object

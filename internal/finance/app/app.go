@@ -14,6 +14,7 @@ type Application struct {
 }
 
 type Commands struct {
+	AllocateFund       command.AllocateFundHandler
 	CreateFundProvider command.CreateFundProviderHandler
 	CreateWallet       command.CreateWalletHandler
 }
@@ -36,6 +37,7 @@ func NewApplication(pgPool *pgxpool.Pool) (Application, error) {
 
 	return Application{
 		Commands: Commands{
+			AllocateFund:       command.NewAllocateFundHandler(walletRepo, fundProviderRepo),
 			CreateFundProvider: command.NewCreateFundProviderHandler(fundProviderRepo),
 			CreateWallet:       command.NewCreateWalletHandler(walletRepo),
 		},

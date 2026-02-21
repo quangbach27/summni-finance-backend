@@ -153,16 +153,11 @@ func (p *FundProvider) Withdraw(amount int64) error {
 // Allocate reserves a portion of the provider's available funds for a wallet.
 // It reduces the availableAmountForAllocation by the specified allocatedAmount.
 // Returns ErrInsufficientAvailable if the requested amount exceeds the available balance.
-func (p *FundProvider) Allocate(
-	allocatedAmount int64,
+func (p *FundProvider) Reserve(
+	allocated valueobject.Money,
 ) error {
-	if allocatedAmount < 0 || allocatedAmount > p.unallocatedBalance.Amount() {
+	if allocated.IsNegative() || allocated.GreaterThan(p.unallocatedBalance) {
 		return ErrInsufficientAmount
-	}
-
-	allocated, err := valueobject.NewMoney(allocatedAmount, p.Currency())
-	if err != nil {
-		return err
 	}
 
 	newUnallocatedAmount, err := p.unallocatedBalance.Subtract(allocated)

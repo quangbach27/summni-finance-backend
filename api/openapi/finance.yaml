@@ -70,6 +70,49 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/wallet/{walletId}/allocate-fund:
+    post:
+      summary: Allocate funds to a wallet
+      description: Allocates funds from one or more fund providers to a wallet
+      operationId: allocateFund
+      tags:
+        - Wallet
+      parameters:
+        - name: walletId
+          in: path
+          required: true
+          description: The wallet ID to allocate funds to
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AllocateFundRequest"
+      responses:
+        "200":
+          description: Funds allocated successfully
+        "400":
+          description: Bad request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Wallet or fund provider not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     CreateFundProviderRequest:
@@ -104,6 +147,36 @@ components:
           pattern: "^[a-zA-Z]{3}$"
           minLength: 3
           maxLength: 3
+
+    AllocateFundRequest:
+      type: object
+      required:
+        - providers
+      properties:
+        providers:
+          type: array
+          description: List of fund providers to allocate from
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/AllocatedProvider"
+
+    AllocatedProvider:
+      type: object
+      required:
+        - id
+        - allocatedAmount
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Fund provider ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        allocatedAmount:
+          type: integer
+          format: int64
+          description: Amount to allocate from this provider
+          example: 50000
+          minimum: 0
 
     CreateWalletResponse:
       type: object

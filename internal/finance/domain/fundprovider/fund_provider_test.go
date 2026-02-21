@@ -1,6 +1,7 @@
 package fundprovider_test
 
 import (
+	"sumni-finance-backend/internal/common/valueobject"
 	"sumni-finance-backend/internal/finance/domain/fundprovider"
 	"testing"
 
@@ -206,7 +207,7 @@ func TestFundProvider_UnmarshallFromDatabase(t *testing.T) {
 	}
 }
 
-func TestFundProvider_Allocate(t *testing.T) {
+func TestFundProvider_Reserve(t *testing.T) {
 	testCases := []struct {
 		name              string
 		unallocatedAmount int64
@@ -248,8 +249,11 @@ func TestFundProvider_Allocate(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, fundProvider)
 
+			allocated, err := valueobject.NewMoney(tt.allocatedAmount, valueobject.USD)
+			require.NoError(t, err)
+
 			// When
-			err = fundProvider.Allocate(tt.allocatedAmount)
+			err = fundProvider.Reserve(allocated)
 
 			if tt.hasErr {
 				require.Error(t, err)

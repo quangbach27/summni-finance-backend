@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createWallet = `-- name: CreateWallet :exec
@@ -39,5 +40,83 @@ func (q *Queries) CreateWallet(ctx context.Context, arg CreateWalletParams) erro
 		arg.Currency,
 		arg.Version,
 	)
+	return err
+}
+
+const getWalletByID = `-- name: GetWalletByID :one
+SELECT 
+    id,
+    balance,
+    currency,
+    version
+FROM finance.wallets
+WHERE id = $1
+`
+
+func (q *Queries) GetWalletByID(ctx context.Context, id uuid.UUID) (FinanceWallet, error) {
+	row := q.db.QueryRow(ctx, getWalletByID, id)
+	var i FinanceWallet
+	err := row.Scan(
+		&i.ID,
+		&i.Balance,
+		&i.Currency,
+		&i.Version,
+	)
+	return i, err
+}
+
+const updateWalletPartial = `-- name: UpdateWalletPartial :execrows
+UPDATE finance.wallets
+SET
+    balance  = COALESCE($1, balance),
+    currency = COALESCE($2, currency),
+    version  = version + 1
+WHERE id = $3
+  AND version = $4
+`
+
+type UpdateWalletPartialParams struct {
+	Balance  pgtype.Int8
+	Currency pgtype.Text
+	ID       uuid.UUID
+	Version  int32
+}
+
+func (q *Queries) UpdateWalletPartial(ctx context.Context, arg UpdateWalletPartialParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateWalletPartial,
+		arg.Balance,
+		arg.Currency,
+		arg.ID,
+		arg.Version,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const upsertFundProviderAllocation = `-- name: UpsertFundProviderAllocation :exec
+INSERT INTO finance.fund_provider_allocation (
+    fund_provider_id,
+    wallet_id,
+    allocated_amount
+) VALUES (
+    $1,
+    $2,
+    $3
+)
+ON CONFLICT (fund_provider_id, wallet_id)
+DO UPDATE
+SET allocated_amount = EXCLUDED.allocated_amount
+`
+
+type UpsertFundProviderAllocationParams struct {
+	FundProviderID  uuid.UUID
+	WalletID        uuid.UUID
+	AllocatedAmount int64
+}
+
+func (q *Queries) UpsertFundProviderAllocation(ctx context.Context, arg UpsertFundProviderAllocationParams) error {
+	_, err := q.db.Exec(ctx, upsertFundProviderAllocation, arg.FundProviderID, arg.WalletID, arg.AllocatedAmount)
 	return err
 }

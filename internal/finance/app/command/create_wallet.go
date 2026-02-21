@@ -29,5 +29,10 @@ func (h *createWalletHandler) Handle(ctx context.Context, cmd CreateWalletCmd) e
 		return httperr.NewIncorrectInputError(err, "invalid-currency-code")
 	}
 
-	return h.walletRepo.Create(ctx, walletDomain)
+	err = h.walletRepo.Create(ctx, walletDomain)
+	if err != nil {
+		return httperr.NewUnknowError(err, "failed-to-create-wallet")
+	}
+
+	return nil
 }

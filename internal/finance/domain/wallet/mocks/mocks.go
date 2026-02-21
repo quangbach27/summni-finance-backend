@@ -164,17 +164,91 @@ func (_c *MockRepository_GetByID_Call) RunAndReturn(run func(ctx context.Context
 	return _c
 }
 
+// GetByIDWithProviders provides a mock function for the type MockRepository
+func (_mock *MockRepository) GetByIDWithProviders(ctx context.Context, wID uuid.UUID, spec wallet.ProviderAllocationSpec) (*wallet.Wallet, error) {
+	ret := _mock.Called(ctx, wID, spec)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByIDWithProviders")
+	}
+
+	var r0 *wallet.Wallet
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, wallet.ProviderAllocationSpec) (*wallet.Wallet, error)); ok {
+		return returnFunc(ctx, wID, spec)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, wallet.ProviderAllocationSpec) *wallet.Wallet); ok {
+		r0 = returnFunc(ctx, wID, spec)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*wallet.Wallet)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, wallet.ProviderAllocationSpec) error); ok {
+		r1 = returnFunc(ctx, wID, spec)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockRepository_GetByIDWithProviders_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetByIDWithProviders'
+type MockRepository_GetByIDWithProviders_Call struct {
+	*mock.Call
+}
+
+// GetByIDWithProviders is a helper method to define mock.On call
+//   - ctx context.Context
+//   - wID uuid.UUID
+//   - spec wallet.ProviderAllocationSpec
+func (_e *MockRepository_Expecter) GetByIDWithProviders(ctx interface{}, wID interface{}, spec interface{}) *MockRepository_GetByIDWithProviders_Call {
+	return &MockRepository_GetByIDWithProviders_Call{Call: _e.mock.On("GetByIDWithProviders", ctx, wID, spec)}
+}
+
+func (_c *MockRepository_GetByIDWithProviders_Call) Run(run func(ctx context.Context, wID uuid.UUID, spec wallet.ProviderAllocationSpec)) *MockRepository_GetByIDWithProviders_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 wallet.ProviderAllocationSpec
+		if args[2] != nil {
+			arg2 = args[2].(wallet.ProviderAllocationSpec)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_GetByIDWithProviders_Call) Return(wallet1 *wallet.Wallet, err error) *MockRepository_GetByIDWithProviders_Call {
+	_c.Call.Return(wallet1, err)
+	return _c
+}
+
+func (_c *MockRepository_GetByIDWithProviders_Call) RunAndReturn(run func(ctx context.Context, wID uuid.UUID, spec wallet.ProviderAllocationSpec) (*wallet.Wallet, error)) *MockRepository_GetByIDWithProviders_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Update provides a mock function for the type MockRepository
-func (_mock *MockRepository) Update(ctx context.Context, wallet1 *wallet.Wallet) error {
-	ret := _mock.Called(ctx, wallet1)
+func (_mock *MockRepository) Update(ctx context.Context, wID uuid.UUID, spec wallet.ProviderAllocationSpec, updateFunc func(*wallet.Wallet) error) error {
+	ret := _mock.Called(ctx, wID, spec, updateFunc)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Update")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *wallet.Wallet) error); ok {
-		r0 = returnFunc(ctx, wallet1)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, wallet.ProviderAllocationSpec, func(*wallet.Wallet) error) error); ok {
+		r0 = returnFunc(ctx, wID, spec, updateFunc)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -188,24 +262,36 @@ type MockRepository_Update_Call struct {
 
 // Update is a helper method to define mock.On call
 //   - ctx context.Context
-//   - wallet1 *wallet.Wallet
-func (_e *MockRepository_Expecter) Update(ctx interface{}, wallet1 interface{}) *MockRepository_Update_Call {
-	return &MockRepository_Update_Call{Call: _e.mock.On("Update", ctx, wallet1)}
+//   - wID uuid.UUID
+//   - spec wallet.ProviderAllocationSpec
+//   - updateFunc func(*wallet.Wallet) error
+func (_e *MockRepository_Expecter) Update(ctx interface{}, wID interface{}, spec interface{}, updateFunc interface{}) *MockRepository_Update_Call {
+	return &MockRepository_Update_Call{Call: _e.mock.On("Update", ctx, wID, spec, updateFunc)}
 }
 
-func (_c *MockRepository_Update_Call) Run(run func(ctx context.Context, wallet1 *wallet.Wallet)) *MockRepository_Update_Call {
+func (_c *MockRepository_Update_Call) Run(run func(ctx context.Context, wID uuid.UUID, spec wallet.ProviderAllocationSpec, updateFunc func(*wallet.Wallet) error)) *MockRepository_Update_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 *wallet.Wallet
+		var arg1 uuid.UUID
 		if args[1] != nil {
-			arg1 = args[1].(*wallet.Wallet)
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 wallet.ProviderAllocationSpec
+		if args[2] != nil {
+			arg2 = args[2].(wallet.ProviderAllocationSpec)
+		}
+		var arg3 func(*wallet.Wallet) error
+		if args[3] != nil {
+			arg3 = args[3].(func(*wallet.Wallet) error)
 		}
 		run(
 			arg0,
 			arg1,
+			arg2,
+			arg3,
 		)
 	})
 	return _c
@@ -216,7 +302,7 @@ func (_c *MockRepository_Update_Call) Return(err error) *MockRepository_Update_C
 	return _c
 }
 
-func (_c *MockRepository_Update_Call) RunAndReturn(run func(ctx context.Context, wallet1 *wallet.Wallet) error) *MockRepository_Update_Call {
+func (_c *MockRepository_Update_Call) RunAndReturn(run func(ctx context.Context, wID uuid.UUID, spec wallet.ProviderAllocationSpec, updateFunc func(*wallet.Wallet) error) error) *MockRepository_Update_Call {
 	_c.Call.Return(run)
 	return _c
 }

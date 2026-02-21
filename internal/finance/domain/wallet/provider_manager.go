@@ -3,50 +3,42 @@ package wallet
 import (
 	"errors"
 	"fmt"
-	"sumni-finance-backend/internal/common/validator"
 	"sumni-finance-backend/internal/common/valueobject"
 	"sumni-finance-backend/internal/finance/domain/fundprovider"
 
 	"github.com/google/uuid"
 )
 
-type ProviderAllocation struct {
-	fundProvider *fundprovider.FundProvider
-	allocated    valueobject.Money
-}
-
-func (pa ProviderAllocation) FundProvider() *fundprovider.FundProvider {
-	return pa.fundProvider
-}
-
-func (pa ProviderAllocation) Allocated() valueobject.Money {
-	return pa.allocated
-}
-
-func NewProviderAllocation(
-	fundProvider *fundprovider.FundProvider,
-	allocated valueobject.Money,
-) (ProviderAllocation, error) {
-	v := validator.New()
-
-	v.Check(fundProvider != nil, "fundProvider", "fundProvider is required")
-	v.Check(!allocated.IsZero(), "allocated", "allocated is required")
-
-	if err := v.Err(); err != nil {
-		return ProviderAllocation{}, err
-	}
-
-	return ProviderAllocation{
-		fundProvider: fundProvider,
-		allocated:    allocated,
-	}, nil
-}
-
 type ProviderManager struct {
 	providers map[uuid.UUID]ProviderAllocation
 }
 
-func (m *ProviderManager) GetFundProviderAllocations() []ProviderAllocation {
+func NewProviderManager(allocations []ProviderAllocation) (*ProviderManager, error) {
+	providers := make(map[uuid.UUID]ProviderAllocation, len(allocations))
+
+	for _, allocation := range allocations {
+		if allocation.provider == nil {
+			return nil, errors.New("fundProvider can not be nil")
+		}
+
+		if allocation.allocated.IsZero() {
+			return nil, errors.New("allocated is required")
+		}
+
+		_, exist := providers[allocation.provider.ID()]
+		if exist {
+			return nil, fmt.Errorf("fundProvider must be unique: %s", allocation.provider.ID())
+		}
+
+		providers[allocation.provider.ID()] = allocation
+	}
+
+	return &ProviderManager{
+		providers: providers,
+	}, nil
+}
+
+func (m *ProviderManager) ProviderAllocations() []ProviderAllocation {
 	providerAllocations := make([]ProviderAllocation, 0, len(m.providers))
 
 	for _, provider := range m.providers {
@@ -56,40 +48,27 @@ func (m *ProviderManager) GetFundProviderAllocations() []ProviderAllocation {
 	return providerAllocations
 }
 
-func NewProviderManager(allocations []ProviderAllocation) (*ProviderManager, error) {
-	providers := make(map[uuid.UUID]ProviderAllocation, len(allocations))
-
-	for _, allocation := range allocations {
-		if allocation.fundProvider == nil {
-			return nil, errors.New("fundProvider can not be nil")
-		}
-
-		if allocation.allocated.IsZero() {
-			return nil, errors.New("allocated is required")
-		}
-
-		_, exist := providers[allocation.fundProvider.ID()]
-		if exist {
-			return nil, fmt.Errorf("fundProvider must be unique: %s", allocation.fundProvider.ID())
-		}
-
-		providers[allocation.fundProvider.ID()] = allocation
+func (m *ProviderManager) FindProvider(id uuid.UUID) (*fundprovider.FundProvider, bool) {
+	allocation, exist := m.providers[id]
+	if !exist {
+		return nil, false
 	}
-
-	return &ProviderManager{
-		providers: providers,
-	}, nil
+	return allocation.provider, true
 }
 
-func (m ProviderManager) HasFundProvider(fID uuid.UUID) bool {
-	_, exist := m.providers[fID]
-	return exist
-}
-
-func (m ProviderManager) GetFundProvider(fID uuid.UUID) *fundprovider.FundProvider {
-	if providerAllocation, exist := m.providers[fID]; exist {
-		return providerAllocation.fundProvider
+func (m *ProviderManager) AddFundProviderAndReserve(
+	fundProvider *fundprovider.FundProvider,
+	allocated valueobject.Money,
+) error {
+	if err := fundProvider.Reserve(allocated); err != nil {
+		return err
 	}
 
+	providerAllocation, err := NewProviderAllocation(fundProvider, allocated.Amount())
+	if err != nil {
+		return err
+	}
+
+	m.providers[fundProvider.ID()] = providerAllocation
 	return nil
 }

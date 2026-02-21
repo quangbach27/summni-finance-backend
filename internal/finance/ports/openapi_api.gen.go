@@ -8,6 +8,8 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/oapi-codegen/runtime"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // ServerInterface represents all server handlers.
@@ -18,6 +20,9 @@ type ServerInterface interface {
 	// Create a new wallet
 	// (POST /v1/wallet)
 	CreateWallet(w http.ResponseWriter, r *http.Request)
+	// (POST /v1/wallet/{walletId}/allocate-fund)
+	// Allocate funds to a wallet
+	AllocateFund(w http.ResponseWriter, r *http.Request, walletId openapi_types.UUID)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -33,6 +38,12 @@ func (_ Unimplemented) CreateFundProvider(w http.ResponseWriter, r *http.Request
 // Create a new wallet
 // (POST /v1/wallet)
 func (_ Unimplemented) CreateWallet(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Allocate funds to a wallet
+// (POST /v1/wallet/{walletId}/allocate-fund)
+func (_ Unimplemented) AllocateFund(w http.ResponseWriter, r *http.Request, walletId openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -64,6 +75,31 @@ func (siw *ServerInterfaceWrapper) CreateWallet(w http.ResponseWriter, r *http.R
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateWallet(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AllocateFund operation middleware
+func (siw *ServerInterfaceWrapper) AllocateFund(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "walletId" -------------
+	var walletId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "walletId", chi.URLParam(r, "walletId"), &walletId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "walletId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AllocateFund(w, r, walletId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -191,6 +227,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/v1/wallet", wrapper.CreateWallet)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/v1/wallet/{walletId}/allocate-fund", wrapper.AllocateFund)
 	})
 
 	return r

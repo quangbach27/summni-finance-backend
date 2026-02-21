@@ -4,6 +4,7 @@ import (
 	"errors"
 	"sumni-finance-backend/internal/common/validator"
 	"sumni-finance-backend/internal/common/valueobject"
+	"sumni-finance-backend/internal/finance/domain/fundprovider"
 
 	"github.com/google/uuid"
 )
@@ -13,8 +14,12 @@ var (
 	ErrInsufficientBalance           = errors.New("insufficient balance")
 	ErrInsufficientAvailable         = errors.New("insufficient available amount")
 	ErrFundProviderAlreadyRegistered = errors.New("fund provider already registered")
+	ErrFundAllocatedMissing          = errors.New("fund provider for allocation is missing")
+	ErrAllocationAmountNegative      = errors.New("allocated amount is negative")
 )
 
+// Wallet is the Root Aggregate
+// It contain the FundProvider entity
 type Wallet struct {
 	id      uuid.UUID
 	balance valueobject.Money
@@ -94,3 +99,27 @@ func (w *Wallet) Balance() valueobject.Money        { return w.balance }
 func (w *Wallet) Currency() valueobject.Currency    { return w.balance.Currency() }
 func (w *Wallet) ProviderManager() *ProviderManager { return w.providerManager }
 func (w *Wallet) Version() int32                    { return w.version }
+
+func (w *Wallet) AllocateFromFundProvider(
+	fundProvider *fundprovider.FundProvider,
+	allocatedAmount int64,
+) error {
+	if fundProvider == nil {
+		return ErrFundAllocatedMissing
+	}
+
+	if allocatedAmount < 0 {
+		return ErrAllocationAmountNegative
+	}
+
+	if _, exists := w.ProviderManager().FindProvider(fundProvider.ID()); exists {
+		return ErrFundProviderAlreadyRegistered
+	}
+
+	allocated, err := valueobject.NewMoney(allocatedAmount, w.Currency())
+	if err != nil {
+		return err
+	}
+
+	return w.providerManager.AddFundProviderAndReserve(fundProvider, allocated)
+}

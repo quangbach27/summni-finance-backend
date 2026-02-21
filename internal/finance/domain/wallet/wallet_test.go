@@ -1,6 +1,7 @@
 package wallet_test
 
 import (
+	"sumni-finance-backend/internal/finance/domain/fundprovider"
 	"sumni-finance-backend/internal/finance/domain/wallet"
 	"testing"
 
@@ -121,4 +122,102 @@ func TestUnmarshalWalletFromDatabase(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestWallet_AllocateFromFundProvider(t *testing.T) {
+	t.Run("cannot allocate fund provider when fund provider is already allocated", func(t *testing.T) {
+		provider, err := fundprovider.NewFundProvider(100, "USD")
+		require.NoError(t, err)
+
+		allocationProvider, err := wallet.NewProviderAllocation(provider, 50)
+		require.NoError(t, err)
+
+		walletDomain, err := wallet.UnmarshalWalletFromDatabase(
+			uuid.New(),
+			0,
+			"USD",
+			0,
+			allocationProvider,
+		)
+		require.NoError(t, err)
+
+		err = walletDomain.AllocateFromFundProvider(provider, 50)
+
+		require.Error(t, err)
+		assert.ErrorIs(t, err, wallet.ErrFundProviderAlreadyRegistered)
+	})
+
+	t.Run("cannot allocate when fund provider is nil", func(t *testing.T) {
+		walletDomain, err := wallet.NewWallet("USD")
+		require.NoError(t, err)
+
+		err = walletDomain.AllocateFromFundProvider(nil, 100)
+
+		require.Error(t, err)
+		assert.ErrorIs(t, err, wallet.ErrFundAllocatedMissing)
+	})
+
+	t.Run("cannot allocate when allocated amount is negative", func(t *testing.T) {
+		provider, err := fundprovider.NewFundProvider(100, "USD")
+		require.NoError(t, err)
+
+		walletDomain, err := wallet.NewWallet("USD")
+		require.NoError(t, err)
+
+		err = walletDomain.AllocateFromFundProvider(provider, -100)
+
+		require.Error(t, err)
+		assert.ErrorIs(t, err, wallet.ErrAllocationAmountNegative)
+	})
+
+	t.Run("cannot allocate when allocated amount exccedd unallocated amount of fund provider", func(t *testing.T) {
+		provider, err := fundprovider.NewFundProvider(100, "USD")
+		require.NoError(t, err)
+
+		walletDomain, err := wallet.NewWallet("USD")
+		require.NoError(t, err)
+
+		err = walletDomain.AllocateFromFundProvider(provider, 110)
+
+		require.Error(t, err)
+		assert.ErrorIs(t, err, fundprovider.ErrInsufficientAmount)
+	})
+
+	t.Run("can allocate when allocatedAmount is zero", func(t *testing.T) {
+		provider, err := fundprovider.NewFundProvider(100, "USD")
+		require.NoError(t, err)
+
+		unallocatedBalance := provider.UnallocatedBalance()
+
+		walletDomain, err := wallet.NewWallet("USD")
+		require.NoError(t, err)
+
+		err = walletDomain.AllocateFromFundProvider(provider, 0)
+
+		require.NoError(t, err)
+
+		actualProvider, exists := walletDomain.ProviderManager().FindProvider(provider.ID())
+		assert.True(t, exists)
+		assert.Equal(t, actualProvider, provider)
+		assert.Equal(t, unallocatedBalance, actualProvider.UnallocatedBalance())
+	})
+
+	t.Run("can allocate success", func(t *testing.T) {
+		provider, err := fundprovider.NewFundProvider(100, "USD")
+		require.NoError(t, err)
+
+		unallocatedBalance := provider.UnallocatedBalance()
+
+		walletDomain, err := wallet.NewWallet("USD")
+		require.NoError(t, err)
+
+		err = walletDomain.AllocateFromFundProvider(provider, 50)
+
+		require.NoError(t, err)
+
+		actualProvider, exists := walletDomain.ProviderManager().FindProvider(provider.ID())
+		assert.True(t, exists)
+		assert.Equal(t, actualProvider, provider)
+		assert.Equal(t, unallocatedBalance.Amount()-50, actualProvider.UnallocatedBalance().Amount())
+	})
 }

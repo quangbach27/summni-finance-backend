@@ -30,5 +30,10 @@ func (h *createFundProviderHandler) Handle(ctx context.Context, cmd CreateFundPr
 		return httperr.NewIncorrectInputError(err, "invalid-cmd")
 	}
 
-	return h.fundProviderRepo.Create(ctx, fundProvider)
+	err = h.fundProviderRepo.Create(ctx, fundProvider)
+	if err != nil {
+		return httperr.NewUnknowError(err, "failed-to-create-fund-provider")
+	}
+
+	return nil
 }

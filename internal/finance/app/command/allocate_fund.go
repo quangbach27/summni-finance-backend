@@ -37,6 +37,7 @@ func NewAllocateFundHandler(walletRepo wallet.Repository, fundProviderRepo fundp
 }
 
 func (h *allocateFundHandler) Handle(ctx context.Context, cmd AllocateFundCmd) error {
+	// Validate command contains allocation instructions
 	if len(cmd.Providers) == 0 {
 		return httperr.NewIncorrectInputError(
 			errors.New("missing providers in command for allocation"),
@@ -49,9 +50,22 @@ func (h *allocateFundHandler) Handle(ctx context.Context, cmd AllocateFundCmd) e
 		providerIDs = append(providerIDs, p.ID)
 	}
 
-	providerDomains, err := h.fundProviderRepo.GetByIDs(ctx, providerIDs)
+	// Retrieve all fund providers involved in this allocation request
+	providersDomain, err := h.fundProviderRepo.GetByIDs(ctx, providerIDs)
 	if err != nil {
 		return httperr.NewUnknowError(err, "failed-to-retrieve-fund-provider")
+	}
+	if len(providersDomain) != len(providerIDs) {
+		return httperr.NewIncorrectInputError(
+			errors.New("one or more fund providers not found"),
+			"invalid-provider",
+		)
+	}
+
+	// Build lookup map for deterministic access
+	providerMap := make(map[uuid.UUID]*fundprovider.FundProvider, len(providersDomain))
+	for _, p := range providersDomain {
+		providerMap[p.ID()] = p
 	}
 
 	err = h.walletRepo.Update(
@@ -59,13 +73,13 @@ func (h *allocateFundHandler) Handle(ctx context.Context, cmd AllocateFundCmd) e
 		cmd.WalletID,
 		wallet.NewAllocationBelongsToAnyProviderSpec(providerIDs),
 		func(w *wallet.Wallet) error {
-			for _, provider := range cmd.Providers {
-				providerDomain := h.findFundProvider(providerDomains, provider.ID)
-				if providerDomain == nil {
-					return fmt.Errorf("fund provider '%s' did not existe", provider.ID)
+			for _, item := range cmd.Providers {
+				provider, ok := providerMap[item.ID]
+				if !ok {
+					return fmt.Errorf("fund provider %s not found", item.ID)
 				}
 
-				err = w.AllocateFromFundProvider(providerDomain, provider.AllocatedAmount)
+				err = w.AllocateFromFundProvider(provider, item.AllocatedAmount)
 				if err != nil {
 					return err
 				}
@@ -76,19 +90,6 @@ func (h *allocateFundHandler) Handle(ctx context.Context, cmd AllocateFundCmd) e
 	)
 	if err != nil {
 		return httperr.NewUnknowError(err, "failed-to-allocate-fund")
-	}
-
-	return nil
-}
-
-func (h *allocateFundHandler) findFundProvider(
-	fundProviders []*fundprovider.FundProvider,
-	fpID uuid.UUID,
-) *fundprovider.FundProvider {
-	for _, provider := range fundProviders {
-		if provider.ID() == fpID {
-			return provider
-		}
 	}
 
 	return nil

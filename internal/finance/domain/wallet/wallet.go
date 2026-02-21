@@ -10,16 +10,11 @@ import (
 )
 
 var (
-	ErrCurrencyMismatch              = errors.New("currency mismatch")
-	ErrInsufficientBalance           = errors.New("insufficient balance")
-	ErrInsufficientAvailable         = errors.New("insufficient available amount")
 	ErrFundProviderAlreadyRegistered = errors.New("fund provider already registered")
 	ErrFundAllocatedMissing          = errors.New("fund provider for allocation is missing")
 	ErrAllocationAmountNegative      = errors.New("allocated amount is negative")
 )
 
-// Wallet is the Root Aggregate
-// It contain the FundProvider entity
 type Wallet struct {
 	id      uuid.UUID
 	balance valueobject.Money

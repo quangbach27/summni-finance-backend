@@ -10,11 +10,17 @@ import (
 )
 
 var (
-	ErrCurrencyMismatch      = errors.New("currency mismatch")
-	ErrInsufficientBalance   = errors.New("balance amount must be greater or equal 0")
-	ErrInsufficientAvailable = errors.New("available amount must be greater or equal 0")
-	ErrInsufficientAmount    = errors.New("amount must be greater or equal 0")
+	ErrInsufficientAmount = errors.New("amount must be greater or equal 0")
 )
+
+type ErrInsufficientAllocatedAmount struct {
+	AllocatedAmount   int64
+	UnallocatedAmount int64
+}
+
+func (err ErrInsufficientAllocatedAmount) Error() string {
+	return fmt.Sprintf("allocated amount '%d' has exccedd unallocated amount '%d' of fund provider", err.AllocatedAmount, err.UnallocatedAmount)
+}
 
 type FundProvider struct {
 	id                 uuid.UUID
@@ -156,8 +162,15 @@ func (p *FundProvider) Withdraw(amount int64) error {
 func (p *FundProvider) Reserve(
 	allocated valueobject.Money,
 ) error {
-	if allocated.IsNegative() || allocated.GreaterThan(p.unallocatedBalance) {
+	if allocated.IsNegative() {
 		return ErrInsufficientAmount
+	}
+
+	if allocated.GreaterThan(p.unallocatedBalance) {
+		return ErrInsufficientAllocatedAmount{
+			AllocatedAmount:   allocated.Amount(),
+			UnallocatedAmount: p.unallocatedBalance.Amount(),
+		}
 	}
 
 	newUnallocatedAmount, err := p.unallocatedBalance.Subtract(allocated)

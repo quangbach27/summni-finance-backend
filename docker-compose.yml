@@ -58,7 +58,7 @@ services:
       - ./docker/keycloak:/opt/keycloak/data/import
 
   swagger-ui:
-    image: swaggerapi/swagger-ui:latest
+    image: swaggerapi/swagger-ui:v5.17.14
     container_name: sumni-finance-swagger-ui
     ports:
       - "8081:8080"

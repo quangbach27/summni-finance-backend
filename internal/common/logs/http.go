@@ -13,7 +13,9 @@ type ctxLoggerKey int
 
 const loggerKey ctxLoggerKey = 0
 
-// Middleware factory that wraps chi's RequestLogger and adds logger to context
+// Middleware factory that creates a per-request logger, stores it in the context,
+// and logs request start and completion using chi helpers for request ID and
+// response wrapping.
 func Middleware(logger *slog.Logger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

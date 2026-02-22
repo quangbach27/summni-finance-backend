@@ -44,6 +44,20 @@ func (r *walletRepo) GetByIDWithProviders(
 	wID uuid.UUID,
 	spec wallet.ProviderAllocationSpec,
 ) (*wallet.Wallet, error) {
+	return r.getByIDWithProviders(
+		ctx,
+		wID,
+		spec,
+		r.queries,
+	)
+}
+
+func (r *walletRepo) getByIDWithProviders(
+	ctx context.Context,
+	wID uuid.UUID,
+	spec wallet.ProviderAllocationSpec,
+	queries *store.Queries,
+) (*wallet.Wallet, error) {
 	walletModel, err := r.queries.GetWalletByID(ctx, wID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve wallet '%s': %w", wID.String(), err)
@@ -106,19 +120,18 @@ func (r *walletRepo) Update(
 	spec wallet.ProviderAllocationSpec,
 	updateFunc func(w *wallet.Wallet) error,
 ) (err error) {
-	w, err := r.GetByIDWithProviders(ctx, wID, spec)
-	if err != nil {
-		return fmt.Errorf("failed to retrieve wallet :%w", err)
-	}
-
-	err = updateFunc(w)
-	if err != nil {
-		return err
-	}
-
 	return r.transactionManager.WithTx(ctx, func(tx pgx.Tx) error {
 		qtx := r.queries.WithTx(tx)
 
+		w, err := r.getByIDWithProviders(ctx, wID, spec, qtx)
+		if err != nil {
+			return fmt.Errorf("failed to retrieve wallet :%w", err)
+		}
+
+		err = updateFunc(w)
+		if err != nil {
+			return err
+		}
 		// update allocation
 		for _, pa := range w.ProviderManager().ProviderAllocations() {
 			err = qtx.UpsertFundProviderAllocation(

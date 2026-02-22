@@ -11,25 +11,24 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type walletRepo struct {
-	queries *store.Queries
-	pgPool  *pgxpool.Pool
+	queries            *store.Queries
+	transactionManager *common_db.PgxTransactionManager
 }
 
 func NewWalletRepo(
 	queries *store.Queries,
-	pgPool *pgxpool.Pool,
+	transactionManager *common_db.PgxTransactionManager,
 ) (*walletRepo, error) {
-	if queries == nil || pgPool == nil {
+	if queries == nil || transactionManager == nil {
 		return nil, errors.New("missing dependencies")
 	}
 
 	return &walletRepo{
-		queries: queries,
-		pgPool:  pgPool,
+		queries:            queries,
+		transactionManager: transactionManager,
 	}, nil
 }
 
@@ -106,7 +105,7 @@ func (r *walletRepo) Update(
 	wID uuid.UUID,
 	spec wallet.ProviderAllocationSpec,
 	updateFunc func(w *wallet.Wallet) error,
-) error {
+) (err error) {
 	w, err := r.GetByIDWithProviders(ctx, wID, spec)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve wallet :%w", err)
@@ -117,59 +116,51 @@ func (r *walletRepo) Update(
 		return err
 	}
 
-	tx, err := r.pgPool.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to start transaction: %w", err)
-	}
+	return r.transactionManager.WithTx(ctx, func(tx pgx.Tx) error {
+		qtx := r.queries.WithTx(tx)
 
-	defer func() {
-		err = common_db.FinishTransaction(ctx, tx, err)
-	}()
+		// update allocation
+		for _, pa := range w.ProviderManager().ProviderAllocations() {
+			err = qtx.UpsertFundProviderAllocation(
+				ctx,
+				store.UpsertFundProviderAllocationParams{
+					FundProviderID:  pa.Provider().ID(),
+					WalletID:        w.ID(),
+					AllocatedAmount: pa.Allocated().Amount(),
+				},
+			)
+			if err != nil {
+				return fmt.Errorf("failed to update fund provider allocation: %w", err)
+			}
 
-	qtx := r.queries.WithTx(tx)
+			// update fundprovider
+			rows, err := qtx.UpdateFundProviderPartial(ctx, store.UpdateFundProviderPartialParams{
+				UnallocatedAmount: common_db.ToPgInt8(pa.Provider().UnallocatedBalance().Amount()),
+				ID:                pa.Provider().ID(),
+				Version:           pa.Provider().Version(),
+			})
+			if err != nil {
+				return err
+			}
 
-	// update allocation
-	for _, pa := range w.ProviderManager().ProviderAllocations() {
-		err = qtx.UpsertFundProviderAllocation(
-			ctx,
-			store.UpsertFundProviderAllocationParams{
-				FundProviderID:  pa.Provider().ID(),
-				WalletID:        w.ID(),
-				AllocatedAmount: pa.Allocated().Amount(),
-			},
-		)
-		if err != nil {
-			return fmt.Errorf("failed to update fund provider allocation: %w", err)
+			if rows == 0 {
+				return fmt.Errorf("failed to update fund provider: %w", common_db.ErrConcurrentModification)
+			}
 		}
 
-		// update fundprovider
-		rows, err := qtx.UpdateFundProviderPartial(ctx, store.UpdateFundProviderPartialParams{
-			UnallocatedAmount: common_db.ToPgInt8(pa.Provider().UnallocatedBalance().Amount()),
-			ID:                pa.Provider().ID(),
-			Version:           pa.Provider().Version(),
+		// update wallet
+		rows, err := qtx.UpdateWalletPartial(ctx, store.UpdateWalletPartialParams{
+			ID:       w.ID(),
+			Balance:  common_db.ToPgInt8(w.Balance().Amount()),
+			Currency: common_db.ToPgText(w.Currency().Code()),
+			Version:  w.Version(),
 		})
 		if err != nil {
 			return err
 		}
-
 		if rows == 0 {
-			return fmt.Errorf("failed to update fund provider: %w", common_db.ErrConcurrentModification)
+			return fmt.Errorf("failed to update wallet: %w", common_db.ErrConcurrentModification)
 		}
-	}
-
-	// update wallet
-	rows, err := qtx.UpdateWalletPartial(ctx, store.UpdateWalletPartialParams{
-		ID:       w.ID(),
-		Balance:  common_db.ToPgInt8(w.Balance().Amount()),
-		Currency: common_db.ToPgText(w.Currency().Code()),
-		Version:  w.Version(),
+		return nil
 	})
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return fmt.Errorf("failed to update wallet: %w", common_db.ErrConcurrentModification)
-	}
-
-	return nil
 }

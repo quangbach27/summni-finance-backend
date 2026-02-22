@@ -7,25 +7,21 @@ import (
 	"sumni-finance-backend/internal/finance/domain/fundprovider"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type fundProviderRepo struct {
 	queries *store.Queries
-	pgPool  *pgxpool.Pool
 }
 
 func NewFundProviderRepo(
 	queries *store.Queries,
-	pgPool *pgxpool.Pool,
 ) (*fundProviderRepo, error) {
-	if queries == nil || pgPool == nil {
+	if queries == nil {
 		return nil, errors.New("missing dependencies")
 	}
 
 	return &fundProviderRepo{
 		queries: queries,
-		pgPool:  pgPool,
 	}, nil
 }
 

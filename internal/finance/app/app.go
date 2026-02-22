@@ -5,6 +5,8 @@ import (
 	"sumni-finance-backend/internal/finance/adapter/db/store"
 	"sumni-finance-backend/internal/finance/app/command"
 
+	common_db "sumni-finance-backend/internal/common/db"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -24,13 +26,14 @@ type Queries struct {
 
 func NewApplication(pgPool *pgxpool.Pool) (Application, error) {
 	queries := store.New(pgPool)
+	transactionManager := common_db.NewPgxTransactionManager(pgPool)
 
-	walletRepo, err := db.NewWalletRepo(queries, pgPool)
+	walletRepo, err := db.NewWalletRepo(queries, transactionManager)
 	if err != nil {
 		return Application{}, err
 	}
 
-	fundProviderRepo, err := db.NewFundProviderRepo(queries, pgPool)
+	fundProviderRepo, err := db.NewFundProviderRepo(queries)
 	if err != nil {
 		return Application{}, err
 	}

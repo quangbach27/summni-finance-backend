@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"sumni-finance-backend/internal/common/db"
+	common_db "sumni-finance-backend/internal/common/db"
 	"sumni-finance-backend/internal/common/logs"
 	"sumni-finance-backend/internal/common/server"
 	finance_app "sumni-finance-backend/internal/finance/app"
@@ -18,8 +18,6 @@ import (
 func main() {
 	logs.Init()
 	ctx := context.Background()
-
-	_ = db.MustNewPgConnectionPool(ctx)
 
 	// TODO: Uncomment when enable authentication
 	/*
@@ -38,7 +36,7 @@ func main() {
 		authHandler := auth.NewAuthHandler(keycloakClient, tokenRepo)
 	*/
 
-	pgPool := db.MustNewPgConnectionPool(ctx)
+	pgPool := common_db.MustNewPgConnectionPool(ctx)
 	financeApp, err := finance_app.NewApplication(pgPool)
 	if err != nil {
 		slog.Error("failed to init finance app", "error", err)

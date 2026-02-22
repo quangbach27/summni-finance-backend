@@ -7,14 +7,42 @@ import (
 	"sumni-finance-backend/internal/common/logs"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func FinishTransaction(ctx context.Context, tx pgx.Tx, err error) error {
+type PgxTransactionManager struct {
+	pgxPool *pgxpool.Pool
+}
+
+func NewPgxTransactionManager(pgxPool *pgxpool.Pool) *PgxTransactionManager {
+	return &PgxTransactionManager{
+		pgxPool: pgxPool,
+	}
+}
+
+func (tm *PgxTransactionManager) WithTx(
+	ctx context.Context,
+	fn func(tx pgx.Tx) error,
+) (err error) {
+	var tx pgx.Tx
+	tx, err = tm.pgxPool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+
+	defer func() {
+		err = tm.finishTransaction(ctx, tx, err)
+	}()
+
+	return fn(tx)
+}
+
+func (tm *PgxTransactionManager) finishTransaction(ctx context.Context, tx pgx.Tx, err error) error {
 	logger := logs.FromContext(ctx)
 
 	if err == nil {
 		if commitErr := tx.Commit(ctx); commitErr != nil {
-			return fmt.Errorf("commit transaction failed: %w", commitErr)
+			return fmt.Errorf("commit transaction failed after successful operation: %w", commitErr)
 		}
 
 		logger.Info("commit transaction successful")

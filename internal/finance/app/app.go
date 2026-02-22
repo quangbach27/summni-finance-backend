@@ -1,6 +1,7 @@
 package app
 
 import (
+	"sumni-finance-backend/internal/common/cqrs"
 	"sumni-finance-backend/internal/finance/adapter/db"
 	"sumni-finance-backend/internal/finance/adapter/db/store"
 	"sumni-finance-backend/internal/finance/app/command"
@@ -40,9 +41,9 @@ func NewApplication(pgPool *pgxpool.Pool) (Application, error) {
 
 	return Application{
 		Commands: Commands{
-			AllocateFund:       command.NewAllocateFundHandler(walletRepo, fundProviderRepo),
-			CreateFundProvider: command.NewCreateFundProviderHandler(fundProviderRepo),
-			CreateWallet:       command.NewCreateWalletHandler(walletRepo),
+			AllocateFund:       cqrs.ApplyCommandDecorators(command.NewAllocateFundHandler(walletRepo, fundProviderRepo)),
+			CreateFundProvider: cqrs.ApplyCommandDecorators(command.NewCreateFundProviderHandler(fundProviderRepo)),
+			CreateWallet:       cqrs.ApplyCommandDecorators(command.NewCreateWalletHandler(walletRepo)),
 		},
 		Queries: Queries{},
 	}, nil

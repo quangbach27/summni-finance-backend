@@ -16,7 +16,7 @@ func (d commandLoggingDecorator[C]) Handle(ctx context.Context, cmd C) (err erro
 		"command", handlerType,
 	)
 
-	logger.Debug("Execute command")
+	logger.Info("Execute command")
 
 	defer func() {
 		if err != nil {

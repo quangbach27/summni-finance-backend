@@ -4,7 +4,7 @@ info:
   description: API for managing finance operations including fund providers
   version: 1.0.0
 servers:
-  - url: http://localhost:8000/api
+  - url: http://localhost:4000/api
     description: Local development server
 
 paths:

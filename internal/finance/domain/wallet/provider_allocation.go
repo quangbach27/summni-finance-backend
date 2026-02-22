@@ -26,7 +26,7 @@ func NewProviderAllocation(
 
 	allocated, err := valueobject.NewMoney(allocatedAmount, fundProvider.Currency())
 	if err != nil {
-		return ProviderAllocation{}, nil
+		return ProviderAllocation{}, err
 	}
 
 	return ProviderAllocation{

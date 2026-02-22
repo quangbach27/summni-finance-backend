@@ -22,6 +22,15 @@ func (err ErrInsufficientAllocatedAmount) Error() string {
 	return fmt.Sprintf("allocated amount '%d' has exccedd unallocated amount '%d' of fund provider", err.AllocatedAmount, err.UnallocatedAmount)
 }
 
+type ErrInsufficientWithdrawAmount struct {
+	WithdrawAmount  int64
+	AllocatedAmount int64
+}
+
+func (err ErrInsufficientWithdrawAmount) Error() string {
+	return fmt.Sprintf("withdraw amount '%d' has excceedd allocated amount '%d' of fund provider", err.WithdrawAmount, err.AllocatedAmount)
+}
+
 type FundProvider struct {
 	id                 uuid.UUID
 	balance            valueobject.Money
@@ -118,17 +127,12 @@ func (p *FundProvider) AllocatedBalance() valueobject.Money {
 	return allocatedBalance
 }
 
-func (p *FundProvider) TopUp(amount int64) error {
-	if amount <= 0 {
+func (p *FundProvider) TopUp(amount valueobject.Money) error {
+	if amount.IsNegative() || amount.Amount() == 0 {
 		return ErrInsufficientAmount
 	}
 
-	topupMoney, err := valueobject.NewMoney(amount, p.Currency())
-	if err != nil {
-		return err
-	}
-
-	newBalance, err := p.balance.Add(topupMoney)
+	newBalance, err := p.balance.Add(amount)
 	if err != nil {
 		return err
 	}
@@ -137,17 +141,19 @@ func (p *FundProvider) TopUp(amount int64) error {
 	return nil
 }
 
-func (p *FundProvider) Withdraw(amount int64) error {
-	if amount <= 0 || amount > p.AllocatedBalance().Amount() {
+func (p *FundProvider) Withdraw(amount valueobject.Money) error {
+	if amount.IsNegative() || amount.Amount() == 0 {
 		return ErrInsufficientAmount
 	}
 
-	withdrawMoney, err := valueobject.NewMoney(amount, p.Currency())
-	if err != nil {
-		return err
+	if amount.GreaterThan(p.AllocatedBalance()) {
+		return ErrInsufficientWithdrawAmount{
+			WithdrawAmount:  amount.Amount(),
+			AllocatedAmount: p.AllocatedBalance().Amount(),
+		}
 	}
 
-	newBalance, err := p.balance.Subtract(withdrawMoney)
+	newBalance, err := p.balance.Subtract(amount)
 	if err != nil {
 		return err
 	}

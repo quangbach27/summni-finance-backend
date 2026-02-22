@@ -276,14 +276,21 @@ func TestFundProvider_TopUp(t *testing.T) {
 		expectErr   error
 	}{
 		{
-			name:        "cannot top up when amount is negative",
+			name:        "returns error when amount is negative",
 			initBalance: 100,
 			topUpAmount: -50,
 			hasErr:      true,
 			expectErr:   fundprovider.ErrInsufficientAmount,
 		},
 		{
-			name:        "can top up",
+			name:        "returns error when amount is zero",
+			initBalance: 100,
+			topUpAmount: 0,
+			hasErr:      true,
+			expectErr:   fundprovider.ErrInsufficientAmount,
+		},
+		{
+			name:        "ctop up successfully",
 			initBalance: 100,
 			topUpAmount: 50,
 			hasErr:      false,
@@ -295,7 +302,10 @@ func TestFundProvider_TopUp(t *testing.T) {
 			fundProvider, err := fundprovider.NewFundProvider(tt.initBalance, "USD")
 			require.NoError(t, err)
 
-			err = fundProvider.TopUp(tt.topUpAmount)
+			topUpAmount, err := valueobject.NewMoney(tt.topUpAmount, fundProvider.Currency())
+			require.NoError(t, err)
+
+			err = fundProvider.TopUp(topUpAmount)
 
 			if tt.hasErr {
 				require.Error(t, err)
@@ -317,10 +327,11 @@ func TestFundProvider_Withdraw(t *testing.T) {
 		unallocatedBalance int64
 		withdrawAmount     int64
 		hasErr             bool
+		currencyTopUp      valueobject.Currency
 		expectErr          error
 	}{
 		{
-			name:               "cannot withdraw when amount is negative",
+			name:               "return error when amount is negative",
 			balance:            100,
 			unallocatedBalance: 50,
 			withdrawAmount:     -50,
@@ -328,15 +339,30 @@ func TestFundProvider_Withdraw(t *testing.T) {
 			expectErr:          fundprovider.ErrInsufficientAmount,
 		},
 		{
-			name:               "cannot withdraw when amount excceed unallocated balance",
+			name:               "return error when amount is zero",
 			balance:            100,
 			unallocatedBalance: 50,
-			withdrawAmount:     60,
+			withdrawAmount:     0,
 			hasErr:             true,
 			expectErr:          fundprovider.ErrInsufficientAmount,
 		},
 		{
-			name:               "can withdraw success",
+			name:               "return error when amount excceed allocated balance",
+			balance:            100,
+			unallocatedBalance: 50, // allocated amount is balance - unallocatedBalance = 50
+			withdrawAmount:     60,
+			hasErr:             true,
+		},
+		{
+			name:               "return error when topup currency is different from fund provider",
+			balance:            100,
+			unallocatedBalance: 50,
+			withdrawAmount:     30,
+			currencyTopUp:      valueobject.KRW,
+			hasErr:             true,
+		},
+		{
+			name:               "withdraw successfully",
 			balance:            100,
 			unallocatedBalance: 50,
 			withdrawAmount:     30,
@@ -355,11 +381,23 @@ func TestFundProvider_Withdraw(t *testing.T) {
 			)
 			require.NoError(t, err)
 
-			err = fundProvider.Withdraw(tt.withdrawAmount)
+			var withdrawCurrency valueobject.Currency
+			if tt.currencyTopUp.IsZero() {
+				withdrawCurrency = fundProvider.Currency()
+			} else {
+				withdrawCurrency = tt.currencyTopUp
+			}
+
+			withdrawAmount, err := valueobject.NewMoney(tt.withdrawAmount, withdrawCurrency)
+			require.NoError(t, err)
+
+			err = fundProvider.Withdraw(withdrawAmount)
 
 			if tt.hasErr {
 				require.Error(t, err)
-				assert.ErrorIs(t, tt.expectErr, err)
+				if tt.expectErr != nil {
+					assert.ErrorIs(t, tt.expectErr, err)
+				}
 			} else {
 				require.NoError(t, err)
 

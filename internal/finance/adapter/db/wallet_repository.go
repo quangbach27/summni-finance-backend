@@ -37,7 +37,7 @@ func (r *walletRepo) GetByID(
 	ctx context.Context,
 	wID uuid.UUID,
 ) (*wallet.Wallet, error) {
-	return nil, nil
+	return nil, errors.New("walletRepo.GetByID not implemented")
 }
 
 func (r *walletRepo) GetByIDWithProviders(

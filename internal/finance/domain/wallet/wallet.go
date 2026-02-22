@@ -116,5 +116,15 @@ func (w *Wallet) AllocateFromFundProvider(
 		return err
 	}
 
-	return w.providerManager.AddFundProviderAndReserve(fundProvider, allocated)
+	if err = w.providerManager.AddFundProviderAndReserve(fundProvider, allocated); err != nil {
+		return err
+	}
+
+	newWalletBalance, err := w.balance.Add(allocated)
+	if err != nil {
+		return err
+	}
+
+	w.balance = newWalletBalance
+	return nil
 }

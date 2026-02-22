@@ -1,8 +1,29 @@
 package wallet
 
-import "context"
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
 
 type Repository interface {
-	GetByID(ctx context.Context, id ID) (*Wallet, error)
-	Create(ctx context.Context, wallets *Wallet) error
+	GetByID(
+		ctx context.Context,
+		wID uuid.UUID,
+	) (*Wallet, error)
+
+	GetByIDWithProviders(
+		ctx context.Context,
+		wID uuid.UUID,
+		spec ProviderAllocationSpec,
+	) (*Wallet, error)
+
+	Create(ctx context.Context, wallet *Wallet) error
+
+	Update(
+		ctx context.Context,
+		wID uuid.UUID,
+		spec ProviderAllocationSpec,
+		updateFunc func(*Wallet) error,
+	) error
 }

@@ -2,41 +2,30 @@ package wallet
 
 import (
 	"errors"
-	"fmt"
 	"sumni-finance-backend/internal/common/validator"
 	"sumni-finance-backend/internal/common/valueobject"
-	"sumni-finance-backend/internal/finance/domain/assetsource"
+	"sumni-finance-backend/internal/finance/domain/fundprovider"
 
 	"github.com/google/uuid"
 )
 
-type ID uuid.UUID
+var (
+	ErrFundProviderAlreadyRegistered = errors.New("fund provider already registered")
+	ErrFundAllocatedMissing          = errors.New("fund provider for allocation is missing")
+	ErrAllocationAmountNegative      = errors.New("allocated amount is negative")
+)
 
 type Wallet struct {
-	id           ID
-	name         string
-	isStrictMode bool
-	currency     valueobject.Currency
+	id      uuid.UUID
+	balance valueobject.Money
+	version int32
 
-	allocations []*Allocation
+	providerManager *ProviderManager
 }
 
-func NewWallet(
-	name string,
-	currency valueobject.Currency,
-	isStrictMode bool,
-	allocations []*Allocation,
-) (*Wallet, error) {
-	validator := validator.New()
-
-	validator.Required(name, "name")
-
-	validator.Check(len(allocations) != 0, "allocations", "allocation is required")
-	for _, alloc := range allocations {
-		validator.Check(alloc != nil && *alloc != Allocation{}, "allocation", "allocation is required")
-	}
-
-	if err := validator.Err(); err != nil {
+func NewWallet(currencyCode string) (*Wallet, error) {
+	currency, err := valueobject.NewCurrency(currencyCode)
+	if err != nil {
 		return nil, err
 	}
 
@@ -45,84 +34,87 @@ func NewWallet(
 		return nil, err
 	}
 
+	balance, err := valueobject.NewMoney(0, currency)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Wallet{
-		id:           ID(id),
-		name:         name,
-		currency:     currency,
-		isStrictMode: isStrictMode,
-		allocations:  allocations,
+		id:      id,
+		balance: balance,
+		version: 0,
+		providerManager: &ProviderManager{
+			providers: make(map[uuid.UUID]ProviderAllocation),
+		},
 	}, nil
 }
 
-// --- GETTERS (Crucial for other layers to read data) ---
-func (w *Wallet) ID() ID                         { return w.id }
-func (w *Wallet) Name() string                   { return w.name }
-func (w *Wallet) IsStrictMode() bool             { return w.isStrictMode }
-func (w *Wallet) Currency() valueobject.Currency { return w.currency }
-func (w *Wallet) Allocations() []*Allocation     { return w.allocations }
+func UnmarshalWalletFromDatabase(
+	id uuid.UUID,
+	balanceAmount int64,
+	currencyCode string,
+	version int32,
+	providerAllocations ...ProviderAllocation,
+) (*Wallet, error) {
+	v := validator.New()
 
-// --- DOMAIN BEHAVIOR ---
-func (w *Wallet) TotalBalance() (valueobject.Money, error) {
-	total, err := valueobject.NewMoney(0, w.currency)
+	v.Check(id != uuid.Nil, "id", "id is required")
+	v.Check(balanceAmount >= 0, "balance", "balance must greater or equal than 0")
+	v.Required(currencyCode, "currency")
+
+	if err := v.Err(); err != nil {
+		return nil, err
+	}
+
+	currency, err := valueobject.NewCurrency(currencyCode)
 	if err != nil {
-		return valueobject.Money{}, fmt.Errorf("fail to calculate wallet(ID: %s)'s total balance: %w", uuid.UUID(w.id).String(), err)
+		return nil, err
 	}
 
-	for _, a := range w.allocations {
-		total, err = total.Add(a.amount)
-		if err != nil {
-			return valueobject.Money{}, fmt.Errorf("fail to calculate wallet(ID: %s)'s total balance: %w", uuid.UUID(w.id).String(), err)
-		}
+	balance, err := valueobject.NewMoney(balanceAmount, currency)
+	if err != nil {
+		return nil, err
 	}
 
-	return total, nil
+	providerManager, err := NewProviderManager(providerAllocations)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Wallet{
+		id:              id,
+		balance:         balance,
+		version:         version,
+		providerManager: providerManager,
+	}, nil
 }
 
-func (w *Wallet) TopUp(assetSourceID assetsource.ID, amount valueobject.Money) error {
-	if amount.IsZero() {
-		return errors.New("top-up amount must be positive")
+func (w *Wallet) ID() uuid.UUID                     { return w.id }
+func (w *Wallet) Balance() valueobject.Money        { return w.balance }
+func (w *Wallet) Currency() valueobject.Currency    { return w.balance.Currency() }
+func (w *Wallet) ProviderManager() *ProviderManager { return w.providerManager }
+func (w *Wallet) Version() int32                    { return w.version }
+
+func (w *Wallet) AllocateFromFundProvider(
+	fundProvider *fundprovider.FundProvider,
+	allocatedAmount int64,
+) error {
+	if fundProvider == nil {
+		return ErrFundAllocatedMissing
 	}
 
-	if amount.Currency() != w.currency {
-		return fmt.Errorf("wallet currency is %s but top-up amount is %s", w.currency.Code(), amount.Currency().Code())
+	if allocatedAmount < 0 {
+		return ErrAllocationAmountNegative
 	}
 
-	// Find existing allocation and update it
-	for _, alloc := range w.allocations {
-		if alloc.assetSourceID == assetSourceID {
-			newAmount, err := alloc.amount.Add(amount)
-			if err != nil {
-				return err
-			}
-
-			alloc.amount = newAmount
-			return nil
-		}
+	if _, exists := w.ProviderManager().FindProvider(fundProvider.ID()); exists {
+		return ErrFundProviderAlreadyRegistered
 	}
 
-	// returning error if not found source
-	return fmt.Errorf("asset source %s not found in this wallet", assetSourceID)
-}
-
-func (w *Wallet) Withdraw(assetSourceID assetsource.ID, amount valueobject.Money) error {
-	if amount.Currency() != w.currency {
-		return fmt.Errorf("wallet currency is %s but withdraw amount is %s", w.currency, amount.Currency())
+	allocated, err := valueobject.NewMoney(allocatedAmount, w.Currency())
+	if err != nil {
+		return err
 	}
 
-	for _, alloc := range w.allocations {
-		if alloc.assetSourceID == assetSourceID {
-			// Check if enough balance
-			// Assuming Money.Subtract returns error if result < 0
-			newAmount, err := alloc.amount.Subtract(amount)
-			if err != nil {
-				return fmt.Errorf("insufficient funds in asset source %s: %w", assetSourceID, err)
-			}
-
-			alloc.amount = newAmount
-			return nil
-		}
-	}
-
-	// returning error if not found source
-	return fmt.Errorf("asset source %s not found in this wallet", assetSourceID)
+	return w.providerManager.AddFundProviderAndReserve(fundProvider, allocated)
 }

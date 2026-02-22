@@ -1,8 +1,13 @@
 package app
 
 import (
+	"sumni-finance-backend/internal/finance/adapter/db"
+	"sumni-finance-backend/internal/finance/adapter/db/store"
 	"sumni-finance-backend/internal/finance/app/command"
-	"sumni-finance-backend/internal/finance/app/query"
+
+	common_db "sumni-finance-backend/internal/common/db"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Application struct {
@@ -11,9 +16,34 @@ type Application struct {
 }
 
 type Commands struct {
-	CreateAssetSourceHandler command.CreateAssetSourceHandler
+	AllocateFund       command.AllocateFundHandler
+	CreateFundProvider command.CreateFundProviderHandler
+	CreateWallet       command.CreateWalletHandler
 }
 
 type Queries struct {
-	GetAssetSourceHandler query.GetAssetSourceHandler
+}
+
+func NewApplication(pgPool *pgxpool.Pool) (Application, error) {
+	queries := store.New(pgPool)
+	transactionManager := common_db.NewPgxTransactionManager(pgPool)
+
+	walletRepo, err := db.NewWalletRepo(queries, transactionManager)
+	if err != nil {
+		return Application{}, err
+	}
+
+	fundProviderRepo, err := db.NewFundProviderRepo(queries)
+	if err != nil {
+		return Application{}, err
+	}
+
+	return Application{
+		Commands: Commands{
+			AllocateFund:       command.NewAllocateFundHandler(walletRepo, fundProviderRepo),
+			CreateFundProvider: command.NewCreateFundProviderHandler(fundProviderRepo),
+			CreateWallet:       command.NewCreateWalletHandler(walletRepo),
+		},
+		Queries: Queries{},
+	}, nil
 }

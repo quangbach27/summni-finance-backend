@@ -1,6 +1,6 @@
 all: false
 dir: "{{.InterfaceDir}}/mocks"
-filename: mocks_test.go
+filename: mocks.go
 force-file-write: true
 formatter: goimports
 generate: true
@@ -11,7 +11,9 @@ pkgname: "mocks"
 recursive: false
 template: testify
 packages:
-  summni-finance-backend/internal/auth:
+  sumni-finance-backend/internal/finance/domain/fundprovider:
     interfaces:
-      Oauth2Client:
-      TokenRepository:
+      Repository:
+  sumni-finance-backend/internal/finance/domain/wallet:
+    interfaces:
+      Repository:

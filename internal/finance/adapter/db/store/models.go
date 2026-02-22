@@ -6,28 +6,25 @@ package store
 
 import (
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type FinanceAssetSource struct {
-	ID            uuid.UUID
-	OwnerID       uuid.UUID
-	Balance       int64
-	SourceType    string
-	CurrencyCode  string
-	BankName      pgtype.Text
-	AccountNumber pgtype.Text
+type FinanceFundProvider struct {
+	ID                uuid.UUID
+	Balance           int64
+	Currency          string
+	UnallocatedAmount int64
+	Version           int32
 }
 
-type FinanceAssetsourceWallet struct {
-	AssetsourceID uuid.UUID
-	WalletID      uuid.UUID
+type FinanceFundProviderAllocation struct {
+	FundProviderID  uuid.UUID
+	WalletID        uuid.UUID
+	AllocatedAmount int64
 }
 
 type FinanceWallet struct {
-	ID           uuid.UUID
-	OwnerID      uuid.UUID
-	Name         string
-	CurrencyCode string
-	IsStrictMode pgtype.Bool
+	ID       uuid.UUID
+	Balance  int64
+	Currency string
+	Version  int32
 }

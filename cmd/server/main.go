@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
-	"sumni-finance-backend/internal/common/db"
+	"os"
+	common_db "sumni-finance-backend/internal/common/db"
 	"sumni-finance-backend/internal/common/logs"
 	"sumni-finance-backend/internal/common/server"
-	financePorts "sumni-finance-backend/internal/finance/ports"
-	financeService "sumni-finance-backend/internal/finance/service"
+	finance_app "sumni-finance-backend/internal/finance/app"
+	"sumni-finance-backend/internal/finance/ports"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
@@ -16,8 +18,6 @@ import (
 func main() {
 	logs.Init()
 	ctx := context.Background()
-
-	connPool := db.MustNewPgConnectionPool(ctx)
 
 	// TODO: Uncomment when enable authentication
 	/*
@@ -32,9 +32,18 @@ func main() {
 			slog.Error("critical failure", "err", err)
 			os.Exit(1)
 		}
+
+		authHandler := auth.NewAuthHandler(keycloakClient, tokenRepo)
 	*/
 
-	financeApplication := financeService.NewApplication(connPool)
+	pgPool := common_db.MustNewPgConnectionPool(ctx)
+	financeApp, err := finance_app.NewApplication(pgPool)
+	if err != nil {
+		slog.Error("failed to init finance app", "error", err)
+		os.Exit(1)
+	}
+
+	financeServer := ports.NewHttpServer(financeApp)
 
 	server.RunHTTPServer(func(router chi.Router) http.Handler {
 		// HealthCheck
@@ -45,7 +54,6 @@ func main() {
 
 		// TODO: Uncomment when enable authentication
 		/*
-			authHandler := auth.NewAuthHandler(keycloakClient, tokenRepo)
 			auth.HandleServerFromMux(router, authHandler)
 		*/
 
@@ -55,12 +63,7 @@ func main() {
 			/*
 				protectedRoute.Use(authHandler.AuthMiddleware)
 			*/
-
-			// Finance Port
-			financePorts.HandleFinanceFromMux(
-				protectedRoute,
-				financePorts.NewFinanceHandler(financeApplication),
-			)
+			ports.HandlerFromMux(financeServer, protectedRoute)
 		})
 
 		return router

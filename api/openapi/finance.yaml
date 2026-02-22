@@ -1,0 +1,212 @@
+openapi: 3.0.3
+info:
+  title: Sumni Finance API
+  description: API for managing finance operations including fund providers
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000/api
+    description: Local development server
+
+paths:
+  /v1/fund-provider:
+    post:
+      summary: Create a new fund provider
+      description: Creates a new fund provider with an initial balance and currency
+      operationId: createFundProvider
+      tags:
+        - Fund Provider
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFundProviderRequest"
+      responses:
+        "201":
+          description: Fund provider created successfully
+        "400":
+          description: Bad request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/wallet:
+    post:
+      summary: Create a new wallet
+      description: Creates a new wallet with initial fund provider allocations
+      operationId: createWallet
+      tags:
+        - Wallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWalletRequest"
+      responses:
+        "201":
+          description: Wallet created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateWalletResponse"
+        "400":
+          description: Bad request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/wallet/{walletId}/allocate-fund:
+    post:
+      summary: Allocate funds to a wallet
+      description: Allocates funds from one or more fund providers to a wallet
+      operationId: allocateFund
+      tags:
+        - Wallet
+      parameters:
+        - name: walletId
+          in: path
+          required: true
+          description: The wallet ID to allocate funds to
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AllocateFundRequest"
+      responses:
+        "200":
+          description: Funds allocated successfully
+        "400":
+          description: Bad request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Wallet or fund provider not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    CreateFundProviderRequest:
+      type: object
+      required:
+        - initBalance
+        - currency
+      properties:
+        initBalance:
+          type: integer
+          format: int64
+          description: Initial balance for the fund provider
+          example: 1000000
+          minimum: 0
+        currency:
+          type: string
+          description: Currency code (e.g., USD, VND, KRW)
+          example: "USD"
+          pattern: "^[A-Z]{3}$"
+          minLength: 3
+          maxLength: 3
+
+    CreateWalletRequest:
+      type: object
+      required:
+        - currency
+      properties:
+        currency:
+          type: string
+          description: Currency code (e.g., USD, VND, KRW)
+          example: "VND"
+          pattern: "^[a-zA-Z]{3}$"
+          minLength: 3
+          maxLength: 3
+
+    AllocateFundRequest:
+      type: object
+      required:
+        - providers
+      properties:
+        providers:
+          type: array
+          description: List of fund providers to allocate from
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/AllocatedProvider"
+
+    AllocatedProvider:
+      type: object
+      required:
+        - id
+        - allocatedAmount
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Fund provider ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        allocatedAmount:
+          type: integer
+          format: int64
+          description: Amount to allocate from this provider
+          example: 50000
+          minimum: 0
+
+    CreateWalletResponse:
+      type: object
+      properties:
+        request_id:
+          type: string
+          description: Request identifier for tracking
+          example: "abc123xyz"
+
+    ErrorResponse:
+      type: object
+      required:
+        - request_id
+        - error
+      properties:
+        request_id:
+          type: string
+          description: Request identifier for tracking
+          example: "abc123xyz"
+        error:
+          type: object
+          required:
+            - slug
+            - message
+          properties:
+            slug:
+              type: string
+              description: Error slug identifier
+              example: "invalid-currency"
+            message:
+              type: string
+              description: Human-readable error message
+              example: "Currency code must be 3 uppercase letters"

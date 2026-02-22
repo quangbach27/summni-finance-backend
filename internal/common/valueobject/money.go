@@ -15,7 +15,6 @@ type Money struct {
 func NewMoney(amount int64, currency Currency) (Money, error) {
 	validator := validator.New()
 
-	validator.Check(amount >= 0, "money.amount", "amount cannot be negative")
 	validator.Check(!currency.IsZero(), "money.currency", "currency is required")
 
 	if err := validator.Err(); err != nil {
@@ -38,8 +37,8 @@ func (m Money) IsZero() bool { return m == Money{} }
 // Add sums two money objects.
 func (m Money) Add(other Money) (Money, error) {
 	// 1. Allow adding Zero (No error needed)
-	if other.IsZero() || other.amount == 0 {
-		return m, nil
+	if other.IsZero() {
+		return Money{}, errors.New("empty input money when adding")
 	}
 
 	// 2. Validate Currency
@@ -65,26 +64,52 @@ func (m Money) Subtract(other Money) (Money, error) {
 		return Money{}, errors.New("cannot subtract different currencies")
 	}
 
-	resultAmount := m.amount - other.amount
-
-	// 3. Maintain Invariant: If NewMoney forbids negative, Subtract must also forbid it.
-	if resultAmount < 0 {
-		return Money{}, errors.New("insufficient funds: result cannot be negative")
-	}
-
 	return Money{
-		amount:   resultAmount,
+		amount:   m.amount - other.amount,
 		currency: m.currency,
 	}, nil
 }
 
+func (m Money) IsNegative() bool {
+	return m.amount < 0
+}
+
 // LessOrEqualThan compares amounts.
 func (m Money) LessOrEqualThan(other Money) bool {
-	// Choosing to return false here implies they are not comparable.
-	// Be careful not to rely on this for sorting mixed currencies.
 	if m.currency != other.currency {
 		return false
 	}
 
 	return m.amount <= other.amount
+}
+
+// LessThan compares amounts.
+func (m Money) LessThan(other Money) bool {
+	if m.currency != other.currency {
+		return false
+	}
+
+	return m.amount < other.amount
+}
+
+// GreaterThan compares amounts.
+func (m Money) GreaterThan(other Money) bool {
+	if m.currency != other.currency {
+		return false
+	}
+
+	return m.amount > other.amount
+}
+
+// GreaterOrEqualThan compares amounts.
+func (m Money) GreaterOrEqualThan(other Money) bool {
+	if m.currency != other.currency {
+		return false
+	}
+
+	return m.amount >= other.amount
+}
+
+func (m Money) Equal(other Money) bool {
+	return m.amount == other.amount && m.currency == other.currency
 }

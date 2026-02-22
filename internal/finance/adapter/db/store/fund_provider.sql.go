@@ -47,6 +47,38 @@ func (q *Queries) CreateFundProvider(ctx context.Context, arg CreateFundProvider
 	return err
 }
 
+const getFundProviderByID = `-- name: GetFundProviderByID :one
+SELECT
+    id,
+    balance,
+    unallocated_amount,
+    currency,
+    version
+FROM finance.fund_providers
+WHERE id = $1
+`
+
+type GetFundProviderByIDRow struct {
+	ID                uuid.UUID
+	Balance           int64
+	UnallocatedAmount int64
+	Currency          string
+	Version           int32
+}
+
+func (q *Queries) GetFundProviderByID(ctx context.Context, id uuid.UUID) (GetFundProviderByIDRow, error) {
+	row := q.db.QueryRow(ctx, getFundProviderByID, id)
+	var i GetFundProviderByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.Balance,
+		&i.UnallocatedAmount,
+		&i.Currency,
+		&i.Version,
+	)
+	return i, err
+}
+
 const getFundProviderByWalletID = `-- name: GetFundProviderByWalletID :many
 SELECT 
     fp.id,
@@ -86,6 +118,51 @@ func (q *Queries) GetFundProviderByWalletID(ctx context.Context, walletID uuid.U
 			&i.UnallocatedAmount,
 			&i.Version,
 			&i.WalletAllocatedAmount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getFundProvidersByIDs = `-- name: GetFundProvidersByIDs :many
+SELECT
+    id,
+    balance,
+    unallocated_amount,
+    currency,
+    version
+FROM finance.fund_providers
+WHERE id = ANY($1::uuid[])
+`
+
+type GetFundProvidersByIDsRow struct {
+	ID                uuid.UUID
+	Balance           int64
+	UnallocatedAmount int64
+	Currency          string
+	Version           int32
+}
+
+func (q *Queries) GetFundProvidersByIDs(ctx context.Context, fpids []uuid.UUID) ([]GetFundProvidersByIDsRow, error) {
+	rows, err := q.db.Query(ctx, getFundProvidersByIDs, fpids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetFundProvidersByIDsRow
+	for rows.Next() {
+		var i GetFundProvidersByIDsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Balance,
+			&i.UnallocatedAmount,
+			&i.Currency,
+			&i.Version,
 		); err != nil {
 			return nil, err
 		}

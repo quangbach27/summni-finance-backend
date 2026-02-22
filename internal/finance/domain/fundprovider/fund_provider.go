@@ -75,7 +75,7 @@ func NewFundProvider(
 	}, nil
 }
 
-func UnmarshallFundProviderFromDatabase(
+func UnmarshalFundProviderFromDatabase(
 	id uuid.UUID,
 	balanceAmount int64,
 	unallocatedBalanceAmount int64,

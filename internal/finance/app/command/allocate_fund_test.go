@@ -196,6 +196,39 @@ func TestAllocateFundHandler_Handle(t *testing.T) {
 		require.Error(t, err)
 	})
 
+	t.Run("returns error when GetByIDs return nil", func(t *testing.T) {
+		provider1, err := fundprovider.NewFundProvider(100, "USD")
+		require.NoError(t, err)
+
+		provider2, err := fundprovider.NewFundProvider(100, "USD")
+		require.NoError(t, err)
+
+		cmd := command.AllocateFundCmd{
+			WalletID: uuid.New(),
+			Providers: []command.AllocatedProviders{
+				{ID: provider1.ID(), AllocatedAmount: 50},
+				{ID: provider2.ID(), AllocatedAmount: 50},
+			},
+		}
+
+		dm := NewAllocateFundDM(t)
+
+		dm.fundProviderRepoMock.
+			EXPECT().
+			GetByIDs(mock.Anything, mock.Anything).
+			Return(
+				[]*fundprovider.FundProvider{
+					provider1,
+					nil,
+				},
+				nil,
+			).
+			Once()
+
+		err = dm.NewHandler().Handle(context.Background(), cmd)
+		require.Error(t, err)
+	})
+
 	t.Run("allocate fund provider successfully", func(t *testing.T) {
 		provider1, err := fundprovider.NewFundProvider(100, "USD")
 		require.NoError(t, err)

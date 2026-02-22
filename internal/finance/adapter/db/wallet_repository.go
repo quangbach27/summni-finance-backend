@@ -57,7 +57,7 @@ func (r *walletRepo) GetByIDWithProviders(
 
 	filteredProviderAllocationsDomain := make([]wallet.ProviderAllocation, 0, len(providerModels))
 	for _, model := range providerModels {
-		fundProvider, err := fundprovider.UnmarshallFundProviderFromDatabase(
+		fundProvider, err := fundprovider.UnmarshalFundProviderFromDatabase(
 			model.ID,
 			model.Balance,
 			model.UnallocatedAmount,

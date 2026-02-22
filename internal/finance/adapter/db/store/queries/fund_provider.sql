@@ -36,3 +36,23 @@ SET
     version = version + 1
 WHERE id = sqlc.arg(id)
   AND version = sqlc.arg(version);
+
+-- name: GetFundProviderByID :one
+SELECT
+    id,
+    balance,
+    unallocated_amount,
+    currency,
+    version
+FROM finance.fund_providers
+WHERE id = $1;
+
+-- name: GetFundProvidersByIDs :many
+SELECT
+    id,
+    balance,
+    unallocated_amount,
+    currency,
+    version
+FROM finance.fund_providers
+WHERE id = ANY(sqlc.arg(fpIDs)::uuid[]);

@@ -43,9 +43,40 @@ func (r *fundProviderRepo) Create(
 }
 
 func (r *fundProviderRepo) GetByID(ctx context.Context, fpID uuid.UUID) (*fundprovider.FundProvider, error) {
-	return nil, nil
+	fundProviderModel, err := r.queries.GetFundProviderByID(ctx, fpID)
+	if err != nil {
+		return nil, err
+	}
+
+	return fundprovider.UnmarshalFundProviderFromDatabase(
+		fundProviderModel.ID,
+		fundProviderModel.Balance,
+		fundProviderModel.UnallocatedAmount,
+		fundProviderModel.Currency,
+		fundProviderModel.Version,
+	)
 }
 
 func (r *fundProviderRepo) GetByIDs(ctx context.Context, fpID []uuid.UUID) ([]*fundprovider.FundProvider, error) {
-	return nil, nil
+	fpModels, err := r.queries.GetFundProvidersByIDs(ctx, fpID)
+	if err != nil {
+		return nil, err
+	}
+
+	fps := make([]*fundprovider.FundProvider, 0, len(fpModels))
+	for _, model := range fpModels {
+		fp, err := fundprovider.UnmarshalFundProviderFromDatabase(
+			model.ID,
+			model.Balance,
+			model.UnallocatedAmount,
+			model.Currency,
+			model.Version,
+		)
+		if err != nil {
+			return nil, err
+		}
+		fps = append(fps, fp)
+	}
+
+	return fps, nil
 }

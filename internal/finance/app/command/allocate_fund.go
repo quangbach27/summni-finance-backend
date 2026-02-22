@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sumni-finance-backend/internal/common/cqrs"
+	"sumni-finance-backend/internal/common/logs"
 	"sumni-finance-backend/internal/common/server/httperr"
 	"sumni-finance-backend/internal/finance/domain/fundprovider"
 	"sumni-finance-backend/internal/finance/domain/wallet"
@@ -37,6 +38,8 @@ func NewAllocateFundHandler(walletRepo wallet.Repository, fundProviderRepo fundp
 }
 
 func (h *allocateFundHandler) Handle(ctx context.Context, cmd AllocateFundCmd) error {
+	logger := logs.FromContext(ctx)
+
 	// Validate command contains allocation instructions
 	if len(cmd.Providers) == 0 {
 		return httperr.NewIncorrectInputError(
@@ -62,9 +65,14 @@ func (h *allocateFundHandler) Handle(ctx context.Context, cmd AllocateFundCmd) e
 		)
 	}
 
+	logger.Info("retrieved provider", "ids", providerIDs)
+
 	// Build lookup map for deterministic access
 	providerMap := make(map[uuid.UUID]*fundprovider.FundProvider, len(providersDomain))
 	for _, p := range providersDomain {
+		if p == nil {
+			return fmt.Errorf("fund provider is empty")
+		}
 		providerMap[p.ID()] = p
 	}
 

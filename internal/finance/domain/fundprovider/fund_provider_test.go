@@ -179,7 +179,7 @@ func TestFundProvider_UnmarshallFromDatabase(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			fundProvider, err := fundprovider.UnmarshallFundProviderFromDatabase(
+			fundProvider, err := fundprovider.UnmarshalFundProviderFromDatabase(
 				tt.id,
 				tt.balanceAmount,
 				tt.unallocatedBalanceAmount,
@@ -372,7 +372,7 @@ func TestFundProvider_Withdraw(t *testing.T) {
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			fundProvider, err := fundprovider.UnmarshallFundProviderFromDatabase(
+			fundProvider, err := fundprovider.UnmarshalFundProviderFromDatabase(
 				uuid.New(),
 				tt.balance,
 				tt.unallocatedBalance,

@@ -5,6 +5,7 @@ CREATE SCHEMA IF NOT EXISTS finance;
 
 CREATE TABLE finance.fund_providers(
     id uuid PRIMARY KEY NOT NULL,
+    name varchar(255) NOT NULL,
     balance bigint NOT NULL,
     currency char(3) NOT NULL,
     unallocated_amount bigint NOT NULL,
@@ -13,6 +14,7 @@ CREATE TABLE finance.fund_providers(
 
 CREATE TABLE finance.wallets (
     id uuid PRIMARY KEY NOT NULL,
+    name varchar(255) NOT NULL,
     balance bigint NOT NULL,
     currency varchar(3) NOT NULL,
     version int NOT NULL

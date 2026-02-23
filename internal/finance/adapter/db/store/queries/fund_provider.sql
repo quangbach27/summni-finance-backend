@@ -1,22 +1,25 @@
 -- name: CreateFundProvider :exec
 INSERT INTO finance.fund_providers (
     id,
+    name,
     balance,
     currency,
     unallocated_amount,
     version
 ) VALUES(
     $1, -- id
-    $2, -- balance
-    $3, -- currency
-    $4, -- unallocated_amount
-    $5  -- version
+    $2, -- name
+    $3, -- balance
+    $4, -- currency
+    $5, -- unallocated_amount
+    $6  -- version
 );
 
 
 -- name: GetFundProviderByWalletID :many
 SELECT 
     fp.id,
+    fp.name,
     fp.balance,
     fp.currency,
     fp.unallocated_amount,
@@ -30,6 +33,7 @@ FROM finance.fund_providers fp
 -- name: UpdateFundProviderPartial :execrows
 UPDATE finance.fund_providers
 SET
+    name = COALESCE(sqlc.narg(name), name),
     balance = COALESCE(sqlc.narg(balance), balance),
     unallocated_amount = COALESCE(sqlc.narg(unallocated_amount), unallocated_amount),
     currency = COALESCE(sqlc.narg(currency), currency),
@@ -40,6 +44,7 @@ WHERE id = sqlc.arg(id)
 -- name: GetFundProviderByID :one
 SELECT
     id,
+    name,
     balance,
     unallocated_amount,
     currency,
@@ -50,6 +55,7 @@ WHERE id = $1;
 -- name: GetFundProvidersByIDs :many
 SELECT
     id,
+    name,
     balance,
     unallocated_amount,
     currency,

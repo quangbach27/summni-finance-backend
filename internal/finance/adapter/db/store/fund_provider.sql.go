@@ -15,21 +15,24 @@ import (
 const createFundProvider = `-- name: CreateFundProvider :exec
 INSERT INTO finance.fund_providers (
     id,
+    name,
     balance,
     currency,
     unallocated_amount,
     version
 ) VALUES(
     $1, -- id
-    $2, -- balance
-    $3, -- currency
-    $4, -- unallocated_amount
-    $5  -- version
+    $2, -- name
+    $3, -- balance
+    $4, -- currency
+    $5, -- unallocated_amount
+    $6  -- version
 )
 `
 
 type CreateFundProviderParams struct {
 	ID                uuid.UUID
+	Name              string
 	Balance           int64
 	Currency          string
 	UnallocatedAmount int64
@@ -39,6 +42,7 @@ type CreateFundProviderParams struct {
 func (q *Queries) CreateFundProvider(ctx context.Context, arg CreateFundProviderParams) error {
 	_, err := q.db.Exec(ctx, createFundProvider,
 		arg.ID,
+		arg.Name,
 		arg.Balance,
 		arg.Currency,
 		arg.UnallocatedAmount,
@@ -50,6 +54,7 @@ func (q *Queries) CreateFundProvider(ctx context.Context, arg CreateFundProvider
 const getFundProviderByID = `-- name: GetFundProviderByID :one
 SELECT
     id,
+    name,
     balance,
     unallocated_amount,
     currency,
@@ -60,6 +65,7 @@ WHERE id = $1
 
 type GetFundProviderByIDRow struct {
 	ID                uuid.UUID
+	Name              string
 	Balance           int64
 	UnallocatedAmount int64
 	Currency          string
@@ -71,6 +77,7 @@ func (q *Queries) GetFundProviderByID(ctx context.Context, id uuid.UUID) (GetFun
 	var i GetFundProviderByIDRow
 	err := row.Scan(
 		&i.ID,
+		&i.Name,
 		&i.Balance,
 		&i.UnallocatedAmount,
 		&i.Currency,
@@ -82,6 +89,7 @@ func (q *Queries) GetFundProviderByID(ctx context.Context, id uuid.UUID) (GetFun
 const getFundProviderByWalletID = `-- name: GetFundProviderByWalletID :many
 SELECT 
     fp.id,
+    fp.name,
     fp.balance,
     fp.currency,
     fp.unallocated_amount,
@@ -95,6 +103,7 @@ FROM finance.fund_providers fp
 
 type GetFundProviderByWalletIDRow struct {
 	ID                    uuid.UUID
+	Name                  string
 	Balance               int64
 	Currency              string
 	UnallocatedAmount     int64
@@ -113,6 +122,7 @@ func (q *Queries) GetFundProviderByWalletID(ctx context.Context, walletID uuid.U
 		var i GetFundProviderByWalletIDRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.Name,
 			&i.Balance,
 			&i.Currency,
 			&i.UnallocatedAmount,
@@ -132,6 +142,7 @@ func (q *Queries) GetFundProviderByWalletID(ctx context.Context, walletID uuid.U
 const getFundProvidersByIDs = `-- name: GetFundProvidersByIDs :many
 SELECT
     id,
+    name,
     balance,
     unallocated_amount,
     currency,
@@ -142,6 +153,7 @@ WHERE id = ANY($1::uuid[])
 
 type GetFundProvidersByIDsRow struct {
 	ID                uuid.UUID
+	Name              string
 	Balance           int64
 	UnallocatedAmount int64
 	Currency          string
@@ -159,6 +171,7 @@ func (q *Queries) GetFundProvidersByIDs(ctx context.Context, fpids []uuid.UUID) 
 		var i GetFundProvidersByIDsRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.Name,
 			&i.Balance,
 			&i.UnallocatedAmount,
 			&i.Currency,
@@ -177,15 +190,17 @@ func (q *Queries) GetFundProvidersByIDs(ctx context.Context, fpids []uuid.UUID) 
 const updateFundProviderPartial = `-- name: UpdateFundProviderPartial :execrows
 UPDATE finance.fund_providers
 SET
-    balance = COALESCE($1, balance),
-    unallocated_amount = COALESCE($2, unallocated_amount),
-    currency = COALESCE($3, currency),
+    name = COALESCE($1, name),
+    balance = COALESCE($2, balance),
+    unallocated_amount = COALESCE($3, unallocated_amount),
+    currency = COALESCE($4, currency),
     version = version + 1
-WHERE id = $4
-  AND version = $5
+WHERE id = $5
+  AND version = $6
 `
 
 type UpdateFundProviderPartialParams struct {
+	Name              pgtype.Text
 	Balance           pgtype.Int8
 	UnallocatedAmount pgtype.Int8
 	Currency          pgtype.Text
@@ -195,6 +210,7 @@ type UpdateFundProviderPartialParams struct {
 
 func (q *Queries) UpdateFundProviderPartial(ctx context.Context, arg UpdateFundProviderPartialParams) (int64, error) {
 	result, err := q.db.Exec(ctx, updateFundProviderPartial,
+		arg.Name,
 		arg.Balance,
 		arg.UnallocatedAmount,
 		arg.Currency,

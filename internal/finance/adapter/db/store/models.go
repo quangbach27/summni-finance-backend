@@ -10,6 +10,7 @@ import (
 
 type FinanceFundProvider struct {
 	ID                uuid.UUID
+	Name              string
 	Balance           int64
 	Currency          string
 	UnallocatedAmount int64
@@ -24,6 +25,7 @@ type FinanceFundProviderAllocation struct {
 
 type FinanceWallet struct {
 	ID       uuid.UUID
+	Name     string
 	Balance  int64
 	Currency string
 	Version  int32

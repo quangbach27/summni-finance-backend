@@ -8,6 +8,7 @@ import (
 )
 
 type CreateFundProviderCmd struct {
+	Name         string
 	InitBalance  int64
 	CurrencyCode string
 }
@@ -25,9 +26,9 @@ func NewCreateFundProviderHandler(fundProviderRepo fundprovider.Repository) *cre
 }
 
 func (h *createFundProviderHandler) Handle(ctx context.Context, cmd CreateFundProviderCmd) error {
-	fundProvider, err := fundprovider.NewFundProvider(cmd.InitBalance, cmd.CurrencyCode)
+	fundProvider, err := fundprovider.NewFundProvider(cmd.Name, cmd.InitBalance, cmd.CurrencyCode)
 	if err != nil {
-		return httperr.NewIncorrectInputError(err, "invalid-cmd")
+		return httperr.NewIncorrectInputError(err, "invalid-cmd-input")
 	}
 
 	err = h.fundProviderRepo.Create(ctx, fundProvider)

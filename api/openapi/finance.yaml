@@ -120,6 +120,7 @@ components:
       required:
         - initBalance
         - currency
+        - name
       properties:
         initBalance:
           type: integer
@@ -134,11 +135,16 @@ components:
           pattern: "^[A-Z]{3}$"
           minLength: 3
           maxLength: 3
+        name:
+          type: string
+          description: Fund provider name followed by the last 4 digits of the account number (e.g., Techcombank 7316)
+          example: "Techcomebank7316"
 
     CreateWalletRequest:
       type: object
       required:
         - currency
+        - name
       properties:
         currency:
           type: string
@@ -147,6 +153,10 @@ components:
           pattern: "^[a-zA-Z]{3}$"
           minLength: 3
           maxLength: 3
+        name:
+          type: string
+          description: Wallet Name (tai chinh tong, quy van phong, ...)
+          example: "Tai Chinh Tong"
 
     AllocateFundRequest:
       type: object

@@ -31,6 +31,7 @@ func (r *fundProviderRepo) Create(
 ) error {
 	return r.queries.CreateFundProvider(ctx, store.CreateFundProviderParams{
 		ID:                fundProvider.ID(),
+		Name:              fundProvider.Name(),
 		Balance:           fundProvider.Balance().Amount(),
 		Currency:          fundProvider.Currency().Code(),
 		UnallocatedAmount: fundProvider.UnallocatedBalance().Amount(),
@@ -39,17 +40,18 @@ func (r *fundProviderRepo) Create(
 }
 
 func (r *fundProviderRepo) GetByID(ctx context.Context, fpID uuid.UUID) (*fundprovider.FundProvider, error) {
-	fundProviderModel, err := r.queries.GetFundProviderByID(ctx, fpID)
+	fpModel, err := r.queries.GetFundProviderByID(ctx, fpID)
 	if err != nil {
 		return nil, err
 	}
 
 	return fundprovider.UnmarshalFundProviderFromDatabase(
-		fundProviderModel.ID,
-		fundProviderModel.Balance,
-		fundProviderModel.UnallocatedAmount,
-		fundProviderModel.Currency,
-		fundProviderModel.Version,
+		fpModel.ID,
+		fpModel.Name,
+		fpModel.Balance,
+		fpModel.UnallocatedAmount,
+		fpModel.Currency,
+		fpModel.Version,
 	)
 }
 
@@ -60,13 +62,14 @@ func (r *fundProviderRepo) GetByIDs(ctx context.Context, fpID []uuid.UUID) ([]*f
 	}
 
 	fps := make([]*fundprovider.FundProvider, 0, len(fpModels))
-	for _, model := range fpModels {
+	for _, fpModel := range fpModels {
 		fp, err := fundprovider.UnmarshalFundProviderFromDatabase(
-			model.ID,
-			model.Balance,
-			model.UnallocatedAmount,
-			model.Currency,
-			model.Version,
+			fpModel.ID,
+			fpModel.Name,
+			fpModel.Balance,
+			fpModel.UnallocatedAmount,
+			fpModel.Currency,
+			fpModel.Version,
 		)
 		if err != nil {
 			return nil, err

@@ -58,30 +58,31 @@ func (r *walletRepo) getByIDWithProviders(
 	spec wallet.ProviderAllocationSpec,
 	queries *store.Queries,
 ) (*wallet.Wallet, error) {
-	walletModel, err := r.queries.GetWalletByID(ctx, wID)
+	walletModel, err := queries.GetWalletByID(ctx, wID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve wallet '%s': %w", wID.String(), err)
 	}
 
-	providerModels, err := r.queries.GetFundProviderByWalletID(ctx, wID)
+	providerModels, err := queries.GetFundProviderByWalletID(ctx, wID)
 	if err != nil {
 		return nil, err
 	}
 
 	filteredProviderAllocationsDomain := make([]wallet.ProviderAllocation, 0, len(providerModels))
-	for _, model := range providerModels {
+	for _, fpModel := range providerModels {
 		fundProvider, err := fundprovider.UnmarshalFundProviderFromDatabase(
-			model.ID,
-			model.Balance,
-			model.UnallocatedAmount,
-			model.Currency,
-			model.Version,
+			fpModel.ID,
+			fpModel.Name,
+			fpModel.Balance,
+			fpModel.UnallocatedAmount,
+			fpModel.Currency,
+			fpModel.Version,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		providerAllocation, err := wallet.NewProviderAllocation(fundProvider, model.WalletAllocatedAmount)
+		providerAllocation, err := wallet.NewProviderAllocation(fundProvider, fpModel.WalletAllocatedAmount)
 		if err != nil {
 			return nil, err
 		}
@@ -93,6 +94,7 @@ func (r *walletRepo) getByIDWithProviders(
 
 	walletDomain, err := wallet.UnmarshalWalletFromDatabase(
 		walletModel.ID,
+		walletModel.Name,
 		walletModel.Balance,
 		walletModel.Currency,
 		walletModel.Version,
@@ -108,6 +110,7 @@ func (r *walletRepo) getByIDWithProviders(
 func (r *walletRepo) Create(ctx context.Context, wallet *wallet.Wallet) error {
 	return r.queries.CreateWallet(ctx, store.CreateWalletParams{
 		ID:       wallet.ID(),
+		Name:     wallet.Name(),
 		Balance:  wallet.Balance().Amount(),
 		Currency: wallet.Currency().Code(),
 		Version:  wallet.Version(),
@@ -164,6 +167,7 @@ func (r *walletRepo) Update(
 		// update wallet
 		rows, err := qtx.UpdateWalletPartial(ctx, store.UpdateWalletPartialParams{
 			ID:       w.ID(),
+			Name:     common_db.ToPgText(w.Name()),
 			Balance:  common_db.ToPgInt8(w.Balance().Amount()),
 			Currency: common_db.ToPgText(w.Currency().Code()),
 			Version:  w.Version(),
@@ -174,6 +178,7 @@ func (r *walletRepo) Update(
 		if rows == 0 {
 			return fmt.Errorf("failed to update wallet: %w", common_db.ErrConcurrentModification)
 		}
+
 		return nil
 	})
 }

@@ -15,19 +15,22 @@ import (
 const createWallet = `-- name: CreateWallet :exec
 INSERT INTO finance.wallets (
     id,
+    name,
     balance,
     currency,
     version
 ) VALUES (
     $1, -- id
-    $2, -- balance
-    $3, -- currency
-    $4 -- version
+    $2, -- name
+    $3, -- balance
+    $4, -- currency
+    $5 -- version
 )
 `
 
 type CreateWalletParams struct {
 	ID       uuid.UUID
+	Name     string
 	Balance  int64
 	Currency string
 	Version  int32
@@ -36,6 +39,7 @@ type CreateWalletParams struct {
 func (q *Queries) CreateWallet(ctx context.Context, arg CreateWalletParams) error {
 	_, err := q.db.Exec(ctx, createWallet,
 		arg.ID,
+		arg.Name,
 		arg.Balance,
 		arg.Currency,
 		arg.Version,
@@ -46,6 +50,7 @@ func (q *Queries) CreateWallet(ctx context.Context, arg CreateWalletParams) erro
 const getWalletByID = `-- name: GetWalletByID :one
 SELECT 
     id,
+    name,
     balance,
     currency,
     version
@@ -58,6 +63,7 @@ func (q *Queries) GetWalletByID(ctx context.Context, id uuid.UUID) (FinanceWalle
 	var i FinanceWallet
 	err := row.Scan(
 		&i.ID,
+		&i.Name,
 		&i.Balance,
 		&i.Currency,
 		&i.Version,
@@ -68,14 +74,16 @@ func (q *Queries) GetWalletByID(ctx context.Context, id uuid.UUID) (FinanceWalle
 const updateWalletPartial = `-- name: UpdateWalletPartial :execrows
 UPDATE finance.wallets
 SET
-    balance  = COALESCE($1, balance),
-    currency = COALESCE($2, currency),
+    name = COALESCE($1, name),
+    balance  = COALESCE($2, balance),
+    currency = COALESCE($3, currency),
     version  = version + 1
-WHERE id = $3
-  AND version = $4
+WHERE id = $4
+  AND version = $5
 `
 
 type UpdateWalletPartialParams struct {
+	Name     pgtype.Text
 	Balance  pgtype.Int8
 	Currency pgtype.Text
 	ID       uuid.UUID
@@ -84,6 +92,7 @@ type UpdateWalletPartialParams struct {
 
 func (q *Queries) UpdateWalletPartial(ctx context.Context, arg UpdateWalletPartialParams) (int64, error) {
 	result, err := q.db.Exec(ctx, updateWalletPartial,
+		arg.Name,
 		arg.Balance,
 		arg.Currency,
 		arg.ID,

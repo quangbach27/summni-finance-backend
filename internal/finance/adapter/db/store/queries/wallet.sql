@@ -1,19 +1,22 @@
 -- name: CreateWallet :exec
 INSERT INTO finance.wallets (
     id,
+    name,
     balance,
     currency,
     version
 ) VALUES (
     $1, -- id
-    $2, -- balance
-    $3, -- currency
-    $4 -- version
+    $2, -- name
+    $3, -- balance
+    $4, -- currency
+    $5 -- version
 );
 
 -- name: GetWalletByID :one
 SELECT 
     id,
+    name,
     balance,
     currency,
     version
@@ -23,6 +26,7 @@ WHERE id = $1;
 -- name: UpdateWalletPartial :execrows
 UPDATE finance.wallets
 SET
+    name = COALESCE(sqlc.narg(name), name),
     balance  = COALESCE(sqlc.narg(balance), balance),
     currency = COALESCE(sqlc.narg(currency), currency),
     version  = version + 1

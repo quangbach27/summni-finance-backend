@@ -17,13 +17,18 @@ var (
 
 type Wallet struct {
 	id      uuid.UUID
+	name    string
 	balance valueobject.Money
 	version int32
 
 	providerManager *ProviderManager
 }
 
-func NewWallet(currencyCode string) (*Wallet, error) {
+func NewWallet(currencyCode string, name string) (*Wallet, error) {
+	if name == "" {
+		return nil, errors.New("name is required")
+	}
+
 	currency, err := valueobject.NewCurrency(currencyCode)
 	if err != nil {
 		return nil, err
@@ -41,6 +46,7 @@ func NewWallet(currencyCode string) (*Wallet, error) {
 
 	return &Wallet{
 		id:      id,
+		name:    name,
 		balance: balance,
 		version: 0,
 		providerManager: &ProviderManager{
@@ -51,6 +57,7 @@ func NewWallet(currencyCode string) (*Wallet, error) {
 
 func UnmarshalWalletFromDatabase(
 	id uuid.UUID,
+	name string,
 	balanceAmount int64,
 	currencyCode string,
 	version int32,
@@ -59,6 +66,7 @@ func UnmarshalWalletFromDatabase(
 	v := validator.New()
 
 	v.Check(id != uuid.Nil, "id", "id is required")
+	v.Required(name, "name")
 	v.Check(balanceAmount >= 0, "balance", "balance must greater or equal than 0")
 	v.Required(currencyCode, "currency")
 
@@ -83,6 +91,7 @@ func UnmarshalWalletFromDatabase(
 
 	return &Wallet{
 		id:              id,
+		name:            name,
 		balance:         balance,
 		version:         version,
 		providerManager: providerManager,
@@ -90,6 +99,7 @@ func UnmarshalWalletFromDatabase(
 }
 
 func (w *Wallet) ID() uuid.UUID                     { return w.id }
+func (w *Wallet) Name() string                      { return w.name }
 func (w *Wallet) Balance() valueobject.Money        { return w.balance }
 func (w *Wallet) Currency() valueobject.Currency    { return w.balance.Currency() }
 func (w *Wallet) ProviderManager() *ProviderManager { return w.providerManager }

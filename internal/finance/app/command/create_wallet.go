@@ -9,6 +9,7 @@ import (
 
 type CreateWalletCmd struct {
 	CurrencyCode string
+	Name         string
 }
 
 type CreateWalletHandler cqrs.CommandHandler[CreateWalletCmd]
@@ -24,9 +25,9 @@ func NewCreateWalletHandler(walletRepo wallet.Repository) *createWalletHandler {
 }
 
 func (h *createWalletHandler) Handle(ctx context.Context, cmd CreateWalletCmd) error {
-	walletDomain, err := wallet.NewWallet(cmd.CurrencyCode)
+	walletDomain, err := wallet.NewWallet(cmd.CurrencyCode, cmd.Name)
 	if err != nil {
-		return httperr.NewIncorrectInputError(err, "invalid-currency-code")
+		return httperr.NewIncorrectInputError(err, "invalid-cmd-input")
 	}
 
 	err = h.walletRepo.Create(ctx, walletDomain)

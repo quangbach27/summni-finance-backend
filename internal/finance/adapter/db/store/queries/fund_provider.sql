@@ -28,9 +28,9 @@ SELECT
     fp.version,
     fpa.allocated_amount AS wallet_allocated_amount
 FROM finance.fund_providers fp
-    INNER JOIN finance.fund_provider_allocations fpa
-        ON fp.id = fpa.fund_provider_id
-            AND fpa.wallet_id = $1;
+INNER JOIN finance.fund_provider_allocations fpa
+    ON fp.id = fpa.fund_provider_id
+WHERE fpa.wallet_id = $1;
 
 -- name: GetFundProviderByID :one
 SELECT

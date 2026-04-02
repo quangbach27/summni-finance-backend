@@ -12,9 +12,9 @@ import (
 )
 
 type BulkInsertFundAllocationsParams struct {
-	FpID            uuid.UUID
-	WalletID        uuid.UUID
-	AllocatedAmount int64
+	FpID            uuid.UUID `db:"fp_id"`
+	WalletID        uuid.UUID `db:"wallet_id"`
+	AllocatedAmount int64     `db:"allocated_amount"`
 }
 
 const createWallet = `-- name: CreateWallet :exec
@@ -34,11 +34,11 @@ INSERT INTO finance.wallets (
 `
 
 type CreateWalletParams struct {
-	ID       uuid.UUID
-	Name     string
-	Balance  int64
-	Currency string
-	Version  int32
+	ID       uuid.UUID `db:"id"`
+	Name     string    `db:"name"`
+	Balance  int64     `db:"balance"`
+	Currency string    `db:"currency"`
+	Version  int32     `db:"version"`
 }
 
 func (q *Queries) CreateWallet(ctx context.Context, arg CreateWalletParams) error {
@@ -86,9 +86,9 @@ WHERE id = $2
 `
 
 type UpdateWalletBalanceParams struct {
-	Balance int64
-	ID      uuid.UUID
-	Version int32
+	Balance int64     `db:"balance"`
+	ID      uuid.UUID `db:"id"`
+	Version int32     `db:"version"`
 }
 
 func (q *Queries) UpdateWalletBalance(ctx context.Context, arg UpdateWalletBalanceParams) error {

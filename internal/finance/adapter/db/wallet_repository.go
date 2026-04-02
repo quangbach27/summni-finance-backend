@@ -82,19 +82,19 @@ func (r *walletRepo) getByIDWithProviders(
 	spec wallet.ProviderAllocationSpec,
 	queries *store.Queries,
 ) (*wallet.Wallet, error) {
-	walletModel, err := queries.GetWalletByID(ctx, wID)
+	wModel, err := queries.GetWalletByID(ctx, wID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve wallet '%s': %w", wID.String(), err)
 	}
 
-	providerModels, err := queries.GetFundProviderByWalletID(ctx, wID)
+	fpModels, err := queries.GetFundProviderByWalletID(ctx, wID)
 	if err != nil {
 		return nil, err
 	}
 
-	filteredProviderAllocationsDomain := make([]wallet.ProviderAllocation, 0, len(providerModels))
-	for _, fpModel := range providerModels {
-		fundProvider, err := fundprovider.UnmarshalFundProviderFromDatabase(
+	filteredAllocations := make([]wallet.ProviderAllocation, 0, len(fpModels))
+	for _, fpModel := range fpModels {
+		fp, err := fundprovider.UnmarshalFundProviderFromDatabase(
 			fpModel.ID,
 			fpModel.Name,
 			fpModel.FpType,
@@ -107,31 +107,31 @@ func (r *walletRepo) getByIDWithProviders(
 			return nil, err
 		}
 
-		providerAllocation, err := wallet.NewProviderAllocation(fundProvider, fpModel.WalletAllocatedAmount)
+		allocation, err := wallet.NewProviderAllocation(fp, fpModel.WalletAllocatedAmount)
 		if err != nil {
 			return nil, err
 		}
 
 		if spec == nil {
-			filteredProviderAllocationsDomain = append(filteredProviderAllocationsDomain, providerAllocation)
-		} else if spec.IsSatisfiedBy(providerAllocation) {
-			filteredProviderAllocationsDomain = append(filteredProviderAllocationsDomain, providerAllocation)
+			filteredAllocations = append(filteredAllocations, allocation)
+		} else if spec.IsSatisfiedBy(allocation) {
+			filteredAllocations = append(filteredAllocations, allocation)
 		}
 	}
 
-	walletDomain, err := wallet.UnmarshalWalletFromDatabase(
-		walletModel.ID,
-		walletModel.Name,
-		walletModel.Balance,
-		walletModel.Currency,
-		walletModel.Version,
-		filteredProviderAllocationsDomain...,
+	w, err := wallet.UnmarshalWalletFromDatabase(
+		wModel.ID,
+		wModel.Name,
+		wModel.Balance,
+		wModel.Currency,
+		wModel.Version,
+		filteredAllocations...,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return walletDomain, nil
+	return w, nil
 }
 
 func (r *walletRepo) Create(ctx context.Context, wallet *wallet.Wallet) error {
@@ -180,6 +180,9 @@ func (r *walletRepo) insertFundAllocations(
 	fpAllocations []wallet.ProviderAllocation,
 ) error {
 	allocationsLen := len(fpAllocations)
+	if allocationsLen == 0 {
+		return errors.New("empty fund provider allocation")
+	}
 
 	allocationParams := make([]store.BulkInsertFundAllocationsParams, 0, allocationsLen)
 	fpParams := store.BatchUpdateFundProvidersBalanceParams{

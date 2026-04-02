@@ -29,10 +29,10 @@ WHERE fp.id = v.id
 `
 
 type BatchUpdateFundProvidersBalanceParams struct {
-	Ids                []uuid.UUID
-	Balances           []int64
-	UnallocatedAmounts []int64
-	Versions           []int32
+	Ids                []uuid.UUID `db:"ids"`
+	Balances           []int64     `db:"balances"`
+	UnallocatedAmounts []int64     `db:"unallocated_amounts"`
+	Versions           []int32     `db:"versions"`
 }
 
 func (q *Queries) BatchUpdateFundProvidersBalance(ctx context.Context, arg BatchUpdateFundProvidersBalanceParams) error {
@@ -66,13 +66,13 @@ INSERT INTO finance.fund_providers (
 `
 
 type CreateFundProviderParams struct {
-	ID                uuid.UUID
-	Name              string
-	FpType            string
-	Balance           int64
-	Currency          string
-	UnallocatedAmount int64
-	Version           int32
+	ID                uuid.UUID `db:"id"`
+	Name              string    `db:"name"`
+	FpType            string    `db:"fp_type"`
+	Balance           int64     `db:"balance"`
+	Currency          string    `db:"currency"`
+	UnallocatedAmount int64     `db:"unallocated_amount"`
+	Version           int32     `db:"version"`
 }
 
 func (q *Queries) CreateFundProvider(ctx context.Context, arg CreateFundProviderParams) error {
@@ -102,13 +102,13 @@ WHERE id = $1
 `
 
 type GetFundProviderByIDRow struct {
-	ID                uuid.UUID
-	Name              string
-	FpType            string
-	Balance           int64
-	UnallocatedAmount int64
-	Currency          string
-	Version           int32
+	ID                uuid.UUID `db:"id"`
+	Name              string    `db:"name"`
+	FpType            string    `db:"fp_type"`
+	Balance           int64     `db:"balance"`
+	UnallocatedAmount int64     `db:"unallocated_amount"`
+	Currency          string    `db:"currency"`
+	Version           int32     `db:"version"`
 }
 
 func (q *Queries) GetFundProviderByID(ctx context.Context, id uuid.UUID) (GetFundProviderByIDRow, error) {
@@ -137,20 +137,20 @@ SELECT
     fp.version,
     fpa.allocated_amount AS wallet_allocated_amount
 FROM finance.fund_providers fp
-    INNER JOIN finance.fund_provider_allocations fpa
-        ON fp.id = fpa.fund_provider_id
-            AND fpa.wallet_id = $1
+INNER JOIN finance.fund_provider_allocations fpa
+    ON fp.id = fpa.fund_provider_id
+WHERE fpa.wallet_id = $1
 `
 
 type GetFundProviderByWalletIDRow struct {
-	ID                    uuid.UUID
-	Name                  string
-	FpType                string
-	Balance               int64
-	Currency              string
-	UnallocatedAmount     int64
-	Version               int32
-	WalletAllocatedAmount int64
+	ID                    uuid.UUID `db:"id"`
+	Name                  string    `db:"name"`
+	FpType                string    `db:"fp_type"`
+	Balance               int64     `db:"balance"`
+	Currency              string    `db:"currency"`
+	UnallocatedAmount     int64     `db:"unallocated_amount"`
+	Version               int32     `db:"version"`
+	WalletAllocatedAmount int64     `db:"wallet_allocated_amount"`
 }
 
 func (q *Queries) GetFundProviderByWalletID(ctx context.Context, walletID uuid.UUID) ([]GetFundProviderByWalletIDRow, error) {
@@ -196,13 +196,13 @@ WHERE id = ANY($1::uuid[])
 `
 
 type GetFundProvidersByIDsRow struct {
-	ID                uuid.UUID
-	Name              string
-	FpType            string
-	Balance           int64
-	UnallocatedAmount int64
-	Currency          string
-	Version           int32
+	ID                uuid.UUID `db:"id"`
+	Name              string    `db:"name"`
+	FpType            string    `db:"fp_type"`
+	Balance           int64     `db:"balance"`
+	UnallocatedAmount int64     `db:"unallocated_amount"`
+	Currency          string    `db:"currency"`
+	Version           int32     `db:"version"`
 }
 
 func (q *Queries) GetFundProvidersByIDs(ctx context.Context, fpids []uuid.UUID) ([]GetFundProvidersByIDsRow, error) {

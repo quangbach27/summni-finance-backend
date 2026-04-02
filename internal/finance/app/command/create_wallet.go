@@ -18,7 +18,7 @@ type createWalletHandler struct {
 	walletRepo wallet.Repository
 }
 
-func NewCreateWalletHandler(walletRepo wallet.Repository) *createWalletHandler {
+func NewCreateWalletHandler(walletRepo wallet.Repository) CreateWalletHandler {
 	return &createWalletHandler{
 		walletRepo: walletRepo,
 	}

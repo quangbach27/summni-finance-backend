@@ -20,7 +20,7 @@ type createFundProviderHandler struct {
 	fundProviderRepo fundprovider.Repository
 }
 
-func NewCreateFundProviderHandler(fundProviderRepo fundprovider.Repository) *createFundProviderHandler {
+func NewCreateFundProviderHandler(fundProviderRepo fundprovider.Repository) CreateFundProviderHandler {
 	return &createFundProviderHandler{
 		fundProviderRepo: fundProviderRepo,
 	}

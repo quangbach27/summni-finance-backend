@@ -30,7 +30,7 @@ type allocateFundHandler struct {
 	fundProviderRepo fundprovider.Repository
 }
 
-func NewAllocateFundHandler(walletRepo wallet.Repository, fundProviderRepo fundprovider.Repository) *allocateFundHandler {
+func NewAllocateFundHandler(walletRepo wallet.Repository, fundProviderRepo fundprovider.Repository) AllocateFundHandler {
 	return &allocateFundHandler{
 		walletRepo:       walletRepo,
 		fundProviderRepo: fundProviderRepo,

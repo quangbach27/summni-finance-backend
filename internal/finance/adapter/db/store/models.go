@@ -10,48 +10,48 @@ import (
 )
 
 type FinanceAccountingPeriod struct {
-	YearMonth            string
-	StartDate            pgtype.Int4
-	Interval             pgtype.Int4
-	WalletOpeningBalance int64
-	TotalDebit           pgtype.Int8
-	TotalCredit          pgtype.Int8
-	WalletClosingBalance pgtype.Int8
-	WalletID             pgtype.UUID
+	YearMonth            string      `db:"year_month"`
+	StartDate            *int32      `db:"start_date"`
+	Interval             *int32      `db:"interval"`
+	WalletOpeningBalance int64       `db:"wallet_opening_balance"`
+	TotalDebit           *int64      `db:"total_debit"`
+	TotalCredit          *int64      `db:"total_credit"`
+	WalletClosingBalance *int64      `db:"wallet_closing_balance"`
+	WalletID             pgtype.UUID `db:"wallet_id"`
 }
 
 type FinanceFundProvider struct {
-	ID                uuid.UUID
-	Name              string
-	FpType            string
-	Balance           int64
-	Currency          string
-	UnallocatedAmount int64
-	Version           int32
+	ID                uuid.UUID `db:"id"`
+	Name              string    `db:"name"`
+	FpType            string    `db:"fp_type"`
+	Balance           int64     `db:"balance"`
+	Currency          string    `db:"currency"`
+	UnallocatedAmount int64     `db:"unallocated_amount"`
+	Version           int32     `db:"version"`
 }
 
 type FinanceFundProviderAllocation struct {
-	FpID            uuid.UUID
-	WalletID        uuid.UUID
-	AllocatedAmount int64
+	FpID            uuid.UUID `db:"fp_id"`
+	WalletID        uuid.UUID `db:"wallet_id"`
+	AllocatedAmount int64     `db:"allocated_amount"`
 }
 
 type FinanceTransactionRecord struct {
-	ID              uuid.UUID
-	TransactionNo   pgtype.Text
-	TransactionType string
-	Amount          int64
-	WalletBalance   int64
-	WalletID        uuid.UUID
-	FpID            uuid.UUID
-	FpBalance       int64
-	YearMonth       string
+	ID              uuid.UUID `db:"id"`
+	TransactionNo   *string   `db:"transaction_no"`
+	TransactionType string    `db:"transaction_type"`
+	Amount          int64     `db:"amount"`
+	WalletBalance   int64     `db:"wallet_balance"`
+	WalletID        uuid.UUID `db:"wallet_id"`
+	FpID            uuid.UUID `db:"fp_id"`
+	FpBalance       int64     `db:"fp_balance"`
+	YearMonth       string    `db:"year_month"`
 }
 
 type FinanceWallet struct {
-	ID       uuid.UUID
-	Name     string
-	Balance  int64
-	Currency string
-	Version  int32
+	ID       uuid.UUID `db:"id"`
+	Name     string    `db:"name"`
+	Balance  int64     `db:"balance"`
+	Currency string    `db:"currency"`
+	Version  int32     `db:"version"`
 }

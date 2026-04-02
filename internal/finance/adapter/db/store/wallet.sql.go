@@ -76,7 +76,7 @@ func (q *Queries) GetWalletByID(ctx context.Context, id uuid.UUID) (FinanceWalle
 	return i, err
 }
 
-const updateWalletBalance = `-- name: UpdateWalletBalance :exec
+const updateWalletBalance = `-- name: UpdateWalletBalance :execrows
 UPDATE finance.wallets
 SET
     balance = $1,
@@ -91,7 +91,10 @@ type UpdateWalletBalanceParams struct {
 	Version int32     `db:"version"`
 }
 
-func (q *Queries) UpdateWalletBalance(ctx context.Context, arg UpdateWalletBalanceParams) error {
-	_, err := q.db.Exec(ctx, updateWalletBalance, arg.Balance, arg.ID, arg.Version)
-	return err
+func (q *Queries) UpdateWalletBalance(ctx context.Context, arg UpdateWalletBalanceParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateWalletBalance, arg.Balance, arg.ID, arg.Version)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }

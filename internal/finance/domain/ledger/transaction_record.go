@@ -38,9 +38,9 @@ type TransactionRecord struct {
 	amount          valueobject.Money
 	description     string
 
-	waletBalance valueobject.Money
-	fpID         uuid.UUID
-	fpBalance    valueobject.Money
+	walletBalance valueobject.Money
+	fpID          uuid.UUID
+	fpBalance     valueobject.Money
 }
 
 func NewTransactionRecord(
@@ -82,7 +82,7 @@ func NewTransactionRecord(
 }
 
 func (tr *TransactionRecord) SetWalletBalance(walletBalance valueobject.Money) {
-	tr.waletBalance = walletBalance
+	tr.walletBalance = walletBalance
 }
 
 func (tr *TransactionRecord) SetFpBalance(fpBalance valueobject.Money) {

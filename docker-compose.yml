@@ -38,6 +38,8 @@ services:
       POSTGRES_USER: sumni
       POSTGRES_PASSWORD: sumni
       POSTGRES_DB: sumni-finance
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     restart: always
 
   keycloak:

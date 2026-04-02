@@ -8,6 +8,10 @@ type ProviderAllocationSpec interface {
 
 type DefaultProviderAllocationSpec struct{}
 
+func NewDefaultProviderAllocationSpec() DefaultProviderAllocationSpec {
+	return DefaultProviderAllocationSpec{}
+}
+
 func (spec DefaultProviderAllocationSpec) IsSatisfiedBy(p ProviderAllocation) bool {
 	return true
 }

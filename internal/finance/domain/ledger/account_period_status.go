@@ -27,7 +27,7 @@ func NewAccountingPeriodStatus(
 		return AccountingPeriodClose, nil
 	}
 
-	return AccoutingPeriodStatus{}, fmt.Errorf("unknow accounting period status: %s", status)
+	return AccoutingPeriodStatus{}, fmt.Errorf("unknown accounting period status: %s", status)
 }
 
 func (as AccoutingPeriodStatus) String() string { return as.value }

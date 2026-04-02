@@ -23,7 +23,7 @@ SELECT
 FROM finance.wallets
 WHERE id = $1;
 
--- name: UpdateWalletBalance :exec
+-- name: UpdateWalletBalance :execrows
 UPDATE finance.wallets
 SET
     balance = sqlc.arg(balance),

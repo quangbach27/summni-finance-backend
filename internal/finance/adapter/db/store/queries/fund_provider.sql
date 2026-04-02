@@ -29,7 +29,7 @@ SELECT
     fpa.allocated_amount AS wallet_allocated_amount
 FROM finance.fund_providers fp
 INNER JOIN finance.fund_provider_allocations fpa
-    ON fp.id = fpa.fund_provider_id
+    ON fp.id = fpa.fp_id
 WHERE fpa.wallet_id = $1;
 
 -- name: GetFundProviderByID :one
@@ -56,7 +56,7 @@ SELECT
 FROM finance.fund_providers
 WHERE id = ANY(sqlc.arg(fpIDs)::uuid[]);
 
--- name: BatchUpdateFundProvidersBalance :exec
+-- name: BatchUpdateFundProvidersBalance :execrows
 UPDATE finance.fund_providers fp
 SET
     balance = v.balance,

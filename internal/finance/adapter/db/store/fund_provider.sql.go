@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const batchUpdateFundProvidersBalance = `-- name: BatchUpdateFundProvidersBalance :exec
+const batchUpdateFundProvidersBalance = `-- name: BatchUpdateFundProvidersBalance :execrows
 UPDATE finance.fund_providers fp
 SET
     balance = v.balance,
@@ -35,14 +35,17 @@ type BatchUpdateFundProvidersBalanceParams struct {
 	Versions           []int32     `db:"versions"`
 }
 
-func (q *Queries) BatchUpdateFundProvidersBalance(ctx context.Context, arg BatchUpdateFundProvidersBalanceParams) error {
-	_, err := q.db.Exec(ctx, batchUpdateFundProvidersBalance,
+func (q *Queries) BatchUpdateFundProvidersBalance(ctx context.Context, arg BatchUpdateFundProvidersBalanceParams) (int64, error) {
+	result, err := q.db.Exec(ctx, batchUpdateFundProvidersBalance,
 		arg.Ids,
 		arg.Balances,
 		arg.UnallocatedAmounts,
 		arg.Versions,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const createFundProvider = `-- name: CreateFundProvider :exec
@@ -138,7 +141,7 @@ SELECT
     fpa.allocated_amount AS wallet_allocated_amount
 FROM finance.fund_providers fp
 INNER JOIN finance.fund_provider_allocations fpa
-    ON fp.id = fpa.fund_provider_id
+    ON fp.id = fpa.fp_id
 WHERE fpa.wallet_id = $1
 `
 

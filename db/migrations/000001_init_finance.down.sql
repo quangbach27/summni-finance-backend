@@ -1,7 +1,7 @@
 BEGIN;
 
 -- 1. Drop dependent tables first (in reverse order of foreign key dependencies)
-DROP TABLE IF EXISTS finance.transaction_record;
+DROP TABLE IF EXISTS finance.transaction_records;
 DROP TABLE IF EXISTS finance.accounting_periods;
 DROP TABLE IF EXISTS finance.fund_provider_allocations;
 

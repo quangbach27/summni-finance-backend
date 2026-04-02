@@ -119,7 +119,7 @@ func UnmarshalWalletFromDatabase(
 	}, nil
 }
 
-func UmarshalWalletFromDatabaseWithLedger(
+func UnmarshalWalletFromDatabaseWithLedger(
 	id uuid.UUID,
 	name string,
 	balanceAmount int64,

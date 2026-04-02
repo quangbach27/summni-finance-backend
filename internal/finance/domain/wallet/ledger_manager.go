@@ -27,19 +27,23 @@ func NewLedgerManager(accountPeriods []*ledger.AccountingPeriod) (*LedgerManager
 		return nil, err
 	}
 
+	// Initialize map with appropriate capacity
+	capacity := len(accountPeriods)
+	if capacity == 0 {
+		capacity = 1 // Pre-allocate for at least one period
+	}
+
 	ledgerManager := &LedgerManager{
 		config: LedgerConfig{
 			startDate: startDay,
 			interval:  1,
 		},
+		accountPeriods: make(map[ledger.YearMonth]*ledger.AccountingPeriod, capacity),
 	}
 
-	if len(accountPeriods) != 0 {
-		ledgerManager.accountPeriods = make(map[ledger.YearMonth]*ledger.AccountingPeriod, len(accountPeriods))
-
-		for _, ap := range accountPeriods {
-			ledgerManager.accountPeriods[ap.YearMonth()] = ap
-		}
+	// Populate existing periods
+	for _, ap := range accountPeriods {
+		ledgerManager.accountPeriods[ap.YearMonth()] = ap
 	}
 
 	return ledgerManager, nil

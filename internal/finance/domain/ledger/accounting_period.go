@@ -36,7 +36,6 @@ func OpenAccountingPeriod(
 
 	v.Check(!openBalance.IsZero(), "openingBalance", "openingBalance is required")
 	v.Check(!yearMonth.IsZero(), "yearMonth", "yearMonth is required")
-
 	if err := v.Err(); err != nil {
 		return nil, err
 	}
@@ -46,9 +45,16 @@ func OpenAccountingPeriod(
 		return nil, err
 	}
 
-	now := time.Now()
-
-	endDate := time.Date(now.Year(), now.Month(), int(startDate.value), 0, 0, 0, 0, time.Local).AddDate(0, interval, 0)
+	endDate := time.Date(
+		yearMonth.year,
+		time.Month(yearMonth.year),
+		int(startDate.value),
+		0,
+		0,
+		0,
+		0,
+		time.Local,
+	).AddDate(0, interval, 0)
 
 	return &AccountingPeriod{
 		yearMonth:      yearMonth,
@@ -109,6 +115,34 @@ func (ap *AccountingPeriod) EndDate() time.Time                 { return ap.endD
 func (ap *AccountingPeriod) Transactions() []*TransactionRecord { return ap.transactions }
 
 func (ap *AccountingPeriod) Record(transactionRecords []*TransactionRecord) error {
-	ap.transactions = append(ap.transactions, transactionRecords...)
+	totalDebit, err := valueobject.NewMoney(0, ap.openingBalance.Currency())
+	if err != nil {
+		return err
+	}
+
+	totalCredit, err := valueobject.NewMoney(0, ap.openingBalance.Currency())
+	if err != nil {
+		return err
+	}
+
+	for _, txRecord := range transactionRecords {
+		if txRecord.IsCredit() {
+			totalCredit, err = totalCredit.Add(txRecord.amount)
+			if err != nil {
+				return err
+			}
+		} else {
+			totalDebit, err = totalDebit.Add(txRecord.amount)
+			if err != nil {
+				return err
+			}
+		}
+
+		ap.transactions = append(ap.transactions, transactionRecords...)
+	}
+
+	ap.totalCredit = totalCredit
+	ap.totalDebit = totalDebit
+
 	return nil
 }

@@ -65,6 +65,9 @@ func (h *allocateFundHandler) Handle(ctx context.Context, cmd AllocateFundCmd) e
 		func(w *wallet.Wallet) error {
 			for _, ap := range cmd.AllocationProviders {
 				fp := fpLookup[ap.ID]
+				if fp == nil {
+					return fmt.Errorf("fund provider not found: %s", ap.ID.String())
+				}
 
 				err = w.AllocateFromFundProvider(fp, ap.AllocatedAmount)
 				if err != nil {
@@ -91,7 +94,7 @@ func (h *allocateFundHandler) getFundProvidersByIDs(ctx context.Context, fpIDs [
 	}
 
 	if len(fps) != len(fpIDs) {
-		return nil, errors.New("")
+		return nil, fmt.Errorf("one or more fund providers were not found for requested IDs: %v", fpIDs)
 	}
 
 	return h.toFundProviderLookup(fps)

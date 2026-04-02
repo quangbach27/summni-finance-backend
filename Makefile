@@ -1,25 +1,30 @@
 SERVICE := sumni-finance-backend
 
-.PHONY: test test-ci dev stop down lint migrate-create migrate-up migrate-down sqlc-generate swagger-ui swagger-ui-stop
-
+.PHONY: test
 test:
 	@./scripts/test.sh .e2e.env
 
+.PHONY: test-ci
 test-ci: 
 	@CI=true ./scripts/test.sh .e2e.env
 
+.PHONY: dev
 dev:
 	DEBUG=$(DEBUG) docker compose up --build $(SERVICE) -d	
 
+.PHONY: logs
 logs:
 	docker logs -f $(SERVICE)
 
+.PHONY: stop
 stop:
 	docker compose down $(SERVICE)
 
+.PHONY: down
 down:
 	docker compose down -v
-	
+
+.PHONY: lint
 lint:
 	golangci-lint run
 
@@ -42,6 +47,7 @@ POSTGRES_PORT ?= 5432
 DB_URL := postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}?sslmode=disable
 MIGRATE_PATH := db/migrations
 
+.PHONY: migrate-create
 migrate-create:
 	migrate create -ext sql -dir $(MIGRATE_PATH) -seq $(NAME)
 

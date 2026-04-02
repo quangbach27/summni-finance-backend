@@ -36,7 +36,7 @@ func (r *walletRepo) GetByID(
 	ctx context.Context,
 	wID uuid.UUID,
 ) (*wallet.Wallet, error) {
-	return nil, errors.New("walletRepo.GetByID not implemented")
+	return r.getByID(ctx, wID, r.queries)
 }
 
 func (r *walletRepo) getByID(
@@ -140,7 +140,7 @@ func (r *walletRepo) Create(ctx context.Context, wallet *wallet.Wallet) error {
 		Name:     wallet.Name(),
 		Balance:  wallet.Balance().Amount(),
 		Currency: wallet.Currency().Code(),
-		Version:  wallet.Version(),
+		Version:  0,
 	})
 }
 
@@ -152,7 +152,12 @@ func (r *walletRepo) CreateAllocations(
 	return r.transactionManager.WithTx(ctx, func(tx pgx.Tx) error {
 		txQueries := r.queries.WithTx(tx)
 
-		w, err := r.getByID(ctx, wID, txQueries)
+		w, err := r.getByIDWithProviders(
+			ctx,
+			wID,
+			wallet.NewDefaultProviderAllocationSpec(),
+			txQueries,
+		)
 		if err != nil {
 			return err
 		}
@@ -161,12 +166,16 @@ func (r *walletRepo) CreateAllocations(
 			return err
 		}
 
-		if err = txQueries.UpdateWalletBalance(ctx, store.UpdateWalletBalanceParams{
+		rows, err := txQueries.UpdateWalletBalance(ctx, store.UpdateWalletBalanceParams{
 			ID:      w.ID(),
 			Balance: w.Balance().Amount(),
 			Version: w.Version(),
-		}); err != nil {
+		})
+		if err != nil {
 			return err
+		}
+		if rows == 0 {
+			return fmt.Errorf("failed to update wallet balance: %w", common_db.ErrConcurrentModification)
 		}
 
 		return r.insertFundAllocations(ctx, txQueries, w.ID(), w.ProviderManager().ProviderAllocations())
@@ -210,8 +219,12 @@ func (r *walletRepo) insertFundAllocations(
 		fpParams.Versions = append(fpParams.Versions, fp.Version())
 	}
 
-	if err := queries.BatchUpdateFundProvidersBalance(ctx, fpParams); err != nil {
+	rows, err := queries.BatchUpdateFundProvidersBalance(ctx, fpParams)
+	if err != nil {
 		return err
+	}
+	if rows != int64(allocationsLen) {
+		return fmt.Errorf("failed to update fund provider when allocations: %w", common_db.ErrConcurrentModification)
 	}
 
 	row, err := queries.BulkInsertFundAllocations(ctx, allocationParams)

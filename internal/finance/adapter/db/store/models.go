@@ -6,18 +6,18 @@ package store
 
 import (
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type FinanceAccountingPeriod struct {
-	YearMonth            string      `db:"year_month"`
-	StartDate            *int32      `db:"start_date"`
-	Interval             *int32      `db:"interval"`
-	WalletOpeningBalance int64       `db:"wallet_opening_balance"`
-	TotalDebit           *int64      `db:"total_debit"`
-	TotalCredit          *int64      `db:"total_credit"`
-	WalletClosingBalance *int64      `db:"wallet_closing_balance"`
-	WalletID             pgtype.UUID `db:"wallet_id"`
+	ID                   uuid.UUID `db:"id"`
+	YearMonth            string    `db:"year_month"`
+	StartDate            *int32    `db:"start_date"`
+	Interval             *int32    `db:"interval"`
+	WalletOpeningBalance int64     `db:"wallet_opening_balance"`
+	TotalDebit           *int64    `db:"total_debit"`
+	TotalCredit          *int64    `db:"total_credit"`
+	WalletClosingBalance *int64    `db:"wallet_closing_balance"`
+	WalletID             uuid.UUID `db:"wallet_id"`
 }
 
 type FinanceFundProvider struct {
@@ -37,15 +37,15 @@ type FinanceFundProviderAllocation struct {
 }
 
 type FinanceTransactionRecord struct {
-	ID              uuid.UUID `db:"id"`
-	TransactionNo   *string   `db:"transaction_no"`
-	TransactionType string    `db:"transaction_type"`
-	Amount          int64     `db:"amount"`
-	WalletBalance   int64     `db:"wallet_balance"`
-	WalletID        uuid.UUID `db:"wallet_id"`
-	FpID            uuid.UUID `db:"fp_id"`
-	FpBalance       int64     `db:"fp_balance"`
-	YearMonth       string    `db:"year_month"`
+	ID                  uuid.UUID `db:"id"`
+	TransactionNo       *string   `db:"transaction_no"`
+	TransactionType     string    `db:"transaction_type"`
+	Amount              int64     `db:"amount"`
+	WalletBalance       int64     `db:"wallet_balance"`
+	WalletID            uuid.UUID `db:"wallet_id"`
+	FpID                uuid.UUID `db:"fp_id"`
+	FpBalance           int64     `db:"fp_balance"`
+	AccountingPeriodsID uuid.UUID `db:"accounting_periods_id"`
 }
 
 type FinanceWallet struct {

@@ -51,7 +51,7 @@ func (h *allocateFundHandler) Handle(ctx context.Context, cmd AllocateFundCmd) e
 
 	fpLookup, err := h.getFundProvidersByIDs(ctx, fpIDs)
 	if err != nil {
-		return httperr.NewIncorrectInputError(err, "failed-to-retrieve-fund-provider-lookup")
+		return httperr.NewUnknowError(err, "failed-to-retrieve-fund-provider-lookup")
 	}
 
 	logger.Info("retrieved fund providers")

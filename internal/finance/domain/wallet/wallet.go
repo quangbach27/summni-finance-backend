@@ -137,7 +137,7 @@ func UnmarshalWalletFromDatabaseWithLedger(
 	balanceAmount int64,
 	currencyCode string,
 	version int32,
-	accountingPerids []*ledger.AccountingPeriod,
+	accountingPeriods []*ledger.AccountingPeriod,
 	providerAllocations ...ProviderAllocation,
 ) (*Wallet, error) {
 	w, err := UnmarshalWalletFromDatabase(
@@ -152,12 +152,12 @@ func UnmarshalWalletFromDatabaseWithLedger(
 		return nil, err
 	}
 
-	ledgerManger, err := NewLedgerManager(accountingPerids)
+	ledgerManager, err := NewLedgerManager(accountingPeriods)
 	if err != nil {
 		return nil, err
 	}
 
-	w.ledgerManager = ledgerManger
+	w.ledgerManager = ledgerManager
 
 	return w, nil
 }

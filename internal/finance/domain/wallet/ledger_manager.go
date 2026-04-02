@@ -75,11 +75,11 @@ func (m *LedgerManager) FindAccountingPeriod(yearMonth ledger.YearMonth) *ledger
 	return m.accountPeriods[yearMonth]
 }
 
-func (m *LedgerManager) Record(yearMonth ledger.YearMonth, txRecords []*ledger.TransactionRecord) error {
+func (m *LedgerManager) Record(yearMonth ledger.YearMonth, txRecord ledger.TransactionRecord) error {
 	ap := m.FindAccountingPeriod(yearMonth)
 	if ap == nil {
 		return fmt.Errorf("account period: %s not found", yearMonth.String())
 	}
 
-	return ap.Record(txRecords)
+	return ap.Record(txRecord)
 }

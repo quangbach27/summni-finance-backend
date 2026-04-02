@@ -251,58 +251,54 @@ func (w *Wallet) OpenAccountPeriod(yearMonth ledger.YearMonth) error {
 	return w.ledgerManager.OpenNewAccountingPeriod(yearMonth, w.balance)
 }
 
-func (w *Wallet) RecordTransactions(yearMonth ledger.YearMonth, specs ...TransactionSpec) error {
+func (w *Wallet) RecordTransactions(yearMonth ledger.YearMonth, txSpecs ...TransactionSpec) error {
 	accountingPeriod := w.ledgerManager.FindAccountingPeriod(yearMonth)
 	if accountingPeriod == nil || accountingPeriod.IsClose() {
 		return fmt.Errorf("account period: %s not found or has been closed", yearMonth.String())
 	}
 
-	txRecords, err := w.buildTransactionRecordsFromSpec(specs)
-	if err != nil {
-		return fmt.Errorf("build transaction records failed: %w", err)
+	if len(txSpecs) == 0 {
+		return errors.New("transaction specs is empty")
 	}
 
-	if err := w.ledgerManager.Record(yearMonth, txRecords); err != nil {
-		return fmt.Errorf("record transaction failed: %w", err)
+	for _, txSpec := range txSpecs {
+		txRecord, err := w.buildTransactionRecordsFromSpec(txSpec)
+		if err != nil {
+			return fmt.Errorf("failed to build transaction record: %w", err)
+		}
+
+		if err = w.ledgerManager.Record(yearMonth, txRecord); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func (w *Wallet) buildTransactionRecordsFromSpec(specs []TransactionSpec) ([]*ledger.TransactionRecord, error) {
-	if len(specs) == 0 {
-		return nil, errors.New("transaction spec is empty")
+func (w *Wallet) buildTransactionRecordsFromSpec(txSpec TransactionSpec) (ledger.TransactionRecord, error) {
+	txRecord, err := ledger.NewTransactionRecord(
+		txSpec.TransactionNo,
+		txSpec.TransactionType,
+		txSpec.Amount,
+		txSpec.Description,
+		txSpec.FpID,
+	)
+	if err != nil {
+		return ledger.TransactionRecord{}, err
 	}
 
-	txRecords := make([]*ledger.TransactionRecord, 0, len(specs))
-
-	for _, spec := range specs {
-		txRecord, err := ledger.NewTransactionRecord(
-			spec.TransactionNo,
-			spec.TransactionType,
-			spec.Amount,
-			spec.Description,
-			spec.FpID,
-		)
-		if err != nil {
-			return nil, err
+	if txRecord.IsCredit() {
+		if err = w.Topup(txRecord.Amount(), txSpec.FpID); err != nil {
+			return ledger.TransactionRecord{}, err
 		}
-
-		if txRecord.IsCredit() {
-			if err = w.Topup(txRecord.Amount(), spec.FpID); err != nil {
-				return nil, err
-			}
-		} else {
-			if err = w.Withdraw(txRecord.Amount(), spec.FpID); err != nil {
-				return nil, err
-			}
+	} else {
+		if err = w.Withdraw(txRecord.Amount(), txSpec.FpID); err != nil {
+			return ledger.TransactionRecord{}, err
 		}
-
-		txRecord.SetFpBalance(w.providerManager.FindProvider(spec.FpID).Balance())
-		txRecord.SetWalletBalance(w.balance)
-
-		txRecords = append(txRecords, txRecord)
 	}
 
-	return txRecords, nil
+	txRecord.SetFpBalance(w.providerManager.FindProvider(txSpec.FpID).Balance())
+	txRecord.SetWalletBalance(w.balance)
+
+	return *txRecord, nil
 }

@@ -114,35 +114,24 @@ func (ap *AccountingPeriod) ClosingBalance() valueobject.Money  { return ap.clos
 func (ap *AccountingPeriod) EndDate() time.Time                 { return ap.endDate }
 func (ap *AccountingPeriod) Transactions() []*TransactionRecord { return ap.transactions }
 
-func (ap *AccountingPeriod) Record(transactionRecords []*TransactionRecord) error {
-	totalDebit, err := valueobject.NewMoney(0, ap.openingBalance.Currency())
-	if err != nil {
-		return err
-	}
-
-	totalCredit, err := valueobject.NewMoney(0, ap.openingBalance.Currency())
-	if err != nil {
-		return err
-	}
-
-	for _, txRecord := range transactionRecords {
-		if txRecord.IsCredit() {
-			totalCredit, err = totalCredit.Add(txRecord.amount)
-			if err != nil {
-				return err
-			}
-		} else {
-			totalDebit, err = totalDebit.Add(txRecord.amount)
-			if err != nil {
-				return err
-			}
+func (ap *AccountingPeriod) Record(txRecord TransactionRecord) error {
+	if txRecord.IsCredit() {
+		newTotalCredit, err := ap.totalCredit.Add(txRecord.amount)
+		if err != nil {
+			return err
 		}
 
-		ap.transactions = append(ap.transactions, transactionRecords...)
+		ap.totalCredit = newTotalCredit
+	} else {
+		newTotalDebit, err := ap.totalDebit.Add(txRecord.amount)
+		if err != nil {
+			return err
+		}
+
+		ap.totalDebit = newTotalDebit
 	}
 
-	ap.totalCredit = totalCredit
-	ap.totalDebit = totalDebit
+	ap.transactions = append(ap.transactions, &txRecord)
 
 	return nil
 }

@@ -47,7 +47,7 @@ func (h *allocateFundHandler) Handle(ctx context.Context, cmd AllocateFundCmd) e
 		)
 	}
 
-	fpIDs := h.extractFpIDsFromCmd(cmd)
+	fpIDs := h.extractUniqueFpIDs(cmd)
 
 	fpLookup, err := h.getFundProvidersByIDs(ctx, fpIDs)
 	if err != nil {
@@ -84,14 +84,19 @@ func (h *allocateFundHandler) Handle(ctx context.Context, cmd AllocateFundCmd) e
 	return nil
 }
 
-func (h *allocateFundHandler) extractFpIDsFromCmd(cmd AllocateFundCmd) []uuid.UUID {
-	fpIDs := make([]uuid.UUID, 0, len(cmd.AllocationProviders))
+func (h *allocateFundHandler) extractUniqueFpIDs(cmd AllocateFundCmd) []uuid.UUID {
+	uniqueIDs := make([]uuid.UUID, 0, len(cmd.AllocationProviders))
+	seen := make(map[uuid.UUID]struct{}, len(cmd.AllocationProviders))
 
 	for _, p := range cmd.AllocationProviders {
-		fpIDs = append(fpIDs, p.ID)
+		if _, ok := seen[p.ID]; ok {
+			continue
+		}
+		seen[p.ID] = struct{}{}
+		uniqueIDs = append(uniqueIDs, p.ID)
 	}
 
-	return fpIDs
+	return uniqueIDs
 }
 
 func (h *allocateFundHandler) getFundProvidersByIDs(ctx context.Context, fpIDs []uuid.UUID) (map[uuid.UUID]*fundprovider.FundProvider, error) {

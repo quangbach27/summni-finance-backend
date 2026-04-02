@@ -58,11 +58,13 @@ func OpenAccountingPeriod(
 
 	return &AccountingPeriod{
 		yearMonth:      yearMonth,
+		startDate:      startDate,
+		interval:       interval,
+		status:         AccountingPeriodOpen,
 		openingBalance: openBalance,
 		totalDebit:     zeroMoney,
 		totalCredit:    zeroMoney,
 		closingBalance: zeroMoney,
-		status:         AccountingPeriodOpen,
 		endDate:        endDate,
 	}, nil
 }

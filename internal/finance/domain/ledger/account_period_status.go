@@ -6,17 +6,17 @@ import (
 )
 
 var (
-	AccountingPeriodOpen  = AccoutingPeriodStatus{value: "OPEN"}
-	AccountingPeriodClose = AccoutingPeriodStatus{value: "CLOSE"}
+	AccountingPeriodOpen  = AccountingPeriodStatus{value: "OPEN"}
+	AccountingPeriodClose = AccountingPeriodStatus{value: "CLOSE"}
 )
 
-type AccoutingPeriodStatus struct {
+type AccountingPeriodStatus struct {
 	value string
 }
 
 func NewAccountingPeriodStatus(
 	status string,
-) (AccoutingPeriodStatus, error) {
+) (AccountingPeriodStatus, error) {
 	statusCleaned := strings.TrimSpace(strings.ToUpper(status))
 
 	if statusCleaned == AccountingPeriodOpen.value {
@@ -27,7 +27,7 @@ func NewAccountingPeriodStatus(
 		return AccountingPeriodClose, nil
 	}
 
-	return AccoutingPeriodStatus{}, fmt.Errorf("unknown accounting period status: %s", status)
+	return AccountingPeriodStatus{}, fmt.Errorf("unknown accounting period status: %s", status)
 }
 
-func (as AccoutingPeriodStatus) String() string { return as.value }
+func (as AccountingPeriodStatus) String() string { return as.value }

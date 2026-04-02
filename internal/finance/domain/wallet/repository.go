@@ -23,6 +23,7 @@ type Repository interface {
 	CreateAllocations(
 		ctx context.Context,
 		wID uuid.UUID,
+		allocationSpec ProviderAllocationSpec,
 		allocatedFunc func(*Wallet) error,
 	) error
 }

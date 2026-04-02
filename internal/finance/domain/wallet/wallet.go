@@ -32,7 +32,7 @@ type TransactionSpec struct {
 	TransactionType string
 	Amount          valueobject.Money
 	Description     string
-	fpID            uuid.UUID
+	FpID            uuid.UUID
 }
 
 type Wallet struct {
@@ -65,6 +65,11 @@ func NewWallet(currencyCode string, name string) (*Wallet, error) {
 		return nil, err
 	}
 
+	ledgerManager, err := NewLedgerManager(nil)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Wallet{
 		id:      id,
 		name:    name,
@@ -73,6 +78,7 @@ func NewWallet(currencyCode string, name string) (*Wallet, error) {
 		providerManager: &ProviderManager{
 			providers: make(map[uuid.UUID]ProviderAllocation),
 		},
+		ledgerManager: ledgerManager,
 	}, nil
 }
 
@@ -110,12 +116,18 @@ func UnmarshalWalletFromDatabase(
 		return nil, err
 	}
 
+	ledgerManager, err := NewLedgerManager(nil)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Wallet{
 		id:              id,
 		name:            name,
 		balance:         balance,
 		version:         version,
 		providerManager: providerManager,
+		ledgerManager:   ledgerManager,
 	}, nil
 }
 
@@ -270,23 +282,23 @@ func (w *Wallet) buildTransactionRecordsFromSpec(specs []TransactionSpec) ([]*le
 			spec.TransactionType,
 			spec.Amount,
 			spec.Description,
-			spec.fpID,
+			spec.FpID,
 		)
 		if err != nil {
 			return nil, err
 		}
 
 		if txRecord.IsCredit() {
-			if err = w.Topup(txRecord.Amount(), spec.fpID); err != nil {
+			if err = w.Topup(txRecord.Amount(), spec.FpID); err != nil {
 				return nil, err
 			}
 		} else {
-			if err = w.Withdraw(txRecord.Amount(), spec.fpID); err != nil {
+			if err = w.Withdraw(txRecord.Amount(), spec.FpID); err != nil {
 				return nil, err
 			}
 		}
 
-		txRecord.SetFpBalance(w.providerManager.FindProvider(spec.fpID).Balance())
+		txRecord.SetFpBalance(w.providerManager.FindProvider(spec.FpID).Balance())
 		txRecord.SetWalletBalance(w.balance)
 
 		txRecords = append(txRecords, txRecord)

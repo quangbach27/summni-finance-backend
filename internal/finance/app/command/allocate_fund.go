@@ -47,10 +47,7 @@ func (h *allocateFundHandler) Handle(ctx context.Context, cmd AllocateFundCmd) e
 		)
 	}
 
-	fpIDs := make([]uuid.UUID, 0, len(cmd.AllocationProviders))
-	for _, p := range cmd.AllocationProviders {
-		fpIDs = append(fpIDs, p.ID)
-	}
+	fpIDs := h.extractFpIDsFromCmd(cmd)
 
 	fpLookup, err := h.getFundProvidersByIDs(ctx, fpIDs)
 	if err != nil {
@@ -59,9 +56,10 @@ func (h *allocateFundHandler) Handle(ctx context.Context, cmd AllocateFundCmd) e
 
 	logger.Info("retrieved fund providers")
 
-	err = h.walletRepo.CreateAllocations(
+	if err = h.walletRepo.CreateAllocations(
 		ctx,
 		cmd.WalletID,
+		wallet.NewProviderMatchesAnySpec(fpIDs),
 		func(w *wallet.Wallet) error {
 			for _, ap := range cmd.AllocationProviders {
 				fp := fpLookup[ap.ID]
@@ -77,14 +75,23 @@ func (h *allocateFundHandler) Handle(ctx context.Context, cmd AllocateFundCmd) e
 
 			return nil
 		},
-	)
-	if err != nil {
+	); err != nil {
 		return httperr.NewUnknowError(err, "failed-to-allocate-fund")
 	}
 
 	logger.Info("allocated fund provider success")
 
 	return nil
+}
+
+func (h *allocateFundHandler) extractFpIDsFromCmd(cmd AllocateFundCmd) []uuid.UUID {
+	fpIDs := make([]uuid.UUID, 0, len(cmd.AllocationProviders))
+
+	for _, p := range cmd.AllocationProviders {
+		fpIDs = append(fpIDs, p.ID)
+	}
+
+	return fpIDs
 }
 
 func (h *allocateFundHandler) getFundProvidersByIDs(ctx context.Context, fpIDs []uuid.UUID) (map[uuid.UUID]*fundprovider.FundProvider, error) {

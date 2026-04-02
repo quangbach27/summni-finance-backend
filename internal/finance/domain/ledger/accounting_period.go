@@ -14,7 +14,7 @@ type AccountingPeriod struct {
 	startDate PeriodStartDay
 	interval  int
 
-	status AccoutingPeriodStatus
+	status AccountingPeriodStatus
 
 	openingBalance valueobject.Money
 	totalDebit     valueobject.Money
@@ -47,7 +47,7 @@ func OpenAccountingPeriod(
 
 	endDate := time.Date(
 		yearMonth.year,
-		time.Month(yearMonth.year),
+		time.Month(yearMonth.month),
 		int(startDate.value),
 		0,
 		0,
@@ -106,7 +106,7 @@ func (ap *AccountingPeriod) calculateClosingBalance() (valueobject.Money, error)
 func (ap *AccountingPeriod) YearMonth() YearMonth               { return ap.yearMonth }
 func (ap *AccountingPeriod) StartDate() PeriodStartDay          { return ap.startDate }
 func (ap *AccountingPeriod) Interval() int                      { return ap.interval }
-func (ap *AccountingPeriod) Status() AccoutingPeriodStatus      { return ap.status }
+func (ap *AccountingPeriod) Status() AccountingPeriodStatus     { return ap.status }
 func (ap *AccountingPeriod) OpeningBalance() valueobject.Money  { return ap.openingBalance }
 func (ap *AccountingPeriod) TotalDebit() valueobject.Money      { return ap.totalDebit }
 func (ap *AccountingPeriod) TotalCredit() valueobject.Money     { return ap.totalCredit }

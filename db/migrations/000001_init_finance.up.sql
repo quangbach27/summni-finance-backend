@@ -40,7 +40,9 @@ CREATE TABLE finance.fund_provider_allocations (
 );
 
 CREATE TABLE finance.accounting_periods (
-    year_month varchar(100) PRIMARY KEY NOT NULL,
+    id uuid PRIMARY KEY NOT NULL,
+
+    year_month varchar(100) NOT NULL,
 
     start_date int DEFAULT 1,
     interval int DEFAULT 1,
@@ -50,7 +52,8 @@ CREATE TABLE finance.accounting_periods (
     total_credit bigint default 0,
     wallet_closing_balance bigint default 0,
 
-    wallet_id uuid,
+    wallet_id uuid NOT NULL,
+
     CONSTRAINT fk_accounting_periods_wallet
         FOREIGN KEY (wallet_id)
             REFERENCES finance.wallets (id)
@@ -69,11 +72,11 @@ CREATE TABLE finance.transaction_records (
     fp_id uuid NOT NULL,
     fp_balance bigint NOT NULL,
 
-    year_month varchar(100) NOT NULL,
+    accounting_periods_id uuid NOT NULL,
 
     CONSTRAINT fk_transaction_record_accounting_period
-        FOREIGN KEY (year_month)
-            REFERENCES finance.accounting_periods (year_month)
+        FOREIGN KEY (accounting_periods_id)
+            REFERENCES finance.accounting_periods (id)
             ON DELETE CASCADE,
     
     CONSTRAINT fk_transaction_record_fund_provider

@@ -120,10 +120,12 @@ func TestAllocateFundHandler_Handle(t *testing.T) {
 				mock.Anything,
 				cmd.WalletID,
 				mock.Anything,
+				mock.Anything,
 			).
 			RunAndReturn(func(
 				ctx context.Context,
 				wID uuid.UUID,
+				spec wallet.ProviderAllocationSpec,
 				updateFunc func(*wallet.Wallet) error,
 			) error {
 				w, err := wallet.NewWallet("USD", "Tai chinh tong")
@@ -167,10 +169,12 @@ func TestAllocateFundHandler_Handle(t *testing.T) {
 				mock.Anything,
 				cmd.WalletID,
 				mock.Anything,
+				mock.Anything,
 			).
 			RunAndReturn(func(
 				ctx context.Context,
 				wID uuid.UUID,
+				spec wallet.ProviderAllocationSpec,
 				updateFunc func(*wallet.Wallet) error,
 			) error {
 				pa, err := wallet.NewProviderAllocation(provider1, 40)
@@ -257,10 +261,12 @@ func TestAllocateFundHandler_Handle(t *testing.T) {
 				mock.Anything,
 				cmd.WalletID,
 				mock.Anything,
+				mock.Anything,
 			).
 			RunAndReturn(func(
 				ctx context.Context,
 				wID uuid.UUID,
+				spec wallet.ProviderAllocationSpec,
 				updateFunc func(*wallet.Wallet) error,
 			) error {
 				w, err := wallet.NewWallet("USD", "Tai chinh tong")

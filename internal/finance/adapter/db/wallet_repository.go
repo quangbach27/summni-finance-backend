@@ -147,6 +147,7 @@ func (r *walletRepo) Create(ctx context.Context, wallet *wallet.Wallet) error {
 func (r *walletRepo) CreateAllocations(
 	ctx context.Context,
 	wID uuid.UUID,
+	allocationSpec wallet.ProviderAllocationSpec,
 	updateFunc func(*wallet.Wallet) error,
 ) error {
 	return r.transactionManager.WithTx(ctx, func(tx pgx.Tx) error {
@@ -155,7 +156,7 @@ func (r *walletRepo) CreateAllocations(
 		w, err := r.getByIDWithProviders(
 			ctx,
 			wID,
-			wallet.NewDefaultProviderAllocationSpec(),
+			allocationSpec,
 			txQueries,
 		)
 		if err != nil {

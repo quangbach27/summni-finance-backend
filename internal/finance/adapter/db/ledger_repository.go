@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"sumni-finance-backend/internal/common/convert"
 	"sumni-finance-backend/internal/finance/adapter/db/store"
 	"sumni-finance-backend/internal/finance/domain/ledger"
 
@@ -34,7 +33,7 @@ func (r *ledgerRepository) CreateAccountingPeriod(
 		TotalDebit:           ap.TotalDebit().Amount(),
 		TotalCredit:          ap.TotalCredit().Amount(),
 		WalletClosingBalance: ap.ClosingBalance().Amount(),
-		Version:              convert.SafePtr(ap.Version()),
+		Version:              ap.Version(),
 		Status:               ap.Status().String(),
 		WalletID:             wID,
 	})

@@ -22,7 +22,7 @@ type FinanceAccountingPeriod struct {
 	WalletClosingBalance int64     `db:"wallet_closing_balance"`
 	Status               string    `db:"status"`
 	WalletID             uuid.UUID `db:"wallet_id"`
-	Version              *int32    `db:"version"`
+	Version              int32     `db:"version"`
 }
 
 type FinanceFundProvider struct {

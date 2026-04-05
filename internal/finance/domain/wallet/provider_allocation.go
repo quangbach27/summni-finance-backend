@@ -56,7 +56,7 @@ func (pa *FpAllocation) TopUpFundProviderAndAllocation(amount valueobject.Money)
 
 func (pa *FpAllocation) WithdrawFundProviderAndAllocation(amount valueobject.Money) error {
 	if amount.GreaterThan(pa.allocated) {
-		return errors.New("withdraw amount is excced the allocation amount")
+		return errors.New("withdraw amount exceeds the allocated amount")
 	}
 
 	if err := pa.fp.Withdraw(amount); err != nil {

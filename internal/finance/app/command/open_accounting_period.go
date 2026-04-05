@@ -42,15 +42,16 @@ func (h *openAccountingPeriodHandler) Handle(ctx context.Context, cmd OpenAccoun
 		return httperr.NewIncorrectInputError(err, "failed-to-create-year-month")
 	}
 
-	if err = w.OpenAccountingPeriod(yearMonth); err != nil {
+	newAccountingPeriodId, err := w.OpenAccountingPeriod(yearMonth)
+	if err != nil {
 		return httperr.NewIncorrectInputError(err, "failed-to-open-accounting-period")
 	}
 
-	ap, exist := w.LedgerManager().FindAccountingPeriod(yearMonth)
+	ap, exist := w.LedgerManager().FindAccountingPeriod(newAccountingPeriodId)
 	if !exist {
 		return httperr.NewUnknowError(
 			errors.New("accounting period is successful opened in domain but not found in wallet domain"),
-			"faild-to-open-accounting-period",
+			"failed-to-open-accounting-period",
 		)
 	}
 

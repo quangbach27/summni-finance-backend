@@ -64,7 +64,7 @@ type CreateAccountingPeriodParams struct {
 	TotalDebit           int64     `db:"total_debit"`
 	TotalCredit          int64     `db:"total_credit"`
 	WalletClosingBalance int64     `db:"wallet_closing_balance"`
-	Version              *int32    `db:"version"`
+	Version              int32     `db:"version"`
 	WalletID             uuid.UUID `db:"wallet_id"`
 	Status               string    `db:"status"`
 }
@@ -122,7 +122,7 @@ type GetAccountingPeriodsByIDsAndWalletIDRow struct {
 	TotalCredit          int64     `db:"total_credit"`
 	WalletClosingBalance int64     `db:"wallet_closing_balance"`
 	Status               string    `db:"status"`
-	Version              *int32    `db:"version"`
+	Version              int32     `db:"version"`
 }
 
 func (q *Queries) GetAccountingPeriodsByIDsAndWalletID(ctx context.Context, arg GetAccountingPeriodsByIDsAndWalletIDParams) ([]GetAccountingPeriodsByIDsAndWalletIDRow, error) {
@@ -175,7 +175,7 @@ type UpdateAccountingPeridParams struct {
 	ClosingBalance int64     `db:"closing_balance"`
 	Status         string    `db:"status"`
 	ID             uuid.UUID `db:"id"`
-	Version        *int32    `db:"version"`
+	Version        int32     `db:"version"`
 }
 
 func (q *Queries) UpdateAccountingPerid(ctx context.Context, arg UpdateAccountingPeridParams) (int64, error) {

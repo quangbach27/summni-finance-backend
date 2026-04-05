@@ -56,7 +56,7 @@ CREATE TABLE finance.accounting_periods (
     status varchar(10) NOT NULL,
 
     wallet_id uuid NOT NULL,
-    version int DEFAULT 0,
+    version int NOT NULL,
 
     CONSTRAINT fk_accounting_periods_wallet
         FOREIGN KEY (wallet_id)

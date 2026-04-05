@@ -40,16 +40,14 @@ func (hs HttpServer) RecordTransactionRecords(
 		})
 	}
 
-	err := hs.application.Commands.RecordTransactionRecords.Handle(
+	if err := hs.application.Commands.RecordTransactionRecords.Handle(
 		r.Context(),
 		command.RecordTransactionRecordsCmd{
 			WalletID:           walletId,
-			AccountingPeridID:  accountPeriodId,
-			YearMonth:          req.YearMonth,
+			AccountingPeriodID: accountPeriodId,
 			TransactionRecords: transactionRecords,
 		},
-	)
-	if err != nil {
+	); err != nil {
 		httperr.RespondWithSlugError(err, w, r)
 		return
 	}

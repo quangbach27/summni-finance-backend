@@ -260,7 +260,7 @@ func (r *walletRepo) CreateTransactionRecords(
 	ctx context.Context,
 	wID uuid.UUID,
 	allocationSpec wallet.ProviderAllocationSpec,
-	accountingPeriodIDs uuid.UUID,
+	accountingPeriodID uuid.UUID,
 	updateFunc func(w *wallet.Wallet) error,
 ) error {
 	return r.transactionManager.WithTx(ctx, func(tx pgx.Tx) error {
@@ -274,15 +274,19 @@ func (r *walletRepo) CreateTransactionRecords(
 			ctx,
 			store.GetAccountingPeriodsByIDsAndWalletIDParams{
 				WalletID: wID,
-				Ids:      []uuid.UUID{accountingPeriodIDs},
+				Ids:      []uuid.UUID{accountingPeriodID},
 			},
 		)
 		if err != nil {
 			return err
 		}
+
 		accountingPeriods, err := r.toAccountingPeriodsDomain(apModels, w.Currency().Code())
 		if err != nil {
 			return err
+		}
+		if accountingPeriods[0] == nil {
+			return errors.New("failed to load accounting period")
 		}
 
 		if err = w.SetAccountingPeriods(accountingPeriods[0]); err != nil {
@@ -302,7 +306,7 @@ func (r *walletRepo) CreateTransactionRecords(
 		}
 
 		// Get the accounting period from the wallet's ledger manager
-		ap, exists := w.LedgerManager().FindAccountingPeriod(accountingPeriods[0].YearMonth())
+		ap, exists := w.LedgerManager().FindAccountingPeriod(accountingPeriods[0].ID())
 		if !exists {
 			return fmt.Errorf("accounting period not found in wallet after recording transactions")
 		}
@@ -328,12 +332,6 @@ func (r *walletRepo) toAccountingPeriodsDomain(
 	apDomains := make([]*ledger.AccountingPeriod, 0, len(apModels))
 
 	for _, apModel := range apModels {
-		// Handle nullable version field
-		version := int32(0)
-		if apModel.Version != nil {
-			version = *apModel.Version
-		}
-
 		apDomain, err := ledger.UnmarshalAccountingPeriodFromDatabase(
 			apModel.ID,
 			apModel.YearMonth,
@@ -346,7 +344,7 @@ func (r *walletRepo) toAccountingPeriodsDomain(
 			apModel.WalletClosingBalance,
 			currencyCode,
 			apModel.EndTime,
-			version,
+			apModel.Version,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal accounting period %s: %w", apModel.ID, err)
@@ -405,14 +403,13 @@ func (r *walletRepo) updateAccountingPeriod(
 	queries *store.Queries,
 	ap *ledger.AccountingPeriod,
 ) error {
-	version := ap.Version()
 	rows, err := queries.UpdateAccountingPerid(ctx, store.UpdateAccountingPeridParams{
 		TotalDebit:     ap.TotalDebit().Amount(),
 		TotalCredit:    ap.TotalCredit().Amount(),
 		ClosingBalance: ap.ClosingBalance().Amount(),
 		Status:         ap.Status().String(),
 		ID:             ap.ID(),
-		Version:        &version,
+		Version:        ap.Version(),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update accounting period: %w", err)

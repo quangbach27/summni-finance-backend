@@ -20,12 +20,12 @@ type ServerInterface interface {
 	// Create a new wallet
 	// (POST /v1/wallets)
 	CreateWallet(w http.ResponseWriter, r *http.Request)
-	// Record transaction records for an accounting period
-	// (POST /v1/wallets/{walletId}/account-periods/{accountPeriodId})
-	RecordTransactionRecords(w http.ResponseWriter, r *http.Request, walletId openapi_types.UUID, accountPeriodId openapi_types.UUID)
 	// Open a new accounting period for a wallet
 	// (POST /v1/wallets/{walletId}/accounting-periods)
 	OpenAccountingPeriod(w http.ResponseWriter, r *http.Request, walletId openapi_types.UUID)
+	// Record transaction records for an accounting period
+	// (POST /v1/wallets/{walletId}/accounting-periods/{accountPeriodId})
+	RecordTransactionRecords(w http.ResponseWriter, r *http.Request, walletId openapi_types.UUID, accountPeriodId openapi_types.UUID)
 	// Allocate funds to a wallet
 	// (POST /v1/wallets/{walletId}/allocate-fund-providers)
 	AllocateFund(w http.ResponseWriter, r *http.Request, walletId openapi_types.UUID)
@@ -47,15 +47,15 @@ func (_ Unimplemented) CreateWallet(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Record transaction records for an accounting period
-// (POST /v1/wallets/{walletId}/account-periods/{accountPeriodId})
-func (_ Unimplemented) RecordTransactionRecords(w http.ResponseWriter, r *http.Request, walletId openapi_types.UUID, accountPeriodId openapi_types.UUID) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
 // Open a new accounting period for a wallet
 // (POST /v1/wallets/{walletId}/accounting-periods)
 func (_ Unimplemented) OpenAccountingPeriod(w http.ResponseWriter, r *http.Request, walletId openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Record transaction records for an accounting period
+// (POST /v1/wallets/{walletId}/accounting-periods/{accountPeriodId})
+func (_ Unimplemented) RecordTransactionRecords(w http.ResponseWriter, r *http.Request, walletId openapi_types.UUID, accountPeriodId openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -102,6 +102,31 @@ func (siw *ServerInterfaceWrapper) CreateWallet(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
+// OpenAccountingPeriod operation middleware
+func (siw *ServerInterfaceWrapper) OpenAccountingPeriod(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "walletId" -------------
+	var walletId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "walletId", chi.URLParam(r, "walletId"), &walletId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "walletId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.OpenAccountingPeriod(w, r, walletId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // RecordTransactionRecords operation middleware
 func (siw *ServerInterfaceWrapper) RecordTransactionRecords(w http.ResponseWriter, r *http.Request) {
 
@@ -127,31 +152,6 @@ func (siw *ServerInterfaceWrapper) RecordTransactionRecords(w http.ResponseWrite
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RecordTransactionRecords(w, r, walletId, accountPeriodId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// OpenAccountingPeriod operation middleware
-func (siw *ServerInterfaceWrapper) OpenAccountingPeriod(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "walletId" -------------
-	var walletId openapi_types.UUID
-
-	err = runtime.BindStyledParameterWithOptions("simple", "walletId", chi.URLParam(r, "walletId"), &walletId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "walletId", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.OpenAccountingPeriod(w, r, walletId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -306,10 +306,10 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/v1/wallets", wrapper.CreateWallet)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/v1/wallets/{walletId}/account-periods/{accountPeriodId}", wrapper.RecordTransactionRecords)
+		r.Post(options.BaseURL+"/v1/wallets/{walletId}/accounting-periods", wrapper.OpenAccountingPeriod)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/v1/wallets/{walletId}/accounting-periods", wrapper.OpenAccountingPeriod)
+		r.Post(options.BaseURL+"/v1/wallets/{walletId}/accounting-periods/{accountPeriodId}", wrapper.RecordTransactionRecords)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/v1/wallets/{walletId}/allocate-fund-providers", wrapper.AllocateFund)

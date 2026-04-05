@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type BulkInsertTransactionRecordsParams struct {
@@ -87,7 +88,7 @@ func (q *Queries) CreateAccountingPeriod(ctx context.Context, arg CreateAccounti
 	return err
 }
 
-const getAccountingPeriodsByIDsAndWalletID = `-- name: GetAccountingPeriodsByIDsAndWalletID :many
+const getAccountingPeriodsByYearMonthAndWalletID = `-- name: GetAccountingPeriodsByYearMonthAndWalletID :one
 SELECT
     id,
     year_month,
@@ -103,15 +104,15 @@ SELECT
 FROM
     finance.accounting_periods
 WHERE wallet_id = $1 
-    AND id = ANY($2::uuid[])
+    AND year_month = $2
 `
 
-type GetAccountingPeriodsByIDsAndWalletIDParams struct {
-	WalletID uuid.UUID   `db:"wallet_id"`
-	Ids      []uuid.UUID `db:"ids"`
+type GetAccountingPeriodsByYearMonthAndWalletIDParams struct {
+	WalletID  uuid.UUID `db:"wallet_id"`
+	YearMonth string    `db:"year_month"`
 }
 
-type GetAccountingPeriodsByIDsAndWalletIDRow struct {
+type GetAccountingPeriodsByYearMonthAndWalletIDRow struct {
 	ID                   uuid.UUID `db:"id"`
 	YearMonth            string    `db:"year_month"`
 	StartDate            int32     `db:"start_date"`
@@ -125,36 +126,96 @@ type GetAccountingPeriodsByIDsAndWalletIDRow struct {
 	Version              int32     `db:"version"`
 }
 
-func (q *Queries) GetAccountingPeriodsByIDsAndWalletID(ctx context.Context, arg GetAccountingPeriodsByIDsAndWalletIDParams) ([]GetAccountingPeriodsByIDsAndWalletIDRow, error) {
-	rows, err := q.db.Query(ctx, getAccountingPeriodsByIDsAndWalletID, arg.WalletID, arg.Ids)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetAccountingPeriodsByIDsAndWalletIDRow
-	for rows.Next() {
-		var i GetAccountingPeriodsByIDsAndWalletIDRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.YearMonth,
-			&i.StartDate,
-			&i.Interval,
-			&i.EndTime,
-			&i.WalletOpeningBalance,
-			&i.TotalDebit,
-			&i.TotalCredit,
-			&i.WalletClosingBalance,
-			&i.Status,
-			&i.Version,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) GetAccountingPeriodsByYearMonthAndWalletID(ctx context.Context, arg GetAccountingPeriodsByYearMonthAndWalletIDParams) (GetAccountingPeriodsByYearMonthAndWalletIDRow, error) {
+	row := q.db.QueryRow(ctx, getAccountingPeriodsByYearMonthAndWalletID, arg.WalletID, arg.YearMonth)
+	var i GetAccountingPeriodsByYearMonthAndWalletIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.YearMonth,
+		&i.StartDate,
+		&i.Interval,
+		&i.EndTime,
+		&i.WalletOpeningBalance,
+		&i.TotalDebit,
+		&i.TotalCredit,
+		&i.WalletClosingBalance,
+		&i.Status,
+		&i.Version,
+	)
+	return i, err
+}
+
+const getWalletWithAccountingPeriod = `-- name: GetWalletWithAccountingPeriod :one
+SELECT
+    w.id             AS wallet_id,
+    w.name           AS wallet_name,
+    w.balance        AS wallet_balance,
+    w.currency       AS wallet_currency,
+    w.version        AS wallet_version,
+    ap.id            AS period_id,
+    ap.year_month    AS period_year_month,
+    ap.start_date    AS period_start_date,
+    ap.interval      AS period_interval,
+    ap.end_time      AS period_end_time,
+    ap.wallet_opening_balance,
+    ap.total_debit,
+    ap.total_credit,
+    ap.wallet_closing_balance,
+    ap.status        AS period_status,
+    ap.version       AS period_version
+FROM finance.wallets w
+LEFT JOIN finance.accounting_periods ap
+    ON ap.wallet_id = w.id
+    AND ap.year_month = $2
+WHERE w.id = $1
+`
+
+type GetWalletWithAccountingPeriodParams struct {
+	ID        uuid.UUID `db:"id"`
+	YearMonth string    `db:"year_month"`
+}
+
+type GetWalletWithAccountingPeriodRow struct {
+	WalletID             uuid.UUID        `db:"wallet_id"`
+	WalletName           string           `db:"wallet_name"`
+	WalletBalance        int64            `db:"wallet_balance"`
+	WalletCurrency       string           `db:"wallet_currency"`
+	WalletVersion        int32            `db:"wallet_version"`
+	PeriodID             *uuid.UUID       `db:"period_id"`
+	PeriodYearMonth      *string          `db:"period_year_month"`
+	PeriodStartDate      *int32           `db:"period_start_date"`
+	PeriodInterval       *int32           `db:"period_interval"`
+	PeriodEndTime        pgtype.Timestamp `db:"period_end_time"`
+	WalletOpeningBalance *int64           `db:"wallet_opening_balance"`
+	TotalDebit           *int64           `db:"total_debit"`
+	TotalCredit          *int64           `db:"total_credit"`
+	WalletClosingBalance *int64           `db:"wallet_closing_balance"`
+	PeriodStatus         *string          `db:"period_status"`
+	PeriodVersion        *int32           `db:"period_version"`
+}
+
+func (q *Queries) GetWalletWithAccountingPeriod(ctx context.Context, arg GetWalletWithAccountingPeriodParams) (GetWalletWithAccountingPeriodRow, error) {
+	row := q.db.QueryRow(ctx, getWalletWithAccountingPeriod, arg.ID, arg.YearMonth)
+	var i GetWalletWithAccountingPeriodRow
+	err := row.Scan(
+		&i.WalletID,
+		&i.WalletName,
+		&i.WalletBalance,
+		&i.WalletCurrency,
+		&i.WalletVersion,
+		&i.PeriodID,
+		&i.PeriodYearMonth,
+		&i.PeriodStartDate,
+		&i.PeriodInterval,
+		&i.PeriodEndTime,
+		&i.WalletOpeningBalance,
+		&i.TotalDebit,
+		&i.TotalCredit,
+		&i.WalletClosingBalance,
+		&i.PeriodStatus,
+		&i.PeriodVersion,
+	)
+	return i, err
 }
 
 const updateAccountingPerid = `-- name: UpdateAccountingPerid :execrows

@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"context"
+	"sumni-finance-backend/internal/finance/domain/ledger"
 
 	"github.com/google/uuid"
 )
@@ -18,6 +19,12 @@ type Repository interface {
 		spec ProviderAllocationSpec,
 	) (*Wallet, error)
 
+	GetByIDWithAccountingPeriod(
+		ctx context.Context,
+		wID uuid.UUID,
+		yearMonth ledger.YearMonth,
+	) (*Wallet, error)
+
 	Create(ctx context.Context, wallet *Wallet) error
 
 	CreateAllocations(
@@ -31,7 +38,7 @@ type Repository interface {
 		ctx context.Context,
 		wID uuid.UUID,
 		allocationSpec ProviderAllocationSpec,
-		accountingPeriodIDs uuid.UUID,
+		yearMonth ledger.YearMonth,
 		updateFunc func(w *Wallet) error,
 	) error
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sumni-finance-backend/internal/common/convert"
 	common_db "sumni-finance-backend/internal/common/db"
 	"sumni-finance-backend/internal/finance/adapter/db/store"
 	"sumni-finance-backend/internal/finance/domain/fundprovider"
@@ -260,7 +261,7 @@ func (r *walletRepo) CreateTransactionRecords(
 	ctx context.Context,
 	wID uuid.UUID,
 	allocationSpec wallet.ProviderAllocationSpec,
-	accountingPeriodID uuid.UUID,
+	yearMonth ledger.YearMonth,
 	updateFunc func(w *wallet.Wallet) error,
 ) error {
 	return r.transactionManager.WithTx(ctx, func(tx pgx.Tx) error {
@@ -270,26 +271,23 @@ func (r *walletRepo) CreateTransactionRecords(
 			return err
 		}
 
-		apModels, err := txQueries.GetAccountingPeriodsByIDsAndWalletID(
+		apModels, err := txQueries.GetAccountingPeriodsByYearMonthAndWalletID(
 			ctx,
-			store.GetAccountingPeriodsByIDsAndWalletIDParams{
-				WalletID: wID,
-				Ids:      []uuid.UUID{accountingPeriodID},
+			store.GetAccountingPeriodsByYearMonthAndWalletIDParams{
+				WalletID:  wID,
+				YearMonth: yearMonth.String(),
 			},
 		)
 		if err != nil {
 			return err
 		}
 
-		accountingPeriods, err := r.toAccountingPeriodsDomain(apModels, w.Currency().Code())
+		ap, err := r.toAccountingPeriodsDomain(apModels, w.Currency().Code())
 		if err != nil {
 			return err
 		}
-		if accountingPeriods[0] == nil {
-			return errors.New("failed to load accounting period")
-		}
 
-		if err = w.SetAccountingPeriods(accountingPeriods[0]); err != nil {
+		if err = w.SetAccountingPeriods(ap); err != nil {
 			return err
 		}
 
@@ -306,18 +304,18 @@ func (r *walletRepo) CreateTransactionRecords(
 		}
 
 		// Get the accounting period from the wallet's ledger manager
-		ap, exists := w.LedgerManager().FindAccountingPeriod(accountingPeriods[0].ID())
+		acPeriod, exists := w.LedgerManager().FindAccountingPeriod(ap.YearMonth())
 		if !exists {
 			return fmt.Errorf("accounting period not found in wallet after recording transactions")
 		}
 
 		// Update accounting period
-		if err := r.updateAccountingPeriod(ctx, txQueries, ap); err != nil {
+		if err := r.updateAccountingPeriod(ctx, txQueries, acPeriod); err != nil {
 			return err
 		}
 
 		// Insert transaction records
-		if err := r.insertTransactionRecords(ctx, txQueries, w.ID(), ap); err != nil {
+		if err := r.insertTransactionRecords(ctx, txQueries, w.ID(), acPeriod); err != nil {
 			return err
 		}
 
@@ -326,34 +324,28 @@ func (r *walletRepo) CreateTransactionRecords(
 }
 
 func (r *walletRepo) toAccountingPeriodsDomain(
-	apModels []store.GetAccountingPeriodsByIDsAndWalletIDRow,
+	apModel store.GetAccountingPeriodsByYearMonthAndWalletIDRow,
 	currencyCode string,
-) ([]*ledger.AccountingPeriod, error) {
-	apDomains := make([]*ledger.AccountingPeriod, 0, len(apModels))
-
-	for _, apModel := range apModels {
-		apDomain, err := ledger.UnmarshalAccountingPeriodFromDatabase(
-			apModel.ID,
-			apModel.YearMonth,
-			apModel.StartDate,
-			apModel.Interval,
-			apModel.Status,
-			apModel.WalletOpeningBalance,
-			apModel.TotalDebit,
-			apModel.TotalCredit,
-			apModel.WalletClosingBalance,
-			currencyCode,
-			apModel.EndTime,
-			apModel.Version,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal accounting period %s: %w", apModel.ID, err)
-		}
-
-		apDomains = append(apDomains, apDomain)
+) (*ledger.AccountingPeriod, error) {
+	ap, err := ledger.UnmarshalAccountingPeriodFromDatabase(
+		apModel.ID,
+		apModel.YearMonth,
+		apModel.StartDate,
+		apModel.Interval,
+		apModel.Status,
+		apModel.WalletOpeningBalance,
+		apModel.TotalDebit,
+		apModel.TotalCredit,
+		apModel.WalletClosingBalance,
+		currencyCode,
+		apModel.EndTime,
+		apModel.Version,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal accounting period %s: %w", apModel.ID, err)
 	}
 
-	return apDomains, nil
+	return ap, nil
 }
 
 func (r *walletRepo) updateFundProviderAllocations(
@@ -465,4 +457,55 @@ func (r *walletRepo) insertTransactionRecords(
 	}
 
 	return nil
+}
+
+func (r *walletRepo) GetByIDWithAccountingPeriod(
+	ctx context.Context,
+	wID uuid.UUID,
+	yearMonth ledger.YearMonth,
+) (*wallet.Wallet, error) {
+	model, err := r.queries.GetWalletWithAccountingPeriod(ctx, store.GetWalletWithAccountingPeriodParams{
+		ID:        wID,
+		YearMonth: yearMonth.String(),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get wallet with accounting period: %w", err)
+	}
+
+	var accountingPeriods []*ledger.AccountingPeriod
+	if model.PeriodID != nil {
+		ap, err := ledger.UnmarshalAccountingPeriodFromDatabase(
+			convert.SafeDeref(model.PeriodID, uuid.UUID{}),
+			convert.SafeDeref(model.PeriodYearMonth, ""),
+			convert.SafeDeref(model.PeriodStartDate, 0),
+			convert.SafeDeref(model.PeriodInterval, 0),
+			convert.SafeDeref(model.PeriodStatus, ""),
+			convert.SafeDeref(model.WalletOpeningBalance, 0),
+			convert.SafeDeref(model.TotalDebit, 0),
+			convert.SafeDeref(model.TotalCredit, 0),
+			convert.SafeDeref(model.WalletClosingBalance, 0),
+			model.WalletCurrency,
+			model.PeriodEndTime.Time,
+			convert.SafeDeref(model.PeriodVersion, 0),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal accounting period: %w", err)
+		}
+
+		accountingPeriods = append(accountingPeriods, ap)
+	}
+
+	w, err := wallet.UnmarshalWalletWithLedgerFromDatabase(
+		model.WalletID,
+		model.WalletName,
+		model.WalletBalance,
+		model.WalletCurrency,
+		model.WalletVersion,
+		accountingPeriods,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal wallet: %w", err)
+	}
+
+	return w, nil
 }

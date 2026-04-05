@@ -5,6 +5,7 @@ import (
 	"errors"
 	"sumni-finance-backend/internal/common/cqrs"
 	"sumni-finance-backend/internal/common/server/httperr"
+	"sumni-finance-backend/internal/finance/domain/ledger"
 	"sumni-finance-backend/internal/finance/domain/wallet"
 
 	"github.com/google/uuid"
@@ -12,7 +13,7 @@ import (
 
 type RecordTransactionRecordsCmd struct {
 	WalletID           uuid.UUID
-	AccountingPeriodID uuid.UUID
+	YearMonth          string
 	TransactionRecords []TransactionRecordCmd
 }
 
@@ -43,14 +44,18 @@ func (h *recordTransactionRecordsHandler) Handle(ctx context.Context, cmd Record
 	}
 
 	fpIDs, txSpecs := h.extractFpIDsAndBuildTxSpec(cmd.TransactionRecords)
+	yearMonth, err := ledger.UnmarshalYearMonthFromString(cmd.YearMonth)
+	if err != nil {
+		return httperr.NewIncorrectInputError(err, "invalid-year-month-format")
+	}
 
 	if err := h.walletRepo.CreateTransactionRecords(
 		ctx,
 		cmd.WalletID,
 		wallet.NewProviderMatchesAnySpec(fpIDs),
-		cmd.AccountingPeriodID,
+		yearMonth,
 		func(w *wallet.Wallet) error {
-			if err := w.RecordTransactions(cmd.AccountingPeriodID, txSpecs...); err != nil {
+			if err := w.RecordTransactions(yearMonth, txSpecs...); err != nil {
 				return err
 			}
 

@@ -4,9 +4,11 @@ package mocks
 
 import (
 	context "context"
+	ledger "sumni-finance-backend/internal/finance/domain/ledger"
+
+	mock "github.com/stretchr/testify/mock"
 
 	uuid "github.com/google/uuid"
-	mock "github.com/stretchr/testify/mock"
 
 	wallet "sumni-finance-backend/internal/finance/domain/wallet"
 )
@@ -120,17 +122,17 @@ func (_c *MockRepository_CreateAllocations_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
-// CreateTransactionRecords provides a mock function with given fields: ctx, wID, allocationSpec, accountingPeriodIDs, updateFunc
-func (_m *MockRepository) CreateTransactionRecords(ctx context.Context, wID uuid.UUID, allocationSpec wallet.ProviderAllocationSpec, accountingPeriodIDs uuid.UUID, updateFunc func(*wallet.Wallet) error) error {
-	ret := _m.Called(ctx, wID, allocationSpec, accountingPeriodIDs, updateFunc)
+// CreateTransactionRecords provides a mock function with given fields: ctx, wID, allocationSpec, yearMonth, updateFunc
+func (_m *MockRepository) CreateTransactionRecords(ctx context.Context, wID uuid.UUID, allocationSpec wallet.ProviderAllocationSpec, yearMonth ledger.YearMonth, updateFunc func(*wallet.Wallet) error) error {
+	ret := _m.Called(ctx, wID, allocationSpec, yearMonth, updateFunc)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateTransactionRecords")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, wallet.ProviderAllocationSpec, uuid.UUID, func(*wallet.Wallet) error) error); ok {
-		r0 = rf(ctx, wID, allocationSpec, accountingPeriodIDs, updateFunc)
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, wallet.ProviderAllocationSpec, ledger.YearMonth, func(*wallet.Wallet) error) error); ok {
+		r0 = rf(ctx, wID, allocationSpec, yearMonth, updateFunc)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -147,15 +149,15 @@ type MockRepository_CreateTransactionRecords_Call struct {
 //   - ctx context.Context
 //   - wID uuid.UUID
 //   - allocationSpec wallet.ProviderAllocationSpec
-//   - accountingPeriodIDs uuid.UUID
+//   - yearMonth ledger.YearMonth
 //   - updateFunc func(*wallet.Wallet) error
-func (_e *MockRepository_Expecter) CreateTransactionRecords(ctx interface{}, wID interface{}, allocationSpec interface{}, accountingPeriodIDs interface{}, updateFunc interface{}) *MockRepository_CreateTransactionRecords_Call {
-	return &MockRepository_CreateTransactionRecords_Call{Call: _e.mock.On("CreateTransactionRecords", ctx, wID, allocationSpec, accountingPeriodIDs, updateFunc)}
+func (_e *MockRepository_Expecter) CreateTransactionRecords(ctx interface{}, wID interface{}, allocationSpec interface{}, yearMonth interface{}, updateFunc interface{}) *MockRepository_CreateTransactionRecords_Call {
+	return &MockRepository_CreateTransactionRecords_Call{Call: _e.mock.On("CreateTransactionRecords", ctx, wID, allocationSpec, yearMonth, updateFunc)}
 }
 
-func (_c *MockRepository_CreateTransactionRecords_Call) Run(run func(ctx context.Context, wID uuid.UUID, allocationSpec wallet.ProviderAllocationSpec, accountingPeriodIDs uuid.UUID, updateFunc func(*wallet.Wallet) error)) *MockRepository_CreateTransactionRecords_Call {
+func (_c *MockRepository_CreateTransactionRecords_Call) Run(run func(ctx context.Context, wID uuid.UUID, allocationSpec wallet.ProviderAllocationSpec, yearMonth ledger.YearMonth, updateFunc func(*wallet.Wallet) error)) *MockRepository_CreateTransactionRecords_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(wallet.ProviderAllocationSpec), args[3].(uuid.UUID), args[4].(func(*wallet.Wallet) error))
+		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(wallet.ProviderAllocationSpec), args[3].(ledger.YearMonth), args[4].(func(*wallet.Wallet) error))
 	})
 	return _c
 }
@@ -165,7 +167,7 @@ func (_c *MockRepository_CreateTransactionRecords_Call) Return(_a0 error) *MockR
 	return _c
 }
 
-func (_c *MockRepository_CreateTransactionRecords_Call) RunAndReturn(run func(context.Context, uuid.UUID, wallet.ProviderAllocationSpec, uuid.UUID, func(*wallet.Wallet) error) error) *MockRepository_CreateTransactionRecords_Call {
+func (_c *MockRepository_CreateTransactionRecords_Call) RunAndReturn(run func(context.Context, uuid.UUID, wallet.ProviderAllocationSpec, ledger.YearMonth, func(*wallet.Wallet) error) error) *MockRepository_CreateTransactionRecords_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -225,6 +227,66 @@ func (_c *MockRepository_GetByID_Call) Return(_a0 *wallet.Wallet, _a1 error) *Mo
 }
 
 func (_c *MockRepository_GetByID_Call) RunAndReturn(run func(context.Context, uuid.UUID) (*wallet.Wallet, error)) *MockRepository_GetByID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetByIDWithAccountingPeriod provides a mock function with given fields: ctx, wID, yearMonth
+func (_m *MockRepository) GetByIDWithAccountingPeriod(ctx context.Context, wID uuid.UUID, yearMonth ledger.YearMonth) (*wallet.Wallet, error) {
+	ret := _m.Called(ctx, wID, yearMonth)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByIDWithAccountingPeriod")
+	}
+
+	var r0 *wallet.Wallet
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, ledger.YearMonth) (*wallet.Wallet, error)); ok {
+		return rf(ctx, wID, yearMonth)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, ledger.YearMonth) *wallet.Wallet); ok {
+		r0 = rf(ctx, wID, yearMonth)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*wallet.Wallet)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, ledger.YearMonth) error); ok {
+		r1 = rf(ctx, wID, yearMonth)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockRepository_GetByIDWithAccountingPeriod_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetByIDWithAccountingPeriod'
+type MockRepository_GetByIDWithAccountingPeriod_Call struct {
+	*mock.Call
+}
+
+// GetByIDWithAccountingPeriod is a helper method to define mock.On call
+//   - ctx context.Context
+//   - wID uuid.UUID
+//   - yearMonth ledger.YearMonth
+func (_e *MockRepository_Expecter) GetByIDWithAccountingPeriod(ctx interface{}, wID interface{}, yearMonth interface{}) *MockRepository_GetByIDWithAccountingPeriod_Call {
+	return &MockRepository_GetByIDWithAccountingPeriod_Call{Call: _e.mock.On("GetByIDWithAccountingPeriod", ctx, wID, yearMonth)}
+}
+
+func (_c *MockRepository_GetByIDWithAccountingPeriod_Call) Run(run func(ctx context.Context, wID uuid.UUID, yearMonth ledger.YearMonth)) *MockRepository_GetByIDWithAccountingPeriod_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(ledger.YearMonth))
+	})
+	return _c
+}
+
+func (_c *MockRepository_GetByIDWithAccountingPeriod_Call) Return(_a0 *wallet.Wallet, _a1 error) *MockRepository_GetByIDWithAccountingPeriod_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockRepository_GetByIDWithAccountingPeriod_Call) RunAndReturn(run func(context.Context, uuid.UUID, ledger.YearMonth) (*wallet.Wallet, error)) *MockRepository_GetByIDWithAccountingPeriod_Call {
 	_c.Call.Return(run)
 	return _c
 }

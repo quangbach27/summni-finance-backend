@@ -58,6 +58,9 @@ CREATE TABLE finance.accounting_periods (
     wallet_id uuid NOT NULL,
     version int NOT NULL,
 
+    CONSTRAINT uq_wallet_year_month
+        UNIQUE (wallet_id, year_month),
+
     CONSTRAINT fk_accounting_periods_wallet
         FOREIGN KEY (wallet_id)
             REFERENCES finance.wallets (id)

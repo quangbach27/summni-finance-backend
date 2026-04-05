@@ -156,7 +156,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /v1/wallets/{walletId}/accounting-periods/{accountPeriodId}:
+  /v1/wallets/{walletId}/accounting-periods/{yearMonth}:
     post:
       summary: Record transaction records for an accounting period
       description: Records transaction records for a specific accounting period in a wallet
@@ -171,13 +171,12 @@ paths:
           schema:
             type: string
             format: uuid
-        - name: accountPeriodId
+        - name: yearMonth
           in: path
           required: true
-          description: The accounting period ID
+          description: The year month string
           schema:
             type: string
-            format: uuid
       requestBody:
         required: true
         content:
@@ -271,7 +270,6 @@ components:
     OpenAccountingPeriodRequest:
       type: object
       required:
-        - walletId
         - year
         - month
       properties:

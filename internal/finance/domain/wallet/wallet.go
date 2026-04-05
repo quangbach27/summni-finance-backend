@@ -266,22 +266,22 @@ func (w *Wallet) Withdraw(amount valueobject.Money, fpID uuid.UUID) error {
 	return nil
 }
 
-func (w *Wallet) OpenAccountingPeriod(yearMonth ledger.YearMonth) (uuid.UUID, error) {
+func (w *Wallet) OpenAccountingPeriod(yearMonth ledger.YearMonth) error {
 	return w.ledgerManager.OpenNewAccountingPeriod(yearMonth, w.balance)
 }
 
-func (w *Wallet) RecordTransactions(id uuid.UUID, txSpecs ...TransactionSpec) error {
+func (w *Wallet) RecordTransactions(yearMonth ledger.YearMonth, txSpecs ...TransactionSpec) error {
 	if len(txSpecs) == 0 {
 		return errors.New("transaction specs is empty")
 	}
 
-	accountingPeriod, exist := w.ledgerManager.FindAccountingPeriod(id)
+	accountingPeriod, exist := w.ledgerManager.FindAccountingPeriod(yearMonth)
 	if !exist {
-		return fmt.Errorf("account period: %s not found", id.String())
+		return fmt.Errorf("account period: %s not found", yearMonth.String())
 	}
 
 	if accountingPeriod.IsClose() {
-		return fmt.Errorf("accounting period: %s has been closed", id.String())
+		return fmt.Errorf("accounting period: %s has been closed", yearMonth.String())
 	}
 
 	for _, txSpec := range txSpecs {
@@ -290,7 +290,7 @@ func (w *Wallet) RecordTransactions(id uuid.UUID, txSpecs ...TransactionSpec) er
 			return fmt.Errorf("failed to build transaction record: %w", err)
 		}
 
-		if err = w.ledgerManager.Record(id, txRecord); err != nil {
+		if err = w.ledgerManager.Record(yearMonth, txRecord); err != nil {
 			return err
 		}
 	}

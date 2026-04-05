@@ -11,12 +11,12 @@ import (
 )
 
 // Record transaction records for an accounting period
-// (POST /v1/wallets/{walletId}/account-periods/{accountPeriodId})
+// (POST /v1/wallets/{walletId}/accounting-periods/{yearMonth})
 func (hs HttpServer) RecordTransactionRecords(
 	w http.ResponseWriter,
 	r *http.Request,
 	walletId openapi_types.UUID,
-	accountPeriodId openapi_types.UUID,
+	yearMonth string,
 ) {
 	var req RecordTransactionRecordsRequest
 
@@ -44,7 +44,7 @@ func (hs HttpServer) RecordTransactionRecords(
 		r.Context(),
 		command.RecordTransactionRecordsCmd{
 			WalletID:           walletId,
-			AccountingPeriodID: accountPeriodId,
+			YearMonth:          yearMonth,
 			TransactionRecords: transactionRecords,
 		},
 	); err != nil {

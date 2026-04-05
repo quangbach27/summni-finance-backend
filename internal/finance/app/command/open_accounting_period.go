@@ -32,22 +32,21 @@ func NewOpenAccountingPeriodHandler(walletRepo wallet.Repository, ledgerRepo led
 }
 
 func (h *openAccountingPeriodHandler) Handle(ctx context.Context, cmd OpenAccountingPeriodCmd) error {
-	w, err := h.walletRepo.GetByID(ctx, cmd.WalletID)
-	if err != nil {
-		return httperr.NewUnknowError(err, "failed-to-retrieve-wallet")
-	}
-
-	yearMonth, err := ledger.NewYearMonth(cmd.Month, cmd.Year)
+	newYearMonth, err := ledger.NewYearMonth(cmd.Month, cmd.Year)
 	if err != nil {
 		return httperr.NewIncorrectInputError(err, "failed-to-create-year-month")
 	}
 
-	newAccountingPeriodId, err := w.OpenAccountingPeriod(yearMonth)
+	w, err := h.walletRepo.GetByIDWithAccountingPeriod(ctx, cmd.WalletID, newYearMonth)
 	if err != nil {
+		return httperr.NewUnknowError(err, "failed-to-retrieve-wallet")
+	}
+
+	if err := w.OpenAccountingPeriod(newYearMonth); err != nil {
 		return httperr.NewIncorrectInputError(err, "failed-to-open-accounting-period")
 	}
 
-	ap, exist := w.LedgerManager().FindAccountingPeriod(newAccountingPeriodId)
+	ap, exist := w.LedgerManager().FindAccountingPeriod(newYearMonth)
 	if !exist {
 		return httperr.NewUnknowError(
 			errors.New("accounting period is successful opened in domain but not found in wallet domain"),

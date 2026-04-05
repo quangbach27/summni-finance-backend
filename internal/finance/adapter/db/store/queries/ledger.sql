@@ -38,7 +38,7 @@ SET
 WHERE ap.id = sqlc.arg(id)
     AND ap.version = sqlc.arg(version);
 
--- name: GetAccountingPeriodsByIDsAndWalletID :many
+-- name: GetAccountingPeriodsByYearMonthAndWalletID :one
 SELECT
     id,
     year_month,
@@ -54,7 +54,31 @@ SELECT
 FROM
     finance.accounting_periods
 WHERE wallet_id = $1 
-    AND id = ANY(sqlc.arg(ids)::uuid[]);
+    AND year_month = $2;
+
+-- name: GetWalletWithAccountingPeriod :one
+SELECT
+    w.id             AS wallet_id,
+    w.name           AS wallet_name,
+    w.balance        AS wallet_balance,
+    w.currency       AS wallet_currency,
+    w.version        AS wallet_version,
+    ap.id            AS period_id,
+    ap.year_month    AS period_year_month,
+    ap.start_date    AS period_start_date,
+    ap.interval      AS period_interval,
+    ap.end_time      AS period_end_time,
+    ap.wallet_opening_balance,
+    ap.total_debit,
+    ap.total_credit,
+    ap.wallet_closing_balance,
+    ap.status        AS period_status,
+    ap.version       AS period_version
+FROM finance.wallets w
+LEFT JOIN finance.accounting_periods ap
+    ON ap.wallet_id = w.id
+    AND ap.year_month = $2
+WHERE w.id = $1;
 
 -- name: BulkInsertTransactionRecords :copyfrom
 INSERT INTO finance.transaction_records (

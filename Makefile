@@ -32,6 +32,10 @@ lint:
 sqlc-generate:
 	sqlc generate -f ./internal/$(DOMAIN)/adapter/db/store/sqlc.yml
 
+.PHONY: docs
+docs:
+	docker compose up swagger-ui -d
+
 .PHONY: openapi_http
 openapi_http:
 	@./scripts/openapi-http.sh $(SERVICE) $(OUTPUT) $(PACKAGE)

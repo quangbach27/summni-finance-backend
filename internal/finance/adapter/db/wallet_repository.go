@@ -300,7 +300,7 @@ func (r *walletRepo) CreateTransactionRecords(
 			return err
 		}
 
-		if err := r.updateFundProviderAllocations(ctx, txQueries, w.FundProviderManager().FpAllocations()); err != nil {
+		if err := r.updateFundProviderAllocations(ctx, txQueries, w.ID(), w.FundProviderManager().FpAllocations()); err != nil {
 			return err
 		}
 
@@ -352,6 +352,7 @@ func (r *walletRepo) toAccountingPeriodsDomain(
 func (r *walletRepo) updateFundProviderAllocations(
 	ctx context.Context,
 	queries *store.Queries,
+	wID uuid.UUID,
 	allocations []wallet.FpAllocation,
 ) error {
 	allocationsLen := len(allocations)
@@ -366,6 +367,12 @@ func (r *walletRepo) updateFundProviderAllocations(
 		Versions:           make([]int32, 0, allocationsLen),
 	}
 
+	allocationParams := store.BatchUpdateFundAllocationsParams{
+		FpIds:            make([]uuid.UUID, 0, allocationsLen),
+		WalletIds:        make([]uuid.UUID, 0, allocationsLen),
+		AllocatedAmounts: make([]int64, 0, allocationsLen),
+	}
+
 	for _, allocation := range allocations {
 		fp := allocation.FundProvider()
 		if fp == nil {
@@ -376,6 +383,10 @@ func (r *walletRepo) updateFundProviderAllocations(
 		fpParams.Balances = append(fpParams.Balances, fp.Balance().Amount())
 		fpParams.UnallocatedAmounts = append(fpParams.UnallocatedAmounts, fp.UnallocatedBalance().Amount())
 		fpParams.Versions = append(fpParams.Versions, fp.Version())
+
+		allocationParams.FpIds = append(allocationParams.FpIds, fp.ID())
+		allocationParams.WalletIds = append(allocationParams.WalletIds, wID)
+		allocationParams.AllocatedAmounts = append(allocationParams.AllocatedAmounts, allocation.Allocated().Amount())
 	}
 
 	rows, err := queries.BatchUpdateFundProvidersBalance(ctx, fpParams)
@@ -386,6 +397,10 @@ func (r *walletRepo) updateFundProviderAllocations(
 	if rows != int64(allocationsLen) {
 		return fmt.Errorf("failed to update all fund providers: expected %d, updated %d: %w",
 			allocationsLen, rows, common_db.ErrConcurrentModification)
+	}
+
+	if err := queries.BatchUpdateFundAllocations(ctx, allocationParams); err != nil {
+		return fmt.Errorf("failed to batch update fund allocations: %w", err)
 	}
 
 	return nil

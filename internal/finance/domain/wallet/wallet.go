@@ -267,7 +267,7 @@ func (w *Wallet) Withdraw(amount valueobject.Money, fpID uuid.UUID) error {
 }
 
 func (w *Wallet) OpenAccountingPeriod(yearMonth ledger.YearMonth) error {
-	return w.ledgerManager.OpenNewAccountingPeriod(yearMonth, w.balance)
+	return w.ledgerManager.OpenAccountingPeriod(yearMonth, w.balance)
 }
 
 func (w *Wallet) RecordTransactions(yearMonth ledger.YearMonth, txSpecs ...TransactionSpec) error {
@@ -323,7 +323,7 @@ func (w *Wallet) buildTransactionRecordsFromSpec(txSpec TransactionSpec) (ledger
 		return ledger.TransactionRecord{}, err
 	}
 
-	if txRecord.IsCredit() {
+	if txRecord.IsDeposit() {
 		if err = w.TopUp(txRecord.Amount(), txSpec.FpID); err != nil {
 			return ledger.TransactionRecord{}, err
 		}

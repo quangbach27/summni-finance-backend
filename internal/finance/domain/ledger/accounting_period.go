@@ -131,7 +131,7 @@ func (ap *AccountingPeriod) Version() int32                     { return ap.vers
 func (ap *AccountingPeriod) Transactions() []*TransactionRecord { return ap.transactions }
 
 func (ap *AccountingPeriod) Record(txRecord TransactionRecord) error {
-	if txRecord.IsCredit() {
+	if txRecord.IsDeposit() {
 		newTotalCredit, err := ap.totalCredit.Add(txRecord.amount)
 		if err != nil {
 			return err

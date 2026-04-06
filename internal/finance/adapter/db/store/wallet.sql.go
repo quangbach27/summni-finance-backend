@@ -11,6 +11,30 @@ import (
 	"github.com/google/uuid"
 )
 
+const batchUpdateFundAllocations = `-- name: BatchUpdateFundAllocations :exec
+UPDATE finance.fund_provider_allocations
+SET allocated_amount = data.allocated_amount
+FROM (
+    SELECT
+        unnest($1::uuid[])        AS fp_id,
+        unnest($2::uuid[])    AS wallet_id,
+        unnest($3::bigint[]) AS allocated_amount
+) AS data
+WHERE finance.fund_provider_allocations.fp_id = data.fp_id
+    AND finance.fund_provider_allocations.wallet_id = data.wallet_id
+`
+
+type BatchUpdateFundAllocationsParams struct {
+	FpIds            []uuid.UUID `db:"fp_ids"`
+	WalletIds        []uuid.UUID `db:"wallet_ids"`
+	AllocatedAmounts []int64     `db:"allocated_amounts"`
+}
+
+func (q *Queries) BatchUpdateFundAllocations(ctx context.Context, arg BatchUpdateFundAllocationsParams) error {
+	_, err := q.db.Exec(ctx, batchUpdateFundAllocations, arg.FpIds, arg.WalletIds, arg.AllocatedAmounts)
+	return err
+}
+
 type BulkInsertFundAllocationsParams struct {
 	FpID            uuid.UUID `db:"fp_id"`
 	WalletID        uuid.UUID `db:"wallet_id"`

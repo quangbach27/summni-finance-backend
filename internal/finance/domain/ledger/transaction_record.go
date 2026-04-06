@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	DebitTransaction  TransactionType = TransactionType{"DEBIT"}
-	CreditTransaction TransactionType = TransactionType{"CREDIT"}
+	TransactionTypeDeposit    TransactionType = TransactionType{"DEPOSIT"}
+	TransactionTypeWithdrawal TransactionType = TransactionType{"WITHDRAWAL"}
 )
 
 type TransactionType struct {
@@ -22,12 +22,12 @@ func (t TransactionType) String() string { return t.value }
 
 func NewTransactionType(typeStr string) (TransactionType, error) {
 	typeStrCleaned := strings.ToUpper(strings.TrimSpace(typeStr))
-	if typeStrCleaned == DebitTransaction.value {
-		return DebitTransaction, nil
+	if typeStrCleaned == TransactionTypeDeposit.value {
+		return TransactionTypeDeposit, nil
 	}
 
-	if typeStrCleaned == CreditTransaction.value {
-		return CreditTransaction, nil
+	if typeStrCleaned == TransactionTypeWithdrawal.value {
+		return TransactionTypeWithdrawal, nil
 	}
 
 	return TransactionType{}, fmt.Errorf("unknown transaction type: %s", typeStr)
@@ -100,6 +100,6 @@ func (t *TransactionRecord) WalletBalance() valueobject.Money { return t.walletB
 func (t *TransactionRecord) FpID() uuid.UUID                  { return t.fpID }
 func (t *TransactionRecord) FpBalance() valueobject.Money     { return t.fpBalance }
 
-func (t *TransactionRecord) IsCredit() bool {
-	return t.transactionType.value == CreditTransaction.value
+func (t *TransactionRecord) IsDeposit() bool {
+	return t.transactionType.value == TransactionTypeDeposit.value
 }

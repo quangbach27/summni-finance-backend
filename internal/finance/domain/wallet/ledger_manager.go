@@ -8,8 +8,20 @@ import (
 )
 
 type LedgerConfig struct {
-	startDate ledger.PeriodStartDay // day
+	startDate ledger.PeriodStartDay // date of the month
 	interval  int32                 // month
+}
+
+func NewDefaultLedgerConfig() (LedgerConfig, error) {
+	startDate, err := ledger.NewPeriodStartDay(1)
+	if err != nil {
+		return LedgerConfig{}, nil
+	}
+
+	return LedgerConfig{
+		startDate: startDate,
+		interval:  1,
+	}, nil
 }
 
 func (lc LedgerConfig) StartDate() ledger.PeriodStartDay { return lc.startDate }
@@ -22,7 +34,7 @@ type LedgerManager struct {
 }
 
 func NewLedgerManager(accountPeriods []*ledger.AccountingPeriod) (*LedgerManager, error) {
-	startDay, err := ledger.NewPeriodStartDay(1)
+	ledgerConfig, err := NewDefaultLedgerConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -34,10 +46,7 @@ func NewLedgerManager(accountPeriods []*ledger.AccountingPeriod) (*LedgerManager
 	}
 
 	ledgerManager := &LedgerManager{
-		config: LedgerConfig{
-			startDate: startDay,
-			interval:  1,
-		},
+		config:         ledgerConfig,
 		accountPeriods: make(map[ledger.YearMonth]*ledger.AccountingPeriod, capacity),
 	}
 
@@ -61,7 +70,7 @@ func (m *LedgerManager) FindAccountingPeriod(yearMonth ledger.YearMonth) (*ledge
 	return ap, true
 }
 
-func (m *LedgerManager) OpenNewAccountingPeriod(
+func (m *LedgerManager) OpenAccountingPeriod(
 	yearMonth ledger.YearMonth,
 	openBalance valueobject.Money,
 ) error {

@@ -321,7 +321,7 @@ components:
           example: "TXN-2024-001"
         transactionType:
           type: string
-          description: Type of transaction (e.g., DEPOSIT, WITHDRAWAL, TRANSFER)
+          description: Type of transaction (e.g., DEPOSIT, WITHDRAWAL)
           example: "DEPOSIT"
         description:
           type: string

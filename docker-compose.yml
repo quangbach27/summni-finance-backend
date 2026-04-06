@@ -42,6 +42,17 @@ services:
       - postgres_data:/var/lib/postgresql/data
     restart: always
 
+  swagger-ui:
+    image: swaggerapi/swagger-ui:latest
+    container_name: sumni-swagger-ui
+    ports:
+      - "127.0.0.1:8090:8080"
+    volumes:
+      - ./api/openapi/finance.yaml:/app/finance.yaml:ro
+    environment:
+      SWAGGER_JSON: /app/finance.yaml
+    restart: always
+
   # keycloak:
   #   image: quay.io/keycloak/keycloak:latest
   #   container_name: keycloak_server

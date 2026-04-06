@@ -18,6 +18,10 @@ import (
 	"github.com/go-chi/cors"
 )
 
+func isDev() bool {
+	return config.GetConfig().App().Env() == "dev"
+}
+
 func RunHTTPServer(createHandler func(router chi.Router) http.Handler) {
 	addr := fmt.Sprintf(":%s", config.GetConfig().App().Port())
 
@@ -31,11 +35,16 @@ func RunHTTPServerOnAddr(addr string, createHandler func(router chi.Router) http
 	rootRouter := chi.NewRouter()
 	rootRouter.Mount("/api", createHandler(apiRouter))
 
+	readTimeout := 500 * time.Millisecond
+	if isDev() {
+		readTimeout = 0 // no timeout in debug/dev mode
+	}
+
 	server := &http.Server{
 		Addr: addr,
 
-		ReadHeaderTimeout: 500 * time.Millisecond,
-		ReadTimeout:       500 * time.Millisecond,
+		ReadHeaderTimeout: readTimeout,
+		ReadTimeout:       readTimeout,
 		IdleTimeout:       time.Second,
 
 		Handler: rootRouter,
@@ -70,7 +79,9 @@ func setMiddleware(router *chi.Mux) {
 	router.Use(middleware.RealIP)
 	router.Use(logs.Middleware(slog.Default()))
 	router.Use(middleware.Recoverer)
-	router.Use(middleware.Timeout(2 * time.Second))
+	if !isDev() {
+		router.Use(middleware.Timeout(2 * time.Second))
+	}
 
 	addCorsMiddleware(router)
 

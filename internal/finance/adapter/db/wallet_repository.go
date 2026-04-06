@@ -266,6 +266,7 @@ func (r *walletRepo) CreateTransactionRecords(
 ) error {
 	return r.transactionManager.WithTx(ctx, func(tx pgx.Tx) error {
 		txQueries := r.queries.WithTx(tx)
+
 		w, err := r.getByIDWithProviders(ctx, wID, allocationSpec, txQueries)
 		if err != nil {
 			return err
@@ -395,7 +396,7 @@ func (r *walletRepo) updateAccountingPeriod(
 	queries *store.Queries,
 	ap *ledger.AccountingPeriod,
 ) error {
-	rows, err := queries.UpdateAccountingPerid(ctx, store.UpdateAccountingPeridParams{
+	rows, err := queries.UpdateAccountingPeriod(ctx, store.UpdateAccountingPeriodParams{
 		TotalDebit:     ap.TotalDebit().Amount(),
 		TotalCredit:    ap.TotalCredit().Amount(),
 		ClosingBalance: ap.ClosingBalance().Amount(),

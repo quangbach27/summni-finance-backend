@@ -27,7 +27,7 @@ INSERT INTO finance.accounting_periods (
     $12 -- status
 );
 
--- name: UpdateAccountingPerid :execrows
+-- name: UpdateAccountingPeriod :execrows
 UPDATE finance.accounting_periods ap
 SET
     total_debit = sqlc.arg(total_debit),

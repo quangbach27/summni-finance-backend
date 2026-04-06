@@ -218,7 +218,7 @@ func (q *Queries) GetWalletWithAccountingPeriod(ctx context.Context, arg GetWall
 	return i, err
 }
 
-const updateAccountingPerid = `-- name: UpdateAccountingPerid :execrows
+const updateAccountingPeriod = `-- name: UpdateAccountingPeriod :execrows
 UPDATE finance.accounting_periods ap
 SET
     total_debit = $1,
@@ -230,7 +230,7 @@ WHERE ap.id = $5
     AND ap.version = $6
 `
 
-type UpdateAccountingPeridParams struct {
+type UpdateAccountingPeriodParams struct {
 	TotalDebit     int64     `db:"total_debit"`
 	TotalCredit    int64     `db:"total_credit"`
 	ClosingBalance int64     `db:"closing_balance"`
@@ -239,8 +239,8 @@ type UpdateAccountingPeridParams struct {
 	Version        int32     `db:"version"`
 }
 
-func (q *Queries) UpdateAccountingPerid(ctx context.Context, arg UpdateAccountingPeridParams) (int64, error) {
-	result, err := q.db.Exec(ctx, updateAccountingPerid,
+func (q *Queries) UpdateAccountingPeriod(ctx context.Context, arg UpdateAccountingPeriodParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateAccountingPeriod,
 		arg.TotalDebit,
 		arg.TotalCredit,
 		arg.ClosingBalance,

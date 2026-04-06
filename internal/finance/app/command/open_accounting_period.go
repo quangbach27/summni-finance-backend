@@ -55,7 +55,7 @@ func (h *openAccountingPeriodHandler) Handle(ctx context.Context, cmd OpenAccoun
 	}
 
 	if err = h.ledgerRepo.CreateAccountingPeriod(ctx, w.ID(), ap); err != nil {
-		return err
+		return httperr.NewUnknowError(err, "failed-to-create-accounting-period")
 	}
 
 	return nil
